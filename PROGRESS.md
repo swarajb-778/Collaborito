@@ -22,7 +22,9 @@
 ### Task 3: Authentication (LinkedIn OAuth) ⏳
 - ✅ Set up authentication flow structure
 - ✅ Create login screen
-- ⏳ Complete LinkedIn OAuth integration (Need API credentials)
+- ✅ Configure deep linking for auth callbacks
+- ✅ Enhance Supabase auth configuration
+- ⏳ Register LinkedIn Developer App and complete OAuth (Need API credentials)
 
 ### Task 4: Navigation & Base Screens ⏳
 - ✅ Set up basic navigation structure

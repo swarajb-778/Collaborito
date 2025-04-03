@@ -19,7 +19,10 @@ export default {
     ],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.yourcompany.collaborito'
+      bundleIdentifier: 'com.yourcompany.collaborito',
+      config: {
+        usesNonExemptEncryption: false
+      }
     },
     android: {
       adaptiveIcon: {

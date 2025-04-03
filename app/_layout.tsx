@@ -5,6 +5,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '@/src/contexts/AuthContext';
@@ -12,6 +14,9 @@ import { useAuthRedirect } from '@/src/hooks/useAuthRedirect';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// This handles the initial deep link when the app is not open
+WebBrowser.maybeCompleteAuthSession();
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -41,6 +46,20 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  // Handle deep links (needed for OAuth flow)
+  useEffect(() => {
+    // Subscribe to deep link events
+    const subscription = Linking.addEventListener('url', (event) => {
+      // Handle the deep link
+      console.log('Deep link received:', event.url);
+      // The rest is handled by expo-auth-session
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   if (!loaded) {
     return null;

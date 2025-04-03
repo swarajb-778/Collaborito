@@ -2,6 +2,10 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '../services/supabase';
 import { Session } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
 
 // Define the context types
 type AuthContextType = {
@@ -20,6 +24,9 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   signOut: async () => {},
 });
+
+// Hook to use the auth context
+export const useAuth = () => useContext(AuthContext);
 
 // Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -48,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth state changes
     const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('Auth state changed:', event);
       setSession(newSession);
       setUser(newSession?.user || null);
     });
@@ -58,13 +66,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Get the redirect URI
+  const redirectUri = makeRedirectUri({
+    scheme: Constants.expoConfig?.scheme || 'collaborito',
+    path: 'auth/callback',
+  });
+
   // Sign in with LinkedIn OAuth
   const signIn = async (provider: 'linkedin') => {
     try {
+      console.log(`Signing in with ${provider}, redirect URI: ${redirectUri}`);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: 'collaborito://auth/callback',
+          redirectTo: redirectUri,
+          scopes: 'r_liteprofile r_emailaddress',
         },
       });
 
@@ -72,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (error: any) {
-      console.error('Error signing in with LinkedIn:', error.message);
+      console.error(`Error signing in with ${provider}:`, error.message);
       throw error;
     }
   };
@@ -107,15 +124,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-// Custom hook to use auth context
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  
-  return context;
 }; 
