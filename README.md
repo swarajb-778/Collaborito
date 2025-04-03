@@ -1,50 +1,83 @@
-# Welcome to your Expo app 👋
+# Collaborito
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An AI-powered community platform that helps entrepreneurs match with collaborators - unlike inefficient networking communities.
 
-## Get started
+## Project Overview
 
-1. Install dependencies
+Collaborito is a mobile app that facilitates collaboration between users on projects. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, and leverage AI capabilities for enhanced productivity.
 
+The core functionality includes user authentication via LinkedIn OAuth, project management, real-time messaging, task management, and file sharing. The app is enhanced with AI features powered by Claude 3.7, providing intelligent assistance such as chat summarization, task generation, and writing assistance.
+
+## Tech Stack
+
+- **Frontend**: Expo React Native with TypeScript
+- **Backend**: Supabase (Authentication, Database, Storage, Serverless Functions)
+- **AI**: Claude 3.7 API
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Expo CLI
+- Supabase account
+- LinkedIn Developer account (for OAuth)
+- Claude API key (for AI features)
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/collaborito.git
+   cd collaborito
+   ```
+
+2. Install dependencies
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. Copy the environment variables
    ```bash
-    npx expo start
+   cp .env.example .env
    ```
 
-In the output, you'll find options to open the app in a
+4. Edit the `.env` file with your own configuration values:
+   - Supabase URL and Anon Key
+   - LinkedIn OAuth credentials
+   - Claude API key
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+5. Start the development server
+   ```bash
+   npx expo start
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
+- `app/`: Main application code (Expo Router)
+- `src/`
+  - `components/`: Reusable UI components
+  - `screens/`: Screen components
+  - `navigation/`: Navigation configuration
+  - `services/`: API and service integrations
+  - `contexts/`: React Context providers
+  - `hooks/`: Custom React hooks
+  - `types/`: TypeScript interfaces and types
 
-When you're ready, run:
+## Key Features
 
-```bash
-npm run reset-project
-```
+- User authentication with LinkedIn OAuth
+- Project creation and management
+- Real-time chat for project discussions
+- Task management and to-do lists
+- AI-powered assistance via Claude 3.7
+- File sharing and collaboration
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Contributing
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
