@@ -281,8 +281,13 @@ CREATE POLICY "Project members can view projects" ON projects
     EXISTS (
       SELECT 1 FROM project_members 
       WHERE project_id = id AND user_id = auth.uid()
-    ) OR
-    is_public = true
+    )
+    -- Only include public projects if the is_public column exists
+    OR (CASE WHEN EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'projects' AND column_name = 'is_public'
+        ) 
+        THEN is_public ELSE false END)
   );
 
 CREATE POLICY "Project owners can insert projects" ON projects
@@ -309,8 +314,13 @@ CREATE POLICY "Project members can view project members" ON project_members
       WHERE p.id = project_id 
       AND (
         pm.user_id = auth.uid() OR
-        p.owner_id = auth.uid() OR
-        p.is_public = true
+        p.owner_id = auth.uid() 
+        -- Only include public projects if the is_public column exists
+        OR (CASE WHEN EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'projects' AND column_name = 'is_public'
+            ) 
+            THEN p.is_public ELSE false END)
       )
     )
   );
