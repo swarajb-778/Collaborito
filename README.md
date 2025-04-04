@@ -1,5 +1,7 @@
 # Collaborito
 
+[![CI/CD Pipeline](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml/badge.svg)](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml)
+
 An AI-powered community platform that helps entrepreneurs match with collaborators - unlike inefficient networking communities.
 
 ## Project Overview
