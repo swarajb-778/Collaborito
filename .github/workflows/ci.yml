@@ -22,6 +22,24 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
+      
+      # Cache Expo CLI
+      - name: Cache Expo CLI
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm/global
+          key: ${{ runner.os }}-expo-cli-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-expo-cli-
+      
+      # Cache node_modules
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
           
       - name: Install dependencies
         run: npm install
@@ -29,11 +47,11 @@ jobs:
       - name: Create .env file
         run: |
           echo "SUPABASE_URL=https://ekydublgvsoaaepdhtzc.supabase.co" > .env
-          echo "SUPABASE_ANON_KEY=dummy-key-for-ci" >> .env
-          echo "LINKEDIN_CLIENT_ID=placeholder" >> .env
-          echo "LINKEDIN_CLIENT_SECRET=placeholder" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}" >> .env
+          echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID || 'placeholder' }}" >> .env
+          echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET || 'placeholder' }}" >> .env
           echo "LINKEDIN_REDIRECT_URI=collaborito://auth/callback" >> .env
-          echo "CLAUDE_API_KEY=placeholder" >> .env
+          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY || 'placeholder' }}" >> .env
           echo "APP_SCHEME=collaborito" >> .env
       
       - name: Run linting
@@ -49,6 +67,15 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
+      
+      # Cache Expo build
+      - name: Cache Expo Build
+        uses: actions/cache@v3
+        with:
+          path: ~/.expo
+          key: ${{ runner.os }}-expo-build-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-expo-build-
           
       - name: Build preview
         continue-on-error: true  # Continue even if build fails
