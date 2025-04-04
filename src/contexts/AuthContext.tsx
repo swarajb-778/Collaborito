@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Get the redirect URI
   const redirectUri = makeRedirectUri({
-    scheme: Constants.expoConfig?.scheme || 'collaborito',
+    scheme: Constants.expoConfig?.scheme as string || 'collaborito',
     path: 'auth/callback',
   });
 
@@ -124,4 +124,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+};
