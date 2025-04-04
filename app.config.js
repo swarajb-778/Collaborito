@@ -36,12 +36,13 @@ export default {
       favicon: './assets/images/favicon.png'
     },
     extra: {
-      // Load environment variables here
+      // Load environment variables here with fallback values for development
       SUPABASE_URL: process.env.SUPABASE_URL,
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-      LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
-      LINKEDIN_REDIRECT_URI: process.env.LINKEDIN_REDIRECT_URI,
-      CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,
+      // Use placeholder values for LinkedIn and Claude API keys during development
+      LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || 'development-placeholder',
+      LINKEDIN_REDIRECT_URI: process.env.LINKEDIN_REDIRECT_URI || 'collaborito://auth/callback',
+      CLAUDE_API_KEY: process.env.CLAUDE_API_KEY || 'development-placeholder',
       eas: {
         projectId: 'your-eas-project-id'
       }
