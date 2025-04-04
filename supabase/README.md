@@ -27,13 +27,25 @@ The database schema includes the following tables:
 
 ### 2. Database Setup
 
-#### Option 1: Using the SQL Editor
+#### Option 1: Using the SQL Editor (recommended for initial setup)
 
-1. Navigate to the SQL Editor in your Supabase dashboard
-2. Open the file `complete_setup.sql` from this directory
-3. Copy the entire contents of the file
-4. Paste it into the SQL Editor in Supabase
-5. Run the SQL script to create all tables, functions, triggers, and RLS policies
+For first-time setup, it's best to run the SQL script in separate parts to avoid dependency issues:
+
+1. Create a new project on Supabase and note down the project URL and anon key
+2. Go to the SQL Editor
+3. Run the script in this order:
+   ```
+   -- First run just the schema creation part (tables only)
+   -- Lines 1-140 in complete_setup.sql
+
+   -- Then run the triggers and functions
+   -- Lines 141-250 in complete_setup.sql
+
+   -- Finally run the RLS policies
+   -- Lines 251-end in complete_setup.sql
+   ```
+
+This approach prevents errors with column references in RLS policies before tables are fully created.
 
 #### Option 2: Using the Supabase CLI
 
