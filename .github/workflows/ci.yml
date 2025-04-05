@@ -47,11 +47,27 @@ jobs:
       - name: Create .env file
         run: |
           echo "SUPABASE_URL=https://ekydublgvsoaaepdhtzc.supabase.co" > .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}" >> .env
-          echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID || 'placeholder' }}" >> .env
-          echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET || 'placeholder' }}" >> .env
+          if [ -n "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          else
+            echo "SUPABASE_ANON_KEY=dummy-key-for-ci" >> .env
+          fi
+          if [ -n "${{ secrets.LINKEDIN_CLIENT_ID }}" ]; then
+            echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> .env
+          else
+            echo "LINKEDIN_CLIENT_ID=placeholder" >> .env
+          fi
+          if [ -n "${{ secrets.LINKEDIN_CLIENT_SECRET }}" ]; then
+            echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> .env
+          else
+            echo "LINKEDIN_CLIENT_SECRET=placeholder" >> .env
+          fi
           echo "LINKEDIN_REDIRECT_URI=collaborito://auth/callback" >> .env
-          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY || 'placeholder' }}" >> .env
+          if [ -n "${{ secrets.CLAUDE_API_KEY }}" ]; then
+            echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> .env
+          else
+            echo "CLAUDE_API_KEY=placeholder" >> .env
+          fi
           echo "APP_SCHEME=collaborito" >> .env
       
       - name: Run linting
@@ -67,7 +83,8 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          # Only use token if it exists
+          token: ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN || '' }}
       
       # Cache Expo build
       - name: Cache Expo Build
