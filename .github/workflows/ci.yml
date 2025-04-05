@@ -15,12 +15,12 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
       
       # Cache Expo CLI
@@ -42,7 +42,7 @@ jobs:
             ${{ runner.os }}-modules-
           
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       
       - name: Create .env file
         run: |
@@ -67,6 +67,7 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
       
       # Cache Expo build
       - name: Cache Expo Build
