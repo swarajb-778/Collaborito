@@ -19,9 +19,8 @@ type AuthContextType = {
   isDevelopmentMode: boolean;
 };
 
-// Check if we're in development mode
-const isDevelopmentMode = 
-  Constants.expoConfig?.extra?.LINKEDIN_CLIENT_ID === 'development-placeholder';
+// Check if we're in development mode - now we have real credentials, so it should be false
+const isDevelopmentMode = false;
 
 // Create context with default values
 const AuthContext = createContext<AuthContextType>({
@@ -48,6 +47,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const getSession = async () => {
       setLoading(true);
       
+      // Check for development mode session
+      const devModeUser = await AsyncStorage.getItem('devMode.user');
+      if (devModeUser && isDevelopmentMode) {
+        const parsedUser = JSON.parse(devModeUser);
+        setUser(parsedUser);
+        
+        // Create a fake session
+        const fakeSession = {
+          access_token: 'fake-token',
+          refresh_token: 'fake-refresh-token',
+          user: parsedUser,
+          expires_at: Date.now() + 3600 * 1000, // Expires in 1 hour
+        } as unknown as Session;
+        
+        setSession(fakeSession);
+        setLoading(false);
+        return;
+      } else if (devModeUser && !isDevelopmentMode) {
+        // If dev mode is disabled but we have dev user data, clear it
+        await AsyncStorage.removeItem('devMode.user');
+      }
+      
+      // Regular session check
       const { data, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -170,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if using dev mode
       const devModeUser = await AsyncStorage.getItem('devMode.user');
       
-      if (devModeUser) {
+      if (devModeUser && isDevelopmentMode) {
         // Clear dev mode session
         await AsyncStorage.removeItem('devMode.user');
         setSession(null);
