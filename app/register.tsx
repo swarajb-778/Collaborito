@@ -10,19 +10,32 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signIn, loading } = useAuth();
+  const { signUp, loading } = useAuth();
   
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [fullNameError, setFullNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   
   const validateForm = () => {
     let isValid = true;
+    
+    // Validate full name
+    if (!fullName.trim()) {
+      setFullNameError('Full name is required');
+      isValid = false;
+    } else {
+      setFullNameError('');
+    }
     
     // Validate email
     if (!email) {
@@ -46,17 +59,28 @@ export default function LoginScreen() {
       setPasswordError('');
     }
     
+    // Validate password confirmation
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password');
+      isValid = false;
+    } else if (confirmPassword !== password) {
+      setConfirmPasswordError('Passwords do not match');
+      isValid = false;
+    } else {
+      setConfirmPasswordError('');
+    }
+    
     return isValid;
   };
   
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
     
     try {
-      await signIn(email, password);
+      await signUp(email, password, fullName);
       router.push('/(tabs)');
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Registration error:', error);
     }
   };
   
@@ -90,12 +114,21 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInDown.delay(300).duration(800)}>
-          <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
           <Text style={[styles.subtitle, { color: colors.muted }]}>
-            Sign in to your account to continue
+            Sign up to start collaborating on projects
           </Text>
           
           <View style={styles.form}>
+            <TextInput
+              label="Full Name"
+              placeholder="Enter your full name"
+              value={fullName}
+              onChangeText={setFullName}
+              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
+              error={fullNameError}
+            />
+            
             <TextInput
               label="Email"
               placeholder="Enter your email"
@@ -109,7 +142,7 @@ export default function LoginScreen() {
             
             <TextInput
               label="Password"
-              placeholder="Enter your password"
+              placeholder="Create a password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -117,25 +150,26 @@ export default function LoginScreen() {
               error={passwordError}
             />
             
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => console.log('Forgot password')}
-            >
-              <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
-                Forgot password?
-              </Text>
-            </TouchableOpacity>
+            <TextInput
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+              error={confirmPasswordError}
+            />
             
             <Button
-              style={styles.loginButton}
-              onPress={handleLogin}
+              style={styles.registerButton}
+              onPress={handleRegister}
               variant="primary"
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Sign In'
+                'Create Account'
               )}
             </Button>
           </View>
@@ -146,30 +180,29 @@ export default function LoginScreen() {
           entering={FadeInUp.delay(500).duration(800)}
         >
           <Text style={[styles.footerText, { color: colors.muted }]}>
-            Don't have an account?
+            Already have an account?
           </Text>
-          <TouchableOpacity onPress={() => router.push('/register' as any)}>
-            <Text style={[styles.registerLink, { color: colors.primary }]}>
-              Register
+          <TouchableOpacity onPress={() => router.push('/login')}>
+            <Text style={[styles.loginLink, { color: colors.primary }]}>
+              Sign In
             </Text>
           </TouchableOpacity>
         </Animated.View>
         
         <Animated.View 
-          style={styles.demoLogin}
+          style={styles.termsContainer}
           entering={FadeInUp.delay(600).duration(800)}
         >
-          <TouchableOpacity 
-            style={styles.demoButton}
-            onPress={() => {
-              setEmail('demo@collaborito.com');
-              setPassword('password123');
-            }}
-          >
-            <Text style={[styles.demoButtonText, { color: colors.primary }]}>
-              <FontAwesome5 name="info-circle" size={14} color={colors.primary} /> Use demo credentials
+          <Text style={[styles.termsText, { color: colors.muted }]}>
+            By signing up, you agree to our{' '}
+            <Text style={[styles.termsLink, { color: colors.primary }]}>
+              Terms of Service
             </Text>
-          </TouchableOpacity>
+            {' '}and{' '}
+            <Text style={[styles.termsLink, { color: colors.primary }]}>
+              Privacy Policy
+            </Text>
+          </Text>
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -181,26 +214,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerGradient: {
-    paddingTop: 80,
-    paddingBottom: 40,
+    paddingTop: 60,
+    paddingBottom: 30,
     alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 20,
+    width: 60,
+    height: 60,
+    marginBottom: 16,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
   },
   scrollView: {
@@ -227,16 +260,9 @@ const styles = StyleSheet.create({
   form: {
     marginBottom: 24,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-  },
-  loginButton: {
+  registerButton: {
     height: 56,
+    marginTop: 8,
   },
   footer: {
     flexDirection: 'row',
@@ -247,17 +273,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 8,
   },
-  registerLink: {
+  loginLink: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  demoLogin: {
+  termsContainer: {
     alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  demoButton: {
-    padding: 12,
-  },
-  demoButtonText: {
+  termsText: {
     fontSize: 14,
+    textAlign: 'center',
+  },
+  termsLink: {
+    fontWeight: 'bold',
   },
 }); 

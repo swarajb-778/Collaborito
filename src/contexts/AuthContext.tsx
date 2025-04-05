@@ -1,244 +1,204 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '../services/supabase';
-import { Session } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
-import Constants from 'expo-constants';
-import * as Linking from 'expo-linking';
-import { Alert, Platform } from 'react-native';
-import { router } from 'expo-router';
-import { Profile } from '../types/supabase';
-import { getRedirectUri } from '../services/supabase';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
-// Define the context types
-type AuthContextType = {
-  session: Session | null;
-  user: any | null;
+interface UserMetadata {
+  full_name?: string;
+  avatar_url?: string;
+  email?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  user_metadata: UserMetadata;
+  app_metadata: Record<string, any>;
+  // Add other fields as needed
+}
+
+interface AuthContextType {
+  user: User | null;
+  session: string | null;
   loading: boolean;
-  signIn: (provider: 'linkedin') => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
-  devSignIn: () => Promise<void>; // Development sign-in function
-  isDevelopmentMode: boolean;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfile: (userData: Partial<UserMetadata>) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Mock user data for demo purposes
+const MOCK_USER: User = {
+  id: '123456789',
+  email: 'demo@collaborito.com',
+  user_metadata: {
+    full_name: 'Demo User',
+    avatar_url: 'https://ui-avatars.com/api/?name=Demo+User&background=3F83F8&color=fff',
+  },
+  app_metadata: {
+    roles: ['user'],
+  }
 };
 
-// Check if we're in development mode - now we have real credentials, so it should be false
-const isDevelopmentMode = false;
-
-// Create context with default values
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  loading: true,
-  signIn: async () => {},
-  signOut: async () => {},
-  devSignIn: async () => {},
-  isDevelopmentMode,
-});
-
-// Hook to use the auth context
-export const useAuth = () => useContext(AuthContext);
-
-// Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for active session on mount
-    const getSession = async () => {
-      setLoading(true);
-      
-      // Check for development mode session
-      const devModeUser = await AsyncStorage.getItem('devMode.user');
-      if (devModeUser && isDevelopmentMode) {
-        const parsedUser = JSON.parse(devModeUser);
-        setUser(parsedUser);
-        
-        // Create a fake session
-        const fakeSession = {
-          access_token: 'fake-token',
-          refresh_token: 'fake-refresh-token',
-          user: parsedUser,
-          expires_at: Date.now() + 3600 * 1000, // Expires in 1 hour
-        } as unknown as Session;
-        
-        setSession(fakeSession);
+    // Check for existing session on app load
+    const loadSession = async () => {
+      try {
+        const storedSession = await SecureStore.getItemAsync('userSession');
+        if (storedSession) {
+          setSession(storedSession);
+          setUser(MOCK_USER); // In a real app, you would validate the session and fetch user data
+        }
+      } catch (error) {
+        console.error('Error loading session:', error);
+      } finally {
         setLoading(false);
-        return;
-      } else if (devModeUser && !isDevelopmentMode) {
-        // If dev mode is disabled but we have dev user data, clear it
-        await AsyncStorage.removeItem('devMode.user');
       }
-      
-      // Regular session check
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error.message);
-      } else if (data?.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-      }
-      
-      setLoading(false);
     };
 
-    getSession();
-
-    // Listen for auth state changes
-    const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('Auth state changed:', event);
-      setSession(newSession);
-      setUser(newSession?.user || null);
-    });
-
-    // Cleanup subscription on unmount
-    return () => {
-      data.subscription.unsubscribe();
-    };
+    loadSession();
   }, []);
 
-  // Get the redirect URI
-  const redirectUri = makeRedirectUri({
-    scheme: Constants.expoConfig?.scheme as string || 'collaborito',
-    path: 'auth/callback',
-  });
-
-  // Sign in with LinkedIn OAuth
-  const signIn = async (provider: 'linkedin') => {
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      // If in development mode, show option to use dev sign-in
-      if (isDevelopmentMode) {
-        if (Platform.OS !== 'web') {
-          Alert.alert(
-            'Development Mode',
-            'LinkedIn credentials are not configured. Would you like to use development sign-in instead?',
-            [
-              { 
-                text: 'Cancel', 
-                style: 'cancel' 
-              },
-              { 
-                text: 'Use Dev Sign-In', 
-                onPress: () => devSignIn() 
-              }
-            ]
-          );
-          return;
-        } else {
-          // On web, just use dev sign-in
-          return devSignIn();
-        }
-      }
-      
-      console.log(`Signing in with ${provider}, redirect URI: ${redirectUri}`);
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: redirectUri,
-          scopes: 'r_liteprofile r_emailaddress',
-        },
-      });
+      // In a real app, this would be an API call to your authentication service
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
 
-      if (error) {
-        throw error;
+      // Validate credentials
+      if (email !== 'demo@collaborito.com' || password !== 'password123') {
+        throw new Error('Invalid email or password');
       }
-    } catch (error: any) {
-      console.error(`Error signing in with ${provider}:`, error.message);
+
+      // Set mock session and user
+      const mockSession = `session_${Date.now()}`;
+      await SecureStore.setItemAsync('userSession', mockSession);
+      setSession(mockSession);
+      setUser(MOCK_USER);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during sign in';
+      Alert.alert('Sign In Failed', errorMessage);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Development sign-in function
-  const devSignIn = async () => {
+  const signUp = async (email: string, password: string, fullName: string) => {
+    setLoading(true);
     try {
-      console.log('Using development sign-in');
-      
-      // Create a fake session and user
-      const fakeUser = {
-        id: 'dev-user-id',
-        email: 'dev@example.com',
+      // In a real app, this would be an API call to your authentication service
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating API call
+
+      // Create mock user
+      const newUser: User = {
+        ...MOCK_USER,
+        id: `user_${Date.now()}`,
+        email,
         user_metadata: {
-          full_name: 'Development User',
-          avatar_url: 'https://ui-avatars.com/api/?name=Development+User&background=random',
-        }
+          full_name: fullName,
+          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            fullName
+          )}&background=3F83F8&color=fff`,
+        },
       };
-      
-      // Store in AsyncStorage to simulate a session
-      await AsyncStorage.setItem('devMode.user', JSON.stringify(fakeUser));
-      
-      // Update state
-      setUser(fakeUser);
-      
-      // Create a fake session
-      const fakeSession = {
-        access_token: 'fake-token',
-        refresh_token: 'fake-refresh-token',
-        user: fakeUser,
-        expires_at: Date.now() + 3600 * 1000, // Expires in 1 hour
-      } as unknown as Session;
-      
-      setSession(fakeSession);
-      
-    } catch (error: any) {
-      console.error('Error with dev sign in:', error.message);
+
+      // Set mock session and user
+      const mockSession = `session_${Date.now()}`;
+      await SecureStore.setItemAsync('userSession', mockSession);
+      setSession(mockSession);
+      setUser(newUser);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during sign up';
+      Alert.alert('Sign Up Failed', errorMessage);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
-      // Check if using dev mode
-      const devModeUser = await AsyncStorage.getItem('devMode.user');
-      
-      if (devModeUser && isDevelopmentMode) {
-        // Clear dev mode session
-        await AsyncStorage.removeItem('devMode.user');
-        setSession(null);
-        setUser(null);
-        return;
-      }
-      
-      // Regular sign out
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-
-      // Clear session
+      await SecureStore.deleteItemAsync('userSession');
       setSession(null);
       setUser(null);
-      
-      // Clear AsyncStorage
-      await AsyncStorage.removeItem('supabase.auth.token');
-    } catch (error: any) {
-      console.error('Error signing out:', error.message);
-      throw error;
+    } catch (error) {
+      console.error('Error signing out:', error);
+      Alert.alert('Sign Out Failed', 'An error occurred while signing out');
     }
   };
 
-  const value = {
-    session,
-    user,
-    loading,
-    signIn,
-    signOut,
-    devSignIn,
-    isDevelopmentMode,
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    try {
+      // In a real app, this would trigger a password reset email
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
+      Alert.alert(
+        'Password Reset Initiated',
+        `If an account exists for ${email}, you will receive a password reset link.`
+      );
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const updateProfile = async (userData: Partial<UserMetadata>) => {
+    setLoading(true);
+    try {
+      // In a real app, this would update the user profile on your backend
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
+
+      if (user) {
+        const updatedUser: User = {
+          ...user,
+          user_metadata: {
+            ...user.user_metadata,
+            ...userData,
+          },
+        };
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Profile Update Failed', 'An error occurred while updating your profile');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Define types for auth state
-interface AuthState {
-  session: any; // Replace with proper Session type if available
-  loading: boolean;
-  profile: Profile | null;
-  isAuthenticated: boolean;
-}
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

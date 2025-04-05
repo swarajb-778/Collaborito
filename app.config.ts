@@ -33,6 +33,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-font',
+    'expo-secure-store',
     [
       'expo-image-picker',
       {

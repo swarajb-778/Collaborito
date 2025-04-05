@@ -1,65 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-import { Linking } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '@/src/contexts/AuthContext';
-import { useAuthRedirect } from '@/src/hooks/useAuthRedirect';
+import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+
+export {
+  // Catch any errors thrown by the Layout component.
+  ErrorBoundary,
+} from 'expo-router';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// This handles the initial deep link when the app is not open
-WebBrowser.maybeCompleteAuthSession();
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  
-  // Use the auth redirect hook
-  useAuthRedirect();
-  
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
-}
-
 export default function RootLayout() {
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  const [loaded, error] = useFonts({
+    ...FontAwesome.font,
   });
+
+  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  useEffect(() => {
+    if (error) throw error;
+  }, [error]);
 
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
-
-  // Handle deep links (needed for OAuth flow)
-  useEffect(() => {
-    // Subscribe to deep link events
-    const subscription = Linking.addEventListener('url', (event) => {
-      // Handle the deep link
-      console.log('Deep link received:', event.url);
-      // The rest is handled by expo-auth-session
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   if (!loaded) {
     return null;
@@ -69,5 +40,27 @@ export default function RootLayout() {
     <AuthProvider>
       <RootLayoutNav />
     </AuthProvider>
+  );
+}
+
+function RootLayoutNav() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
+  
+  return (
+    <>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="register" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+      </Stack>
+    </>
   );
 }
