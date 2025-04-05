@@ -7,6 +7,9 @@ import { makeRedirectUri } from 'expo-auth-session';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { Alert, Platform } from 'react-native';
+import { router } from 'expo-router';
+import { Profile } from '../types/supabase';
+import { getRedirectUri } from '../services/supabase';
 
 // Define the context types
 type AuthContextType = {
@@ -231,3 +234,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+// Define types for auth state
+interface AuthState {
+  session: any; // Replace with proper Session type if available
+  loading: boolean;
+  profile: Profile | null;
+  isAuthenticated: boolean;
+}

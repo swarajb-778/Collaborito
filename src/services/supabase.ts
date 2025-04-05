@@ -303,8 +303,6 @@ export const getSignedUrl = async (
   }
 };
 
-// Helper functions for better error handling
-
 /**
  * Wrapper for Supabase queries with improved error handling
  * @param queryFn Function that returns a Supabase query
