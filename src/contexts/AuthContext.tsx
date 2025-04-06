@@ -100,7 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Handle deep links (for OAuth callback)
   const handleDeepLink = (event: { url: string }) => {
     const { url } = event;
-    if (url.includes('auth/callback')) {
+    // Only process if we're not already in a LinkedIn session
+    const isAlreadyLinkedInSession = session && session.startsWith('linkedin_');
+    
+    if (url.includes('auth/callback') && !isAlreadyLinkedInSession && !loading) {
       // In a real app, you would extract tokens and verify the authentication
       // For this demo, we'll simulate a successful LinkedIn login
       handleLinkedInAuthCallback();
@@ -177,10 +180,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         // The result is handled via deep link in handleDeepLink function
         
-        // For demo purposes, simulate success after a short delay
-        setTimeout(() => {
+        // Add this check to prevent multiple callbacks
+        const isLinkedInSession = session && session.startsWith('linkedin_');
+        if (!isLinkedInSession) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
           handleLinkedInAuthCallback();
-        }, 1000);
+        }
       }
     } catch (error) {
       console.error('LinkedIn sign in error:', error);

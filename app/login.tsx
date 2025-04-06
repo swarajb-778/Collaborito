@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TextInput } from '@/components/ui/TextInput';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { TextInput } from '../components/ui/TextInput';
+import { Button } from '../components/ui/Button';
+import { Colors } from '../constants/Colors';
+import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth } from '../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
 
 export default function LoginScreen() {
+  console.log('Rendering LoginScreen');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -58,14 +59,18 @@ export default function LoginScreen() {
     if (!validateForm()) return;
     
     try {
+      console.log(`Authenticating with mode: ${mode}`);
       if (mode === 'signin') {
         await signIn(email, password);
+        console.log('Sign in successful, navigating to tabs');
         router.replace('/(tabs)');
       } else if (mode === 'signup') {
         await signUp(email, password, fullName);
+        console.log('Sign up successful, navigating to tabs');
         router.replace('/(tabs)');
       } else if (mode === 'reset') {
         await resetPassword(email);
+        console.log('Password reset initiated, switching to signin mode');
         setMode('signin');
       }
     } catch (error) {
@@ -75,8 +80,10 @@ export default function LoginScreen() {
   
   const handleLinkedInLogin = async () => {
     try {
+      console.log('Starting LinkedIn login');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await signInWithLinkedIn();
+      console.log('LinkedIn sign in successful, navigating to tabs');
       router.replace('/(tabs)');
     } catch (error) {
       console.error('LinkedIn login error:', error);
