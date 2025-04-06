@@ -1,218 +1,259 @@
-import React, { useState, forwardRef, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  View, 
-  TextInput as RNTextInput, 
-  Text, 
+  View,
+  TextInput as RNTextInput,
   StyleSheet, 
-  Animated, 
+  Text, 
   TouchableOpacity,
+  Animated,
   TextInputProps as RNTextInputProps,
-  StyleProp,
   ViewStyle,
   TextStyle,
-  NativeSyntheticEvent,
-  TextInputFocusEventData
+  Easing,
+  Platform
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-interface TextInputProps extends RNTextInputProps {
+interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
   label?: string;
   error?: string;
-  rightIcon?: React.ReactNode;
   leftIcon?: React.ReactNode;
-  containerStyle?: StyleProp<ViewStyle>;
-  inputStyle?: StyleProp<TextStyle>;
-  labelStyle?: StyleProp<TextStyle>;
-  errorStyle?: StyleProp<TextStyle>;
+  rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
   onLeftIconPress?: () => void;
+  style?: ViewStyle;
+  inputStyle?: TextStyle;
+  labelStyle?: TextStyle;
+  errorStyle?: TextStyle;
+  containerStyle?: ViewStyle;
+  secureTextToggle?: boolean;
 }
 
-export const TextInput = forwardRef<RNTextInput, TextInputProps>(
-  (
-    {
-      label,
-      error,
-      rightIcon,
-      leftIcon,
-      containerStyle,
-      inputStyle,
-      labelStyle,
-      errorStyle,
-      onRightIconPress,
-      onLeftIconPress,
-      onFocus,
-      onBlur,
-      value,
-      placeholder,
-      ...rest
-    },
-    ref
-  ) => {
-    const colorScheme = useColorScheme();
-    const colors = Colors[colorScheme ?? 'light'];
-    
-    const [isFocused, setIsFocused] = useState(false);
-    const [hasText, setHasText] = useState(!!value);
-    
-    // Animation values
-    const labelPosition = useRef(new Animated.Value(value ? 1 : 0)).current;
-    const inputBorder = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-      setHasText(!!value);
-      
-      Animated.timing(labelPosition, {
-        toValue: value ? 1 : 0,
-        duration: 150,
+export const TextInput = ({
+  label,
+  error,
+  leftIcon,
+  rightIcon,
+  onRightIconPress,
+  onLeftIconPress,
+  style,
+  inputStyle,
+  labelStyle,
+  errorStyle,
+  containerStyle,
+  secureTextToggle = false,
+  ...props
+}: TextInputProps) => {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSecureTextVisible, setIsSecureTextVisible] = useState(false);
+  const [inputValue, setInputValue] = useState(props.value || '');
+  
+  // Animation values
+  const labelPositionAnim = useRef(new Animated.Value(inputValue ? 1 : 0)).current;
+  const labelSizeAnim = useRef(new Animated.Value(inputValue ? 1 : 0)).current;
+  const focusAnim = useRef(new Animated.Value(0)).current;
+  
+  // Handle secureTextEntry toggling
+  const isSecureTextEntry = secureTextToggle 
+    ? props.secureTextEntry && !isSecureTextVisible 
+    : props.secureTextEntry;
+  
+  // Update input value state when props.value changes
+  useEffect(() => {
+    if (props.value !== undefined) {
+      setInputValue(props.value);
+    }
+  }, [props.value]);
+  
+  // Animation configurations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(labelPositionAnim, {
+        toValue: (isFocused || inputValue) ? 1 : 0,
+        duration: 200,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
         useNativeDriver: false,
-      }).start();
-    }, [value, labelPosition]);
-
-    const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
-      setIsFocused(true);
-      
-      Animated.parallel([
-        Animated.timing(labelPosition, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: false,
-        }),
-        Animated.timing(inputBorder, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: false,
-        }),
-      ]).start();
-      
-      onFocus && onFocus(e);
-    };
-
-    const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
-      setIsFocused(false);
-      
-      if (!hasText) {
-        Animated.timing(labelPosition, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: false,
-        }).start();
-      }
-      
-      Animated.timing(inputBorder, {
-        toValue: 0,
-        duration: 150,
+      }),
+      Animated.timing(labelSizeAnim, {
+        toValue: (isFocused || inputValue) ? 1 : 0,
+        duration: 200,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
         useNativeDriver: false,
-      }).start();
-      
-      onBlur && onBlur(e);
-    };
-
-    // Interpolate label position and font size
-    const labelTop = labelPosition.interpolate({
-      inputRange: [0, 1],
-      outputRange: [17, -8],
-    });
-    
-    const labelFontSize = labelPosition.interpolate({
-      inputRange: [0, 1],
-      outputRange: [16, 12],
-    });
-    
-    // Interpolate border color based on focus state and error
-    const borderColor = inputBorder.interpolate({
-      inputRange: [0, 1],
-      outputRange: [error ? colors.error : colors.border, error ? colors.error : colors.primary],
-    });
-
-    return (
-      <View style={[styles.container, containerStyle]}>
-        {label && (
-          <Animated.Text
-            style={[
-              styles.label,
-              {
-                top: labelTop,
-                fontSize: labelFontSize,
-                color: error 
-                  ? colors.error
-                  : isFocused 
-                    ? colors.primary 
-                    : colors.muted,
-                backgroundColor: colors.background,
-              },
-              labelStyle,
-            ]}
-          >
-            {label}
-          </Animated.Text>
-        )}
-        
+      }),
+      Animated.timing(focusAnim, {
+        toValue: isFocused ? 1 : 0,
+        duration: 200,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        useNativeDriver: false,
+      })
+    ]).start();
+  }, [isFocused, inputValue]);
+  
+  // Interpolated values for animations
+  const labelPositionTop = labelPositionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, -8],
+  });
+  
+  const labelSize = labelSizeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 12],
+  });
+  
+  const labelColor = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.muted, colors.primary],
+  });
+  
+  const borderColor = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.border, colors.primary],
+  });
+  
+  // Event handlers
+  const handleFocus = (e: any) => {
+    setIsFocused(true);
+    props.onFocus && props.onFocus(e);
+  };
+  
+  const handleBlur = (e: any) => {
+    setIsFocused(false);
+    props.onBlur && props.onBlur(e);
+  };
+  
+  const handleChangeText = (text: string) => {
+    setInputValue(text);
+    props.onChangeText && props.onChangeText(text);
+  };
+  
+  const toggleSecureTextVisibility = () => {
+    setIsSecureTextVisible(!isSecureTextVisible);
+  };
+  
+  // Get container border color based on state (focused, error, default)
+  const getContainerBorderColor = () => {
+    if (error) return colors.error;
+    return borderColor;
+  };
+  
+  return (
+    <View style={[styles.container, containerStyle]}>
+      <View style={[styles.inputContainer, { backgroundColor: colors.card }, style]}>
         <Animated.View
           style={[
-            styles.inputContainer,
+            styles.inputWrapper,
             {
-              borderColor,
-              backgroundColor: colors.background,
+              borderColor: getContainerBorderColor(),
+              borderWidth: isFocused ? 2 : 1,
             },
           ]}
         >
+          {/* Floating Label */}
+          {label && (
+            <Animated.Text
+              style={[
+                styles.label,
+                {
+                  top: labelPositionTop,
+                  fontSize: labelSize,
+                  color: error ? colors.error : labelColor,
+                  backgroundColor: colors.card,
+                },
+                labelStyle,
+              ]}
+            >
+              {label}
+            </Animated.Text>
+          )}
+          
+          {/* Left Icon */}
           {leftIcon && (
-            <TouchableOpacity 
-              style={styles.leftIcon} 
+            <TouchableOpacity
+              style={styles.leftIcon}
               onPress={onLeftIconPress}
               disabled={!onLeftIconPress}
+              activeOpacity={onLeftIconPress ? 0.6 : 1}
             >
               {leftIcon}
             </TouchableOpacity>
           )}
           
+          {/* TextInput */}
           <RNTextInput
-            ref={ref}
+            {...props}
             style={[
               styles.input,
               {
                 color: colors.text,
-                paddingLeft: leftIcon ? 0 : 16,
-                paddingRight: rightIcon ? 0 : 16,
+                paddingLeft: leftIcon ? 40 : 12,
+                paddingRight: (rightIcon || secureTextToggle) ? 40 : 12,
               },
               inputStyle,
             ]}
-            placeholder={isFocused ? placeholder : ''}
-            placeholderTextColor={colors.muted}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            value={value}
-            selectionColor={colors.primary}
-            {...rest}
+            onChangeText={handleChangeText}
+            secureTextEntry={isSecureTextEntry}
+            placeholderTextColor={colors.muted}
           />
           
-          {rightIcon && (
-            <TouchableOpacity 
-              style={styles.rightIcon} 
-              onPress={onRightIconPress}
-              disabled={!onRightIconPress}
+          {/* Right Icon */}
+          {(rightIcon || (secureTextToggle && props.secureTextEntry)) && (
+            <TouchableOpacity
+              style={styles.rightIcon}
+              onPress={secureTextToggle ? toggleSecureTextVisibility : onRightIconPress}
+              disabled={!secureTextToggle && !onRightIconPress}
+              activeOpacity={0.6}
             >
-              {rightIcon}
+              {secureTextToggle && props.secureTextEntry ? (
+                <Text style={{ color: colors.primary, fontSize: 14 }}>
+                  {isSecureTextVisible ? 'Hide' : 'Show'}
+                </Text>
+              ) : (
+                rightIcon
+              )}
             </TouchableOpacity>
           )}
         </Animated.View>
-        
-        {error && (
-          <Text style={[styles.error, { color: colors.error }, errorStyle]}>
-            {error}
-          </Text>
-        )}
       </View>
-    );
-  }
-);
+      
+      {/* Error Message */}
+      {error && (
+        <Animated.Text
+          style={[
+            styles.errorText,
+            { color: colors.error },
+            errorStyle,
+          ]}
+        >
+          {error}
+        </Animated.Text>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
-    width: '100%',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    position: 'relative',
+  },
+  inputWrapper: {
+    borderRadius: 8,
+    position: 'relative',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  input: {
+    height: 54,
+    fontSize: 16,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
   },
   label: {
     position: 'absolute',
@@ -220,25 +261,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     zIndex: 1,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    height: 56,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    paddingVertical: 16,
-  },
   leftIcon: {
-    paddingHorizontal: 16,
+    position: 'absolute',
+    left: 12,
+    zIndex: 1,
   },
   rightIcon: {
-    paddingHorizontal: 16,
+    position: 'absolute',
+    right: 12,
+    zIndex: 1,
   },
-  error: {
+  errorText: {
     fontSize: 12,
     marginTop: 4,
     marginLeft: 12,
