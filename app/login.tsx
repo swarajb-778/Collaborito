@@ -158,7 +158,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Sign In with LinkedIn'
+                'Demo LinkedIn Sign In'
               )}
             </Button>
             
@@ -229,7 +229,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Sign Up with LinkedIn'
+                'Demo LinkedIn Sign Up'
               )}
             </Button>
           </Animated.View>

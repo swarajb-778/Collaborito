@@ -166,27 +166,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const redirectUri = getRedirectUri();
       console.log('LinkedIn auth started with redirect URI:', redirectUri);
       
-      // Simulate LinkedIn OAuth flow
+      // For this demo, we'll skip the actual OAuth flow and just simulate success
+      // In a real app, you would register with LinkedIn and get a valid client ID
+      
+      // Simulate a short delay to mimic the authentication process
+      Alert.alert('LinkedIn Authentication', 'Simulating LinkedIn authentication for demo purposes');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call the callback to set the user
+      handleLinkedInAuthCallback();
+      
+      /* Commented out actual OAuth flow that would be used in a real app:
       if (Platform.OS === 'web') {
-        // For web, we would redirect to LinkedIn auth page
-        // For demo, just simulate success
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        handleLinkedInAuthCallback();
+        // For web, redirect to LinkedIn auth page
+        window.location.href = `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_REAL_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`;
       } else {
-        // For mobile, we would open the browser for auth
+        // For mobile, open browser for auth
         await WebBrowser.openAuthSessionAsync(
-          `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`,
+          `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_REAL_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`,
           redirectUri
         );
-        // The result is handled via deep link in handleDeepLink function
-        
-        // Add this check to prevent multiple callbacks
-        const isLinkedInSession = session && session.startsWith('linkedin_');
-        if (!isLinkedInSession) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          handleLinkedInAuthCallback();
-        }
+        // Result would be handled via deep link in handleDeepLink function
       }
+      */
     } catch (error) {
       console.error('LinkedIn sign in error:', error);
       setLoading(false);
