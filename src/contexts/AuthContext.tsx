@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 
 interface UserMetadata {
   full_name?: string;
@@ -21,6 +24,7 @@ interface AuthContextType {
   session: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithLinkedIn: () => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -42,6 +46,23 @@ const MOCK_USER: User = {
   }
 };
 
+// LinkedIn mock user
+const LINKEDIN_MOCK_USER: User = {
+  id: 'linkedin_123456',
+  email: 'linkedin_user@collaborito.com',
+  user_metadata: {
+    full_name: 'LinkedIn User',
+    avatar_url: 'https://ui-avatars.com/api/?name=LinkedIn+User&background=0077B5&color=fff',
+  },
+  app_metadata: {
+    roles: ['user'],
+    provider: 'linkedin',
+  }
+};
+
+// Configure browser for handling OAuth redirects
+WebBrowser.maybeCompleteAuthSession();
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<string | null>(null);
@@ -54,7 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedSession = await SecureStore.getItemAsync('userSession');
         if (storedSession) {
           setSession(storedSession);
-          setUser(MOCK_USER); // In a real app, you would validate the session and fetch user data
+          
+          // Check if it's a LinkedIn session
+          const isLinkedInSession = storedSession.startsWith('linkedin_');
+          setUser(isLinkedInSession ? LINKEDIN_MOCK_USER : MOCK_USER);
         }
       } catch (error) {
         console.error('Error loading session:', error);
@@ -64,7 +88,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     loadSession();
+    
+    // Set up deep link listener for handling OAuth callbacks
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    
+    return () => {
+      subscription.remove();
+    };
   }, []);
+  
+  // Handle deep links (for OAuth callback)
+  const handleDeepLink = (event: { url: string }) => {
+    const { url } = event;
+    if (url.includes('auth/callback')) {
+      // In a real app, you would extract tokens and verify the authentication
+      // For this demo, we'll simulate a successful LinkedIn login
+      handleLinkedInAuthCallback();
+    }
+  };
+  
+  // Handle LinkedIn authentication callback
+  const handleLinkedInAuthCallback = async () => {
+    setLoading(true);
+    try {
+      // In a real app, you would validate the tokens here
+      const mockSession = `linkedin_session_${Date.now()}`;
+      await SecureStore.setItemAsync('userSession', mockSession);
+      setSession(mockSession);
+      setUser(LINKEDIN_MOCK_USER);
+    } catch (error) {
+      console.error('LinkedIn auth callback error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
@@ -88,6 +145,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Get redirect URI for OAuth
+  const getRedirectUri = () => {
+    return makeRedirectUri({
+      scheme: 'collaborito',
+      path: 'auth/callback',
+    });
+  };
+
+  const signInWithLinkedIn = async () => {
+    setLoading(true);
+    try {
+      // In a real app, this would initiate the OAuth flow with LinkedIn
+      const redirectUri = getRedirectUri();
+      console.log('LinkedIn auth started with redirect URI:', redirectUri);
+      
+      // Simulate LinkedIn OAuth flow
+      if (Platform.OS === 'web') {
+        // For web, we would redirect to LinkedIn auth page
+        // For demo, just simulate success
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        handleLinkedInAuthCallback();
+      } else {
+        // For mobile, we would open the browser for auth
+        await WebBrowser.openAuthSessionAsync(
+          `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`,
+          redirectUri
+        );
+        // The result is handled via deep link in handleDeepLink function
+        
+        // For demo purposes, simulate success after a short delay
+        setTimeout(() => {
+          handleLinkedInAuthCallback();
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('LinkedIn sign in error:', error);
+      setLoading(false);
+      Alert.alert('LinkedIn Sign In Failed', 'An error occurred during LinkedIn sign in');
     }
   };
 
@@ -184,6 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         loading,
         signIn,
+        signInWithLinkedIn,
         signUp,
         signOut,
         resetPassword,

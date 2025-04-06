@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TextInput } from '@/components/ui/TextInput';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '@/src/contexts/AuthContext';
-import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  ScrollView,
+  Dimensions,
+  useColorScheme,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useRouter } from 'expo-router';
+import { TextInput } from '../../components/ui/TextInput';
+import { Button } from '../../components/ui/Button';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '../../constants/Colors';
 import * as Haptics from 'expo-haptics';
-import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
+import { FontAwesome5 } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { CollaboritoLogo } from '../../components/ui/CollaboritoLogo';
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
@@ -270,13 +281,19 @@ export default function LoginScreen() {
         style={styles.background}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+      />
+      
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         <Animated.View style={styles.container} entering={FadeIn.duration(800)}>
           <Animated.View
             style={styles.header}
             entering={FadeInDown.duration(800)}
           >
-            <CollaboritoLogo size={120} color={Colors.light.primary} style={styles.logo} />
+            <CollaboritoLogo size={100} color={Colors.light.primary} style={styles.logo} />
             <Text style={[styles.title, { color: colors.text }]}>
               Collaborito
             </Text>
@@ -321,7 +338,7 @@ export default function LoginScreen() {
             )}
           </Animated.View>
         </Animated.View>
-      </LinearGradient>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -350,6 +367,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logo: {
+    width: 100,
+    height: 100,
     marginBottom: 16,
   },
   title: {
