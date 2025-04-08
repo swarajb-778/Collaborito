@@ -51,8 +51,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     SUPABASE_URL: process.env.SUPABASE_URL || 'development-placeholder',
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'development-placeholder',
     CLAUDE_API_KEY: process.env.CLAUDE_API_KEY || 'development-placeholder',
-    LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || 'development-placeholder',
-    LINKEDIN_REDIRECT_URI: process.env.LINKEDIN_REDIRECT_URI || 'development-placeholder',
+    EXPO_PUBLIC_LINKEDIN_CLIENT_ID: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_ID || 'development-placeholder',
+    EXPO_PUBLIC_LINKEDIN_CLIENT_SECRET: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_SECRET || 'development-placeholder',
     eas: {
       projectId: 'your-eas-project-id'
     }
