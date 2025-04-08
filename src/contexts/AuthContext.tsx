@@ -130,41 +130,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleUrl = async (url: string) => {
     console.log('Processing URL:', url);
     
-    try {
-      // For LinkedIn, check if the URL contains auth.expo.io and has a code parameter
-      if (url.includes('auth.expo.io')) {
-        const urlObj = new URL(url);
-        const code = urlObj.searchParams.get('code');
-        const state = urlObj.searchParams.get('state');
-        const error = urlObj.searchParams.get('error');
-        
-        console.log('LinkedIn callback detected, parameters:', { 
-          code: code ? `${code.substring(0, 8)}...` : 'none',
-          state: state || 'none',
-          error: error || 'none'
-        });
-        
-        if (code) {
-          // Exchange the code for a token
+    // Very simple LinkedIn callback handling
+    if (url.includes('auth.expo.io') && url.includes('code=')) {
+      try {
+        // Extract the code parameter using regex for simplicity
+        const codeMatch = url.match(/code=([^&]+)/);
+        if (codeMatch && codeMatch[1]) {
+          const code = codeMatch[1];
+          console.log('Got LinkedIn code, length:', code.length);
+          
+          // Process the LinkedIn authentication
           await exchangeCodeForToken(code);
-        } else if (error) {
-          console.error('LinkedIn auth error:', error);
-          Alert.alert('Authentication Error', 'LinkedIn authentication failed');
+        } else {
+          console.log('No code found in URL');
         }
+      } catch (error) {
+        console.error('Error handling LinkedIn callback:', error);
       }
-      
-      // For Supabase auth callbacks
-      else if (url.includes('auth/callback')) {
-        console.log('Supabase auth callback detected');
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session from callback:', error);
-        } else if (data?.session) {
-          console.log('Got Supabase session from callback');
-        }
-      }
-    } catch (error) {
-      console.error('Error handling URL callback:', error);
     }
   };
 
@@ -249,177 +231,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Exchanging code for token...');
       
-      // Use hardcoded values for reliability
+      // Hardcoded values
       const redirectUri = 'https://auth.expo.io/@swaraj77/collaborito';
       const clientId = '77dpxmsrs0t56d';
       const clientSecret = 'WPL_AP1.Yl49K57KkulMZDQj.p+g9mg==';
       
-      // Prepare the form data for the token request
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'authorization_code');
-      formData.append('code', code);
-      formData.append('redirect_uri', redirectUri);
-      formData.append('client_id', clientId);
-      formData.append('client_secret', clientSecret);
+      // Create form data
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret
+      }).toString();
       
-      console.log('Sending token request with redirect URI:', redirectUri);
-      
-      // Request the access token
+      // Exchange code for token
       const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: formData.toString(),
+        body
       });
-      
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token request failed:', errorText);
-        throw new Error(`Failed to get token: ${tokenResponse.status}`);
-      }
       
       const tokenData = await tokenResponse.json();
-      console.log('Token received successfully:', !!tokenData.access_token);
+      console.log('Token received:', tokenData.access_token ? 'yes' : 'no');
       
-      // Use the token to fetch user profile and email
-      await fetchLinkedInUserProfile(tokenData.access_token);
-      
-    } catch (error) {
-      console.error('Error exchanging code for token:', error);
-      Alert.alert('Authentication Error', 'Failed to complete LinkedIn authentication');
-    }
-  };
-
-  // Fetch the LinkedIn user profile and create a user
-  const fetchLinkedInUserProfile = async (accessToken: string) => {
-    try {
-      console.log('Fetching LinkedIn profile...');
-      
-      // Get profile information
-      const profileResponse = await fetch(LINKEDIN_CONFIG.profileUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      
-      if (!profileResponse.ok) {
-        throw new Error(`Failed to get profile: ${profileResponse.status}`);
-      }
-      
-      const profileData = await profileResponse.json();
-      console.log('Profile data received');
-      
-      // Get email information
-      const emailResponse = await fetch(LINKEDIN_CONFIG.emailUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      
-      if (!emailResponse.ok) {
-        throw new Error(`Failed to get email: ${emailResponse.status}`);
-      }
-      
-      const emailData = await emailResponse.json();
-      console.log('Email data received');
-      
-      // Extract profile picture URL if available
-      let pictureUrl = '';
-      if (profileData.profilePicture && 
-          profileData.profilePicture['displayImage~'] && 
-          profileData.profilePicture['displayImage~'].elements && 
-          profileData.profilePicture['displayImage~'].elements.length > 0) {
-        const elements = profileData.profilePicture['displayImage~'].elements;
-        if (elements[0].identifiers && elements[0].identifiers.length > 0) {
-          pictureUrl = elements[0].identifiers[0].identifier;
-        }
-      }
-      
-      // Extract email address
-      let email = 'unknown@example.com';
-      if (emailData.elements && 
-          emailData.elements.length > 0 && 
-          emailData.elements[0]['handle~']) {
-        email = emailData.elements[0]['handle~'].emailAddress;
-      }
-      
-      // Try to sign in with Supabase using the LinkedIn OAuth data
-      // In a real implementation, you would create a server-side function for this
-      // Here we'll simulate it by either finding an existing user or creating one
-      
-      // Check if a user with this email already exists
-      const { data: existingUserData, error: existingUserError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
+      if (tokenData.access_token) {
+        // Get user profile
+        const profileResponse = await fetch(
+          'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName)', 
+          {
+            headers: {
+              Authorization: `Bearer ${tokenData.access_token}`
+            }
+          }
+        );
         
-      let userId;
-      
-      if (!existingUserData) {
-        // No existing user - create a new one
-        // In a real implementation, you would use Supabase Auth to create a proper user
-        // For this demo, we'll create a user directly (not recommended for production)
-        const { data: newUser, error: createError } = await supabase
-          .from('profiles')
-          .insert({
+        const profileData = await profileResponse.json();
+        console.log('Got profile for:', profileData.localizedFirstName);
+        
+        // Get email address
+        const emailResponse = await fetch(
+          'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', 
+          {
+            headers: {
+              Authorization: `Bearer ${tokenData.access_token}`
+            }
+          }
+        );
+        
+        const emailData = await emailResponse.json();
+        const email = emailData.elements?.[0]?.['handle~']?.emailAddress || 'no-email@example.com';
+        console.log('Email:', email);
+        
+        // Create simple user object
+        const user = {
+          id: profileData.id,
+          email,
+          user_metadata: {
             full_name: `${profileData.localizedFirstName} ${profileData.localizedLastName}`,
-            email: email,
-            avatar_url: pictureUrl,
-            linkedin_id: profileData.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-          
-        if (createError) {
-          throw new Error(`Failed to create user: ${createError.message}`);
-        }
+            avatar_url: ''
+          },
+          app_metadata: {
+            roles: ['user'],
+            provider: 'linkedin'
+          }
+        };
         
-        userId = newUser.id;
-      } else {
-        userId = existingUserData.id;
+        // Store the user
+        setUser(user);
+        await SecureStore.setItemAsync('user', JSON.stringify(user));
         
-        // Update existing user's LinkedIn data
-        await supabase
-          .from('profiles')
-          .update({
-            full_name: `${profileData.localizedFirstName} ${profileData.localizedLastName}`,
-            avatar_url: pictureUrl,
-            linkedin_id: profileData.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', userId);
+        Alert.alert('Success', 'Logged in with LinkedIn!');
       }
-      
-      // Create user object
-      const linkedInUser: User = {
-        id: userId,
-        email: email,
-        user_metadata: {
-          full_name: `${profileData.localizedFirstName} ${profileData.localizedLastName}`,
-          avatar_url: pictureUrl,
-        },
-        app_metadata: {
-          roles: ['user'],
-          provider: 'linkedin',
-        },
-      };
-      
-      console.log('Creating user session with LinkedIn data');
-      
-      // Save the user data
-      setUser(linkedInUser);
-      await SecureStore.setItemAsync('user', JSON.stringify(linkedInUser));
-      await SecureStore.setItemAsync('userSession', `linkedin_${accessToken}`);
-      
-      Alert.alert('Success', 'Logged in with LinkedIn successfully');
-      
     } catch (error) {
-      console.error('Error fetching LinkedIn profile:', error);
-      Alert.alert('Authentication Error', 'Failed to get LinkedIn profile information');
+      console.error('LinkedIn token exchange error:', error);
+      Alert.alert('Error', 'Failed to complete LinkedIn sign in.');
     }
   };
 
@@ -482,32 +370,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // LinkedIn sign in
   const signInWithLinkedIn = async () => {
     try {
-      console.log('Starting LinkedIn login');
+      console.log('Starting LinkedIn sign-in flow');
       
-      // Create a very simple auth state to prevent CSRF attacks
-      const state = generateRandomString(16);
-      setLinkedInAuthState(state);
-      
-      // Use the simplest possible redirect URI that LinkedIn accepts
+      // Use a very direct approach with hardcoded values
       const redirectUri = 'https://auth.expo.io/@swaraj77/collaborito';
-      console.log('Using LinkedIn redirect URI:', redirectUri);
+      const clientId = '77dpxmsrs0t56d';
       
-      // Build the LinkedIn authorization URL
-      const authUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
-      authUrl.searchParams.append('response_type', 'code');
-      authUrl.searchParams.append('client_id', '77dpxmsrs0t56d');
-      authUrl.searchParams.append('redirect_uri', redirectUri);
-      authUrl.searchParams.append('state', state);
-      authUrl.searchParams.append('scope', 'r_liteprofile r_emailaddress');
+      // Build the authorization URL directly
+      const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=r_liteprofile%20r_emailaddress`;
       
-      console.log('Opening LinkedIn auth URL:', authUrl.toString());
+      console.log('Opening LinkedIn auth URL:', authUrl);
       
-      // Just use a simple browser without trying to manage the redirect
-      const result = await WebBrowser.openBrowserAsync(authUrl.toString());
-      console.log('Browser result type:', result.type);
-      
-      // When the browser closes, we'll need to handle the deep link manually via the
-      // URL handler that's already set up. We don't try to handle the redirect here.
+      // Just open the URL without any redirect handling
+      await WebBrowser.openBrowserAsync(authUrl);
       
     } catch (error) {
       console.error('LinkedIn sign in error:', error);
