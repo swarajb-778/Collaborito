@@ -1,93 +1,83 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert, Linking, Platform } from 'react-native';
+import { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import * as WebBrowser from 'expo-web-browser';
+import { Alert, Platform } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
-import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
-interface UserMetadata {
-  full_name?: string;
-  avatar_url?: string;
-  email?: string;
-}
-
-export interface User {
+// Define User type
+interface User {
   id: string;
   email: string;
-  user_metadata: UserMetadata;
-  app_metadata: Record<string, any>;
-  // Add other fields as needed
+  user_metadata: {
+    full_name: string;
+    avatar_url: string;
+  };
+  app_metadata: {
+    roles: string[];
+    provider: string;
+  };
 }
 
+// LinkedIn API response types
+interface LinkedInTokenResponse {
+  access_token: string;
+  expires_in: number;
+}
+
+interface LinkedInProfileResponse {
+  id: string;
+  localizedFirstName: string;
+  localizedLastName: string;
+  profilePicture?: {
+    'displayImage~'?: {
+      elements?: Array<{
+        identifiers?: Array<{
+          identifier?: string;
+        }>;
+      }>;
+    };
+  };
+}
+
+interface LinkedInEmailResponse {
+  elements: Array<{
+    'handle~': {
+      emailAddress: string;
+    };
+  }>;
+}
+
+// LinkedIn configuration
+const LINKEDIN_CONFIG = {
+  clientId: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_ID || '',
+  clientSecret: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_SECRET || '',
+  scopes: ['r_liteprofile', 'r_emailaddress'],
+  authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
+  tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
+  profileEndpoint: 'https://api.linkedin.com/v2/me',
+  emailEndpoint: 'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
+  redirectUri: 'collaborito://auth/linkedin-callback',
+} as const;
+
+// Create context
 interface AuthContextType {
   user: User | null;
-  session: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithLinkedIn: () => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateProfile: (userData: Partial<UserMetadata>) => Promise<void>;
+  signInWithLinkedIn: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data for demo purposes
-const MOCK_USER: User = {
-  id: '123456789',
-  email: 'demo@collaborito.com',
-  user_metadata: {
-    full_name: 'Demo User',
-    avatar_url: 'https://ui-avatars.com/api/?name=Demo+User&background=3F83F8&color=fff',
-  },
-  app_metadata: {
-    roles: ['user'],
-  }
-};
-
-// LinkedIn mock user
-const LINKEDIN_MOCK_USER: User = {
-  id: 'linkedin_123456',
-  email: 'linkedin_user@collaborito.com',
-  user_metadata: {
-    full_name: 'LinkedIn User',
-    avatar_url: 'https://ui-avatars.com/api/?name=LinkedIn+User&background=0077B5&color=fff',
-  },
-  app_metadata: {
-    roles: ['user'],
-    provider: 'linkedin',
-  }
-};
-
-// Configure browser for handling OAuth redirects
-WebBrowser.maybeCompleteAuthSession();
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on app load
-    const loadSession = async () => {
-      try {
-        const storedSession = await SecureStore.getItemAsync('userSession');
-        if (storedSession) {
-          setSession(storedSession);
-          
-          // Check if it's a LinkedIn session
-          const isLinkedInSession = storedSession.startsWith('linkedin_');
-          setUser(isLinkedInSession ? LINKEDIN_MOCK_USER : MOCK_USER);
-        }
-      } catch (error) {
-        console.error('Error loading session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSession();
+    void loadUser();
     
     // Set up deep link listener for handling OAuth callbacks
     const subscription = Linking.addEventListener('url', handleDeepLink);
@@ -96,134 +86,180 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.remove();
     };
   }, []);
-  
+
+  const loadUser = async () => {
+    try {
+      const storedUser = await SecureStore.getItemAsync('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Error loading user:', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle deep links (for OAuth callback)
   const handleDeepLink = (event: { url: string }) => {
     const { url } = event;
-    // Only process if we're not already in a LinkedIn session
-    const isAlreadyLinkedInSession = session && session.startsWith('linkedin_');
-    
-    if (url.includes('auth/callback') && !isAlreadyLinkedInSession && !loading) {
-      // In a real app, you would extract tokens and verify the authentication
-      // For this demo, we'll simulate a successful LinkedIn login
-      handleLinkedInAuthCallback();
-    }
-  };
-  
-  // Handle LinkedIn authentication callback
-  const handleLinkedInAuthCallback = async () => {
-    setLoading(true);
-    try {
-      // In a real app, you would validate the tokens here
-      const mockSession = `linkedin_session_${Date.now()}`;
-      await SecureStore.setItemAsync('userSession', mockSession);
-      setSession(mockSession);
-      setUser(LINKEDIN_MOCK_USER);
-    } catch (error) {
-      console.error('LinkedIn auth callback error:', error);
-    } finally {
-      setLoading(false);
+    if (url.includes('auth/linkedin-callback')) {
+      const params = new URLSearchParams(url.split('?')[1]);
+      const code = params.get('code');
+      const error = params.get('error');
+      const state = params.get('state');
+
+      // Verify state to prevent CSRF attacks
+      void SecureStore.getItemAsync('oauth_state').then(storedState => {
+        if (state !== storedState) {
+          Alert.alert('Security Error', 'Invalid authentication state');
+          return;
+        }
+
+        if (code) {
+          void handleLinkedInAuthCallback(code);
+        } else if (error) {
+          Alert.alert('Authentication Error', error);
+        }
+      });
     }
   };
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call to your authentication service
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
-
-      // Validate credentials
-      if (email !== 'demo@collaborito.com' || password !== 'password123') {
-        throw new Error('Invalid email or password');
-      }
-
-      // Set mock session and user
-      const mockSession = `session_${Date.now()}`;
-      await SecureStore.setItemAsync('userSession', mockSession);
-      setSession(mockSession);
-      setUser(MOCK_USER);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred during sign in';
-      Alert.alert('Sign In Failed', errorMessage);
-      throw error;
+      // Implement your sign in logic here
+      // For now, we'll use a mock user
+      const mockUser: User = {
+        id: '1',
+        email,
+        user_metadata: {
+          full_name: 'Test User',
+          avatar_url: 'https://via.placeholder.com/150',
+        },
+        app_metadata: {
+          roles: ['user'],
+          provider: 'email',
+        },
+      };
+      
+      setUser(mockUser);
+      await SecureStore.setItemAsync('user', JSON.stringify(mockUser));
+      await SecureStore.setItemAsync('userSession', 'mock_session_token');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Sign in error:', errorMessage);
+      Alert.alert('Authentication Error', 'Failed to sign in');
     } finally {
       setLoading(false);
     }
   };
-  
-  // Get redirect URI for OAuth
-  const getRedirectUri = () => {
-    return makeRedirectUri({
-      scheme: 'collaborito',
-      path: 'auth/callback',
-    });
-  };
 
-  const signInWithLinkedIn = async () => {
+  const handleLinkedInAuthCallback = async (code: string) => {
     setLoading(true);
     try {
-      // In a real app, this would initiate the OAuth flow with LinkedIn
-      const redirectUri = getRedirectUri();
-      console.log('LinkedIn auth started with redirect URI:', redirectUri);
-      
-      // For this demo, we'll skip the actual OAuth flow and just simulate success
-      // In a real app, you would register with LinkedIn and get a valid client ID
-      
-      // Simulate a short delay to mimic the authentication process
-      Alert.alert('LinkedIn Authentication', 'Simulating LinkedIn authentication for demo purposes');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Call the callback to set the user
-      handleLinkedInAuthCallback();
-      
-      /* Commented out actual OAuth flow that would be used in a real app:
-      if (Platform.OS === 'web') {
-        // For web, redirect to LinkedIn auth page
-        window.location.href = `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_REAL_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`;
-      } else {
-        // For mobile, open browser for auth
-        await WebBrowser.openAuthSessionAsync(
-          `https://linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_REAL_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&state=random_state_string`,
-          redirectUri
-        );
-        // Result would be handled via deep link in handleDeepLink function
+      // Exchange code for access token
+      const params = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: LINKEDIN_CONFIG.clientId,
+        client_secret: LINKEDIN_CONFIG.clientSecret,
+        redirect_uri: LINKEDIN_CONFIG.redirectUri,
+      });
+
+      const tokenResponse = await fetch(LINKEDIN_CONFIG.tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+
+      if (!tokenResponse.ok) {
+        throw new Error(`Token request failed: ${tokenResponse.statusText}`);
       }
-      */
-    } catch (error) {
-      console.error('LinkedIn sign in error:', error);
-      setLoading(false);
-      Alert.alert('LinkedIn Sign In Failed', 'An error occurred during LinkedIn sign in');
-    }
-  };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    setLoading(true);
-    try {
-      // In a real app, this would be an API call to your authentication service
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating API call
+      const { access_token } = await tokenResponse.json() as LinkedInTokenResponse;
 
-      // Create mock user
-      const newUser: User = {
-        ...MOCK_USER,
-        id: `user_${Date.now()}`,
+      // Fetch user profile
+      const profileResponse = await fetch(LINKEDIN_CONFIG.profileEndpoint, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      if (!profileResponse.ok) {
+        throw new Error(`Profile request failed: ${profileResponse.statusText}`);
+      }
+
+      const profile = await profileResponse.json() as LinkedInProfileResponse;
+
+      // Fetch user email
+      const emailResponse = await fetch(LINKEDIN_CONFIG.emailEndpoint, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error(`Email request failed: ${emailResponse.statusText}`);
+      }
+
+      const emailData = await emailResponse.json() as LinkedInEmailResponse;
+      const email = emailData.elements[0]['handle~'].emailAddress;
+
+      // Create user object
+      const linkedInUser: User = {
+        id: profile.id,
         email,
         user_metadata: {
-          full_name: fullName,
-          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            fullName
-          )}&background=3F83F8&color=fff`,
+          full_name: `${profile.localizedFirstName} ${profile.localizedLastName}`,
+          avatar_url: profile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
+        },
+        app_metadata: {
+          roles: ['user'],
+          provider: 'linkedin',
         },
       };
 
-      // Set mock session and user
-      const mockSession = `session_${Date.now()}`;
-      await SecureStore.setItemAsync('userSession', mockSession);
-      setSession(mockSession);
-      setUser(newUser);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred during sign up';
-      Alert.alert('Sign Up Failed', errorMessage);
-      throw error;
+      setUser(linkedInUser);
+      await SecureStore.setItemAsync('user', JSON.stringify(linkedInUser));
+      await SecureStore.setItemAsync('userSession', `linkedin_${access_token}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('LinkedIn authentication error:', errorMessage);
+      Alert.alert('Authentication Error', 'Failed to authenticate with LinkedIn');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      // Implement your sign up logic here
+      // For now, we'll use a mock user
+      const mockUser: User = {
+        id: '1',
+        email,
+        user_metadata: {
+          full_name: 'New User',
+          avatar_url: 'https://via.placeholder.com/150',
+        },
+        app_metadata: {
+          roles: ['user'],
+          provider: 'email',
+        },
+      };
+
+      setUser(mockUser);
+      await SecureStore.setItemAsync('user', JSON.stringify(mockUser));
+      await SecureStore.setItemAsync('userSession', 'mock_session_token');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Sign up error:', errorMessage);
+      Alert.alert('Authentication Error', 'Failed to sign up');
     } finally {
       setLoading(false);
     }
@@ -231,77 +267,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      await SecureStore.deleteItemAsync('user');
       await SecureStore.deleteItemAsync('userSession');
-      setSession(null);
       setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      Alert.alert('Sign Out Failed', 'An error occurred while signing out');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Sign out error:', errorMessage);
+      Alert.alert('Error', 'Failed to sign out');
     }
   };
 
-  const resetPassword = async (email: string) => {
-    setLoading(true);
+  const signInWithLinkedIn = async () => {
     try {
-      // In a real app, this would trigger a password reset email
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
-      Alert.alert(
-        'Password Reset Initiated',
-        `If an account exists for ${email}, you will receive a password reset link.`
-      );
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Generate and store state for CSRF protection
+      const state = Math.random().toString(36).substring(7);
+      await SecureStore.setItemAsync('oauth_state', state);
 
-  const updateProfile = async (userData: Partial<UserMetadata>) => {
-    setLoading(true);
-    try {
-      // In a real app, this would update the user profile on your backend
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
+      const authUrl = `${LINKEDIN_CONFIG.authorizationEndpoint}?` +
+        `response_type=code&` +
+        `client_id=${LINKEDIN_CONFIG.clientId}&` +
+        `redirect_uri=${encodeURIComponent(LINKEDIN_CONFIG.redirectUri)}&` +
+        `state=${state}&` +
+        `scope=${encodeURIComponent(LINKEDIN_CONFIG.scopes.join(' '))}`;
 
-      if (user) {
-        const updatedUser: User = {
-          ...user,
-          user_metadata: {
-            ...user.user_metadata,
-            ...userData,
-          },
-        };
-        setUser(updatedUser);
+      if (Platform.OS === 'web') {
+        // For web, redirect directly
+        window.location.href = authUrl;
+      } else {
+        // For mobile, use WebBrowser
+        const result = await WebBrowser.openAuthSessionAsync(
+          authUrl,
+          LINKEDIN_CONFIG.redirectUri
+        );
+
+        if (result.type === 'success') {
+          const params = new URLSearchParams(result.url.split('?')[1]);
+          const code = params.get('code');
+          if (code) {
+            await handleLinkedInAuthCallback(code);
+          }
+        } else {
+          // User cancelled or authentication failed
+          Alert.alert('Authentication Cancelled', 'LinkedIn sign in was cancelled');
+        }
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Profile Update Failed', 'An error occurred while updating your profile');
-      throw error;
-    } finally {
-      setLoading(false);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('LinkedIn sign in error:', errorMessage);
+      Alert.alert('Authentication Error', 'Failed to sign in with LinkedIn');
     }
+  };
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    signInWithLinkedIn,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        loading,
-        signIn,
-        signInWithLinkedIn,
-        signUp,
-        signOut,
-        resetPassword,
-        updateProfile,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
