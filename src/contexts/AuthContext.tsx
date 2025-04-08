@@ -4,7 +4,6 @@ import { Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
-import { v4 as uuidv4 } from 'uuid';
 
 // User type definition
 export type User = {
@@ -37,6 +36,17 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper function to generate a random string for state parameter
+// This is more compatible than uuid in React Native environments
+const generateRandomString = (length: number = 32): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 // LinkedIn configuration
 const LINKEDIN_CONFIG = {
@@ -298,7 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Starting LinkedIn sign-in flow with deep linking...');
       
       // Generate a random state parameter to prevent CSRF attacks
-      const state = uuidv4();
+      const state = generateRandomString(32);
       setLinkedInAuthState(state);
       
       // Construct the LinkedIn authorization URL
