@@ -1,9 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Alert, Platform } from 'react-native';
-import { makeRedirectUri } from 'expo-auth-session';
+import { makeRedirectUri, exchangeCodeAsync, TokenResponse, ResponseType, Prompt, AuthRequest, DiscoveryDocument } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+
+// Register your redirect URI with Web Browser to properly handle redirects
+WebBrowser.maybeCompleteAuthSession();
 
 // Define User type
 interface User {
@@ -23,6 +26,9 @@ interface User {
 interface LinkedInTokenResponse {
   access_token: string;
   expires_in: number;
+  id_token?: string;  // For OIDC
+  error?: string;     // Error code
+  error_description?: string; // Error description
 }
 
 interface LinkedInProfileResponse {
@@ -48,17 +54,24 @@ interface LinkedInEmailResponse {
   }>;
 }
 
-// LinkedIn configuration
-const LINKEDIN_CONFIG = {
-  clientId: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_ID || '',
-  clientSecret: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_SECRET || '',
-  scopes: ['r_liteprofile', 'r_emailaddress'],
+// OIDC user info response
+interface OpenIDUserInfoResponse {
+  sub: string;           // User ID
+  email: string;         // Email
+  name?: string;         // Full name
+  given_name?: string;   // First name
+  family_name?: string;  // Last name
+  picture?: string;      // Profile picture URL
+}
+
+// LinkedIn OIDC discovery document
+const LINKEDIN_DISCOVERY: DiscoveryDocument = {
   authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
   tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
-  profileEndpoint: 'https://api.linkedin.com/v2/me',
-  emailEndpoint: 'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
-  redirectUri: 'collaborito://auth/linkedin-callback',
-} as const;
+  userInfoEndpoint: 'https://api.linkedin.com/v2/userinfo',
+  // Required for TypeScript but not used
+  revocationEndpoint: 'https://www.linkedin.com/oauth/v2/revoke'
+};
 
 // Create context
 interface AuthContextType {
@@ -75,16 +88,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [request, setRequest] = useState<AuthRequest | null>(null);
 
+  // Initialize the AuthRequest when the component mounts
   useEffect(() => {
-    void loadUser();
-    
-    // Set up deep link listener for handling OAuth callbacks
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-    
-    return () => {
-      subscription.remove();
+    // Create a new LinkedIn auth request
+    const createAuthRequest = async () => {
+      try {
+        console.log('Creating LinkedIn auth request...');
+        
+        // Create a redirect URI that exactly matches what's registered in LinkedIn Developer Console
+        // Use this exact URI in your LinkedIn Developer Console
+        const redirectUri = 'https://auth.expo.io/@swaraj77/collaborito';
+        
+        console.log('Using redirect URI:', redirectUri);
+        
+        // Create the auth request
+        const authRequest = new AuthRequest({
+          clientId: '77dpxmsrs0t56d', // Your LinkedIn Client ID
+          scopes: ['openid', 'profile', 'email'],
+          redirectUri,
+          responseType: ResponseType.Code,
+          extraParams: {
+            prompt: Prompt.Login, // Force login screen
+          },
+        });
+        
+        setRequest(authRequest);
+        console.log('Auth request created successfully');
+      } catch (error) {
+        console.error('Error creating auth request:', error);
+      }
     };
+    
+    void createAuthRequest();
+    void loadUser();
   }, []);
 
   const loadUser = async () => {
@@ -98,31 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error loading user:', errorMessage);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Handle deep links (for OAuth callback)
-  const handleDeepLink = (event: { url: string }) => {
-    const { url } = event;
-    if (url.includes('auth/linkedin-callback')) {
-      const params = new URLSearchParams(url.split('?')[1]);
-      const code = params.get('code');
-      const error = params.get('error');
-      const state = params.get('state');
-
-      // Verify state to prevent CSRF attacks
-      void SecureStore.getItemAsync('oauth_state').then(storedState => {
-        if (state !== storedState) {
-          Alert.alert('Security Error', 'Invalid authentication state');
-          return;
-        }
-
-        if (code) {
-          void handleLinkedInAuthCallback(code);
-        } else if (error) {
-          Alert.alert('Authentication Error', error);
-        }
-      });
     }
   };
 
@@ -156,82 +169,99 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleLinkedInAuthCallback = async (code: string) => {
-    setLoading(true);
+  const signInWithLinkedIn = async () => {
     try {
-      // Exchange code for access token
-      const params = new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: LINKEDIN_CONFIG.clientId,
-        client_secret: LINKEDIN_CONFIG.clientSecret,
-        redirect_uri: LINKEDIN_CONFIG.redirectUri,
-      });
-
-      const tokenResponse = await fetch(LINKEDIN_CONFIG.tokenEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-      });
-
-      if (!tokenResponse.ok) {
-        throw new Error(`Token request failed: ${tokenResponse.statusText}`);
+      console.log('Starting LinkedIn sign-in flow...');
+      
+      if (!request) {
+        console.error('Auth request not initialized');
+        Alert.alert('Error', 'Authentication system not ready. Please try again later.');
+        return;
       }
+      
+      // Prompt the user with the LinkedIn authorization screen
+      console.log('Prompting authorization...');
+      const result = await request.promptAsync(LINKEDIN_DISCOVERY);
+      console.log('Auth result:', result);
+      
+      if (result.type === 'success') {
+        // Exchange the authorization code for an access token
+        const { code } = result.params;
+        
+        console.log('Got authorization code, exchanging for token...');
+        
+        const tokenResult = await exchangeCodeAsync(
+          {
+            clientId: '77dpxmsrs0t56d', // Your LinkedIn Client ID
+            clientSecret: 'WPL_AP1.Yl49K57KkulMZDQj.p+g9mg==', // Your LinkedIn Client Secret
+            code,
+            redirectUri: request.redirectUri,
+            extraParams: {
+              grant_type: 'authorization_code',
+            },
+          },
+          LINKEDIN_DISCOVERY
+        );
+        
+        console.log('Received token response');
+        
+        // Get user information with the access token
+        const userInfoEndpoint = LINKEDIN_DISCOVERY.userInfoEndpoint;
+        if (!userInfoEndpoint) {
+          throw new Error('User info endpoint is not defined in discovery document');
+        }
 
-      const { access_token } = await tokenResponse.json() as LinkedInTokenResponse;
-
-      // Fetch user profile
-      const profileResponse = await fetch(LINKEDIN_CONFIG.profileEndpoint, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-
-      if (!profileResponse.ok) {
-        throw new Error(`Profile request failed: ${profileResponse.statusText}`);
+        const userInfoResponse = await fetch(userInfoEndpoint, {
+          headers: {
+            Authorization: `Bearer ${tokenResult.accessToken}`,
+            Accept: 'application/json',
+          },
+        });
+        
+        if (!userInfoResponse.ok) {
+          const errorText = await userInfoResponse.text();
+          console.error('User info request failed:', errorText);
+          throw new Error(`Error fetching user info: ${userInfoResponse.status}`);
+        }
+        
+        const userInfo = await userInfoResponse.json() as OpenIDUserInfoResponse;
+        console.log('User info received:', userInfo);
+        
+        if (!userInfo.sub) {
+          throw new Error('User ID not found in response');
+        }
+        
+        // Create user object from OIDC user info
+        const linkedInUser: User = {
+          id: userInfo.sub,
+          email: userInfo.email || 'no-email@example.com',
+          user_metadata: {
+            full_name: userInfo.name || `${userInfo.given_name || ''} ${userInfo.family_name || ''}`.trim() || 'LinkedIn User',
+            avatar_url: userInfo.picture || '',
+          },
+          app_metadata: {
+            roles: ['user'],
+            provider: 'linkedin',
+          },
+        };
+        
+        console.log('Setting user and storing in SecureStore');
+        setUser(linkedInUser);
+        await SecureStore.setItemAsync('user', JSON.stringify(linkedInUser));
+        await SecureStore.setItemAsync('userSession', `linkedin_${tokenResult.accessToken}`);
+        
+        Alert.alert('Success', 'Logged in with LinkedIn successfully');
+      } else if (result.type === 'cancel') {
+        console.log('User cancelled the login flow');
+        Alert.alert('Cancelled', 'LinkedIn login was cancelled');
+      } else {
+        console.error('Authentication error:', result);
+        Alert.alert('Authentication Error', 'Failed to authenticate with LinkedIn');
       }
-
-      const profile = await profileResponse.json() as LinkedInProfileResponse;
-
-      // Fetch user email
-      const emailResponse = await fetch(LINKEDIN_CONFIG.emailEndpoint, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-
-      if (!emailResponse.ok) {
-        throw new Error(`Email request failed: ${emailResponse.statusText}`);
-      }
-
-      const emailData = await emailResponse.json() as LinkedInEmailResponse;
-      const email = emailData.elements[0]['handle~'].emailAddress;
-
-      // Create user object
-      const linkedInUser: User = {
-        id: profile.id,
-        email,
-        user_metadata: {
-          full_name: `${profile.localizedFirstName} ${profile.localizedLastName}`,
-          avatar_url: profile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
-        },
-        app_metadata: {
-          roles: ['user'],
-          provider: 'linkedin',
-        },
-      };
-
-      setUser(linkedInUser);
-      await SecureStore.setItemAsync('user', JSON.stringify(linkedInUser));
-      await SecureStore.setItemAsync('userSession', `linkedin_${access_token}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('LinkedIn authentication error:', errorMessage);
-      Alert.alert('Authentication Error', 'Failed to authenticate with LinkedIn');
-    } finally {
-      setLoading(false);
+      console.error('LinkedIn sign in error:', errorMessage);
+      Alert.alert('Authentication Error', `Failed to sign in with LinkedIn: ${errorMessage}`);
     }
   };
 
@@ -274,47 +304,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Sign out error:', errorMessage);
       Alert.alert('Error', 'Failed to sign out');
-    }
-  };
-
-  const signInWithLinkedIn = async () => {
-    try {
-      // Generate and store state for CSRF protection
-      const state = Math.random().toString(36).substring(7);
-      await SecureStore.setItemAsync('oauth_state', state);
-
-      const authUrl = `${LINKEDIN_CONFIG.authorizationEndpoint}?` +
-        `response_type=code&` +
-        `client_id=${LINKEDIN_CONFIG.clientId}&` +
-        `redirect_uri=${encodeURIComponent(LINKEDIN_CONFIG.redirectUri)}&` +
-        `state=${state}&` +
-        `scope=${encodeURIComponent(LINKEDIN_CONFIG.scopes.join(' '))}`;
-
-      if (Platform.OS === 'web') {
-        // For web, redirect directly
-        window.location.href = authUrl;
-      } else {
-        // For mobile, use WebBrowser
-        const result = await WebBrowser.openAuthSessionAsync(
-          authUrl,
-          LINKEDIN_CONFIG.redirectUri
-        );
-
-        if (result.type === 'success') {
-          const params = new URLSearchParams(result.url.split('?')[1]);
-          const code = params.get('code');
-          if (code) {
-            await handleLinkedInAuthCallback(code);
-          }
-        } else {
-          // User cancelled or authentication failed
-          Alert.alert('Authentication Cancelled', 'LinkedIn sign in was cancelled');
-        }
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('LinkedIn sign in error:', errorMessage);
-      Alert.alert('Authentication Error', 'Failed to sign in with LinkedIn');
     }
   };
 
