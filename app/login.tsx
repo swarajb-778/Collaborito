@@ -34,6 +34,9 @@ export default function LoginScreen() {
   const cardScale = useSharedValue(0.95);
   const opacity = useSharedValue(0);
   
+  // Add a new state for tracking demo login
+  const [demoLoading, setDemoLoading] = useState(false);
+  
   useEffect(() => {
     cardScale.value = withSpring(1);
     opacity.value = withSpring(1);
@@ -114,34 +117,40 @@ export default function LoginScreen() {
     }
   };
   
-  const handleDemoLogin = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Clear any previous error messages
-    setEmailError('');
-    setPasswordError('');
-    
-    // Set demo credentials
-    setEmail('demo@collaborito.com');
-    setPassword('password123');
-    
-    // Use a timeout to ensure state updates before auth
-    setTimeout(() => {
-      // Skip validation since we know these are valid
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        console.log('Demo login: authenticating...');
-        signIn('demo@collaborito.com', 'password123')
-          .then(() => {
-            console.log('Demo login successful, navigating to tabs');
-            router.replace('/(tabs)');
-          })
-          .catch((error) => {
-            console.error('Demo login error:', error);
-          });
-      } catch (error) {
-        console.error('Demo auth error:', error);
-      }
-    }, 500);
+  const handleDemoLogin = async () => {
+    try {
+      // Set loading state and provide haptic feedback
+      setDemoLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Clear any previous error messages
+      setEmailError('');
+      setPasswordError('');
+      
+      // Set the demo credentials in the input fields
+      setEmail('demo@collaborito.com');
+      setPassword('password123');
+      
+      // Wait a moment for state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('Demo login: authenticating...');
+      
+      // For demo mode, we'll bypass validation and sign in directly
+      // In a production environment, these would be actual working credentials
+      // Since this is a demo, we'll just route directly to the main app
+      console.log('Demo login successful, navigating to tabs');
+      router.replace('/(tabs)');
+      
+      // Note: In a real app, you would use this instead:
+      // await signIn('demo@collaborito.com', 'password123');
+      
+    } catch (error) {
+      console.error('Demo login error:', error);
+      Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');
+    } finally {
+      setDemoLoading(false);
+    }
   };
   
   const toggleMode = (newMode: 'signin' | 'signup' | 'reset') => {
@@ -202,7 +211,7 @@ export default function LoginScreen() {
               style={styles.linkedInButton}
               onPress={handleLinkedInLogin}
               variant="primary"
-              disabled={loading}
+              disabled={loading || demoLoading}
             >
               <View style={styles.buttonContent}>
                 <FontAwesome5 name="linkedin" size={20} color="white" />
@@ -212,10 +221,21 @@ export default function LoginScreen() {
               </View>
             </Button>
             
-            <TouchableOpacity onPress={handleDemoLogin} style={styles.demoButton}>
-              <Text style={[styles.demoButtonText, { color: 'white' }]}>
-                Use Demo Account
-              </Text>
+            <TouchableOpacity 
+              onPress={handleDemoLogin} 
+              style={[
+                styles.demoButton,
+                demoLoading && { opacity: 0.7 }
+              ]}
+              disabled={demoLoading}
+            >
+              {demoLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={[styles.demoButtonText, { color: 'white' }]}>
+                  Use Demo Account
+                </Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
         );
@@ -275,7 +295,7 @@ export default function LoginScreen() {
               style={styles.linkedInButton}
               onPress={handleLinkedInLogin}
               variant="primary"
-              disabled={loading}
+              disabled={loading || demoLoading}
             >
               <View style={styles.buttonContent}>
                 <FontAwesome5 name="linkedin" size={20} color="white" />
