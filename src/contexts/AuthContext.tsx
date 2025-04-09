@@ -14,7 +14,7 @@ export type User = {
   id: string;
   email: string;
   firstName: string;
-  lastName: string;
+  lastName: string;ß
   profileImage: string | null;
   oauthProvider: string;
   oauthTokens?: {
@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   };
-
+//hello this is a test
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
