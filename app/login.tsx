@@ -13,17 +13,6 @@ import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValu
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
-import * as SecureStore from 'expo-secure-store';
-
-// Mock demo user data
-const DEMO_USER = {
-  id: 'demo-123',
-  email: 'demo@collaborito.com',
-  firstName: 'Demo',
-  lastName: 'User',
-  profileImage: null,
-  oauthProvider: 'demo',
-};
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -32,7 +21,8 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signIn, signUp, loading, signInWithLinkedIn } = useAuth();
+  
+  const { signIn, signUp, loading, signInWithLinkedIn, signInWithDemo } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -138,34 +128,30 @@ export default function LoginScreen() {
       setEmailError('');
       setPasswordError('');
       
-      // Set the demo credentials in the input fields
+      // Set the demo credentials in the input fields for visual feedback
       setEmail('demo@collaborito.com');
       setPassword('password123');
       
-      // Wait a moment for state to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       console.log('Demo login: authenticating...');
 
-      // Store demo user data in secure storage
-      const userData = JSON.stringify(DEMO_USER);
-      await SecureStore.setItemAsync('user', userData);
-      await SecureStore.setItemAsync('userSession', 'demo-session-token');
+      // Use the dedicated demo sign in function from auth context
+      const success = await signInWithDemo();
       
-      console.log('Demo login successful, navigating to tabs');
-      
-      // Use a timeout to ensure storage is completed before navigation
-      setTimeout(() => {
-        try {
-          // Try direct navigation first via the global router
-          globalRouter.replace('/(tabs)');
-        } catch (navError) {
-          console.error('Navigation error:', navError);
-          // Fall back to the hook-based router if needed
-          router.replace('/(tabs)');
-        }
-      }, 300);
-      
+      if (success) {
+        console.log('Demo login successful, navigating to tabs');
+        // Use a timeout to ensure everything is updated before navigation
+        setTimeout(() => {
+          try {
+            globalRouter.replace('/(tabs)');
+          } catch (navError) {
+            console.error('Navigation error:', navError);
+            router.replace('/(tabs)');
+          }
+        }, 300);
+      } else {
+        console.error('Demo login failed');
+        Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');
+      }
     } catch (error) {
       console.error('Demo login error:', error);
       Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');

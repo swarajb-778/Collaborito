@@ -95,6 +95,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signInWithLinkedIn: () => Promise<void>;
+  signInWithDemo: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -576,6 +577,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Function to sign in with a demo account
+  const signInWithDemo = async () => {
+    try {
+      setLoading(true);
+      
+      // Create a demo user
+      const demoUser: User = {
+        id: 'demo-123',
+        email: 'demo@collaborito.com',
+        firstName: 'Demo',
+        lastName: 'User',
+        profileImage: null,
+        oauthProvider: 'demo'
+      };
+      
+      // Store the user data
+      await storeUserData(demoUser);
+      
+      // Set the user in state
+      setUser(demoUser);
+      setLoggedIn(true);
+      
+      console.log('Demo login successful');
+      return true;
+    } catch (error) {
+      console.error('Demo sign in error:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -583,6 +616,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     signInWithLinkedIn,
+    signInWithDemo
   };
 
   return (
