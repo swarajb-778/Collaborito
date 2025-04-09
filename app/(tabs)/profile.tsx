@@ -1,148 +1,218 @@
-import React from 'react';
-import { View, StyleSheet, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Colors } from '../../constants/Colors';
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '@/src/contexts/AuthContext';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { useAuth } from '../../src/contexts/AuthContext';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withSequence 
+} from 'react-native-reanimated';
 
-// Placeholder user data
+// Fallback user data
 const USER = {
   name: 'John Doe',
   email: 'john.doe@example.com',
-  avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=3F83F8&color=fff',
-  role: 'Product Manager',
-  company: 'Acme Inc.',
+  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+  role: 'Product Designer',
+  company: 'Collaborito Inc.',
   location: 'San Francisco, CA',
-  bio: 'Passionate about building products that solve real-world problems. Currently focused on collaboration tools and AI integration.',
-  skills: ['Product Management', 'UX/UI Design', 'Agile Methodology', 'Team Leadership'],
-  connections: 142,
-  projects: 8,
-  tasks: 17,
+  bio: 'Passionate product designer with 5+ years of experience in creating user-centered digital products. Specializing in mobile app design and design systems.',
+  skills: ['UI Design', 'UX Research', 'Figma', 'Prototyping', 'Design Systems'],
+  connections: 234,
+  projects: 12,
+  tasks: 5
 };
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
-  // Animation values
-  const avatarScale = useSharedValue(1);
+  useEffect(() => {
+    // Log the user info to verify what data we have
+    console.log('Current user data:', user);
+  }, [user]);
   
-  const animatedAvatarStyle = useAnimatedStyle(() => {
+  // Avatar animation
+  const scale = useSharedValue(1);
+  const animatedStyles = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: avatarScale.value }],
+      transform: [{ scale: scale.value }],
     };
   });
-  
-  const handlePressAvatar = () => {
-    avatarScale.value = withSpring(1.1, { damping: 10 }, () => {
-      avatarScale.value = withSpring(1);
-    });
+
+  const handleAvatarPress = () => {
+    scale.value = withSequence(
+      withTiming(1.1, { duration: 100 }),
+      withTiming(1, { duration: 100 })
+    );
+  };
+
+  // Get the display name from the auth user or fallback
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user?.email) {
+      return user.email.split('@')[0]; // Extract username from email
+    }
+    return USER.name;
+  };
+
+  // Get the profile image from the auth user or fallback
+  const getProfileImage = () => {
+    return user?.profileImage || USER.avatar;
+  };
+
+  // Get the auth provider name for display
+  const getAuthProviderName = () => {
+    if (!user?.oauthProvider) return 'Email';
+    
+    switch (user.oauthProvider) {
+      case 'email': return 'Email & Password';
+      case 'linkedin': return 'LinkedIn';
+      case 'linkedin_mock': return 'LinkedIn (Demo)';
+      default: return user.oauthProvider;
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      {/* Header */}
       <LinearGradient
-        colors={[colors.primary, colorScheme === 'dark' ? colors.background : colors.secondary]}
+        colors={['#4361EE', '#3A0CA3']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={styles.header}
       >
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => console.log('Navigate to settings')}
-          >
-            <FontAwesome5 name="cog" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => Alert.alert('Settings', 'Settings page coming soon!')}
+        >
+          <FontAwesome5 name="cog" size={22} color="#FFF" />
+        </TouchableOpacity>
       </LinearGradient>
       
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.profileHeader}>
-          <TouchableOpacity onPress={handlePressAvatar} activeOpacity={0.8}>
-            <Animated.View style={[styles.avatarContainer, animatedAvatarStyle]}>
-              <Image source={{ uri: USER.avatar }} style={styles.avatar} />
-              <View style={[styles.editAvatarButton, { backgroundColor: colors.primary }]}>
-                <FontAwesome5 name="camera" size={12} color="#FFFFFF" />
-              </View>
+      <ScrollView style={styles.scrollView}>
+        {/* Profile */}
+        <View style={styles.profileContainer}>
+          <TouchableOpacity onPress={handleAvatarPress}>
+            <Animated.View style={[styles.avatarContainer, animatedStyles]}>
+              <Image 
+                source={{ uri: getProfileImage() }} 
+                style={styles.avatar} 
+              />
             </Animated.View>
           </TouchableOpacity>
           
-          <Text style={[styles.userName, { color: colors.text }]}>{USER.name}</Text>
-          <Text style={[styles.userRole, { color: colors.muted }]}>{USER.role} • {USER.company}</Text>
-          
-          <View style={styles.userStats}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{USER.projects}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Projects</Text>
+          <Text style={styles.name}>{getDisplayName()}</Text>
+          <Text style={styles.email}>{user?.email || USER.email}</Text>
+          {user?.oauthProvider === 'linkedin' && (
+            <View style={styles.linkedInBadge}>
+              <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
+              <Text style={styles.linkedInText}>LinkedIn Member</Text>
             </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{USER.tasks}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Tasks</Text>
-            </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{USER.connections}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Connections</Text>
-            </View>
+          )}
+        </View>
+        
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{USER.projects}</Text>
+            <Text style={styles.statLabel}>Projects</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{USER.tasks}</Text>
+            <Text style={styles.statLabel}>Tasks</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{USER.connections}</Text>
+            <Text style={styles.statLabel}>Connections</Text>
           </View>
         </View>
         
+        {/* Bio */}
         <Card style={styles.bioCard}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-          <Text style={[styles.bioText, { color: colors.text }]}>{USER.bio}</Text>
+          <Text style={styles.sectionTitle}>Bio</Text>
+          <Text style={styles.bioText}>
+            {user?.oauthProvider === 'linkedin' 
+              ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.` 
+              : USER.bio}
+          </Text>
         </Card>
         
+        {/* Skills */}
         <Card style={styles.skillsCard}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Skills</Text>
+          <Text style={styles.sectionTitle}>Skills</Text>
           <View style={styles.skillsContainer}>
-            {USER.skills.map((skill, index) => (
-              <View 
-                key={index} 
-                style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? colors.card : colors.lightGray }]}
-              >
-                <Text style={[styles.skillText, { color: colors.text }]}>{skill}</Text>
-              </View>
-            ))}
+            {user?.oauthProvider === 'linkedin' ? (
+              // LinkedIn-specific skills
+              ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
+                <View key={index} style={styles.skillBadge}>
+                  <Text style={styles.skillText}>{skill}</Text>
+                </View>
+              ))
+            ) : (
+              // Default skills
+              USER.skills.map((skill, index) => (
+                <View key={index} style={styles.skillBadge}>
+                  <Text style={styles.skillText}>{skill}</Text>
+                </View>
+              ))
+            )}
           </View>
         </Card>
         
-        <Card style={styles.actionsCard}>
-          <TouchableOpacity 
-            style={[styles.actionItem, { borderBottomColor: colors.border }]}
-            onPress={() => console.log('Navigate to edit profile')}
-          >
-            <FontAwesome5 name="user-edit" size={18} color={colors.primary} style={styles.actionIcon} />
-            <Text style={[styles.actionText, { color: colors.text }]}>Edit Profile</Text>
-            <FontAwesome5 name="chevron-right" size={14} color={colors.muted} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionItem, { borderBottomColor: colors.border }]}
-            onPress={() => console.log('Navigate to notifications')}
-          >
-            <FontAwesome5 name="bell" size={18} color={colors.primary} style={styles.actionIcon} />
-            <Text style={[styles.actionText, { color: colors.text }]}>Notifications</Text>
-            <FontAwesome5 name="chevron-right" size={14} color={colors.muted} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionItem}
-            onPress={() => signOut()}
-          >
-            <FontAwesome5 name="sign-out-alt" size={18} color={colors.error} style={styles.actionIcon} />
-            <Text style={[styles.actionText, { color: colors.error }]}>Sign Out</Text>
-            <FontAwesome5 name="chevron-right" size={14} color={colors.muted} />
-          </TouchableOpacity>
+        {/* Authentication Info */}
+        <Card style={styles.authInfoCard}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
+          <View style={styles.authInfoItem}>
+            <Text style={styles.authInfoLabel}>Signed in with:</Text>
+            <Text style={styles.authInfoValue}>{getAuthProviderName()}</Text>
+          </View>
+          <View style={styles.authInfoItem}>
+            <Text style={styles.authInfoLabel}>Email:</Text>
+            <Text style={styles.authInfoValue}>{user?.email || USER.email}</Text>
+          </View>
+          {user?.id && (
+            <View style={styles.authInfoItem}>
+              <Text style={styles.authInfoLabel}>User ID:</Text>
+              <Text style={styles.authInfoValue}>{user.id}</Text>
+            </View>
+          )}
         </Card>
+        
+        {/* Actions */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
+          >
+            <FontAwesome5 name="user-edit" size={20} color="#000" />
+            <Text style={styles.actionText}>Edit Profile</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
+          >
+            <FontAwesome5 name="bell" size={20} color="#000" />
+            <Text style={styles.actionText}>Notifications</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={signOut}
+          >
+            <FontAwesome5 name="sign-out-alt" size={20} color="#000" />
+            <Text style={styles.actionText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -151,21 +221,20 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 15,
     paddingHorizontal: 20,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#FFF',
   },
   settingsButton: {
     width: 40,
@@ -175,116 +244,152 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrollContent: {
-    paddingBottom: 40,
+  scrollView: {
+    flex: 1,
   },
-  profileHeader: {
+  profileContainer: {
     alignItems: 'center',
-    marginTop: -60,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 30,
   },
   avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    backgroundColor: '#f0f0f0', // Fallback background
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  userName: {
-    fontSize: 24,
+  name: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 5,
   },
-  userRole: {
+  email: {
     fontSize: 16,
-    marginBottom: 16,
+    color: '#666',
+    marginBottom: 5,
   },
-  userStats: {
+  linkedInBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#E8F3FC',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginTop: 8,
+  },
+  linkedInText: {
+    fontSize: 12,
+    color: '#0077B5',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  role: {
+    fontSize: 14,
+    color: '#888',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   statItem: {
     alignItems: 'center',
-    paddingHorizontal: 16,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   statLabel: {
-    fontSize: 12,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
+    fontSize: 14,
+    color: '#666',
   },
   bioCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    margin: 20,
+    marginTop: 0,
+    padding: 15,
   },
   skillsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    margin: 20,
+    marginTop: 0,
+    padding: 15,
   },
-  actionsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+  authInfoCard: {
+    margin: 20,
+    marginTop: 0,
+    padding: 15,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   bioText: {
     fontSize: 14,
     lineHeight: 22,
+    color: '#444',
   },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
   },
   skillBadge: {
+    backgroundColor: '#E0E7FF',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     marginRight: 8,
     marginBottom: 8,
   },
   skillText: {
-    fontSize: 14,
+    color: '#4361EE',
+    fontSize: 12,
     fontWeight: '500',
   },
-  actionItem: {
+  actionsContainer: {
+    margin: 20,
+    marginTop: 0,
+    marginBottom: 40,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-  },
-  actionIcon: {
-    marginRight: 16,
-    width: 24,
-    textAlign: 'center',
+    borderBottomColor: '#eee',
   },
   actionText: {
-    flex: 1,
     fontSize: 16,
+    marginLeft: 15,
+  },
+  authInfoItem: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  authInfoLabel: {
+    fontSize: 14,
+    color: '#666',
+    width: 120,
+  },
+  authInfoValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
 }); 

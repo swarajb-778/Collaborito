@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Authentication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #4361EE;
+        }
+        p {
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        button {
+            background-color: #4361EE;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3a4fd0;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://i.imgur.com/YOUR_LOGO.png" alt="Collaborito Logo" class="logo">
+        <h1>Authentication Successful</h1>
+        <p>You have successfully authenticated with LinkedIn. Click the button below to return to the Collaborito app.</p>
+        <button id="returnToApp">Return to App</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parse URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            // Set up the return to app button
+            const returnButton = document.getElementById('returnToApp');
+            
+            if (returnButton) {
+                returnButton.addEventListener('click', function() {
+                    // Build the app URL with the code and state
+                    const appUrl = `collaborito://auth?code=${code}&state=${state}`;
+                    
+                    // Redirect to the app
+                    window.location.href = appUrl;
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

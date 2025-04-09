@@ -173,3 +173,6 @@ before start Just make sure to make it super modern, add microanimations, and ge
 - [Anthropic Claude API Docs](https://docs.anthropic.com)
 - [LinkedIn OAuth (Sign In with LinkedIn)](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authentication)
 - [Figma MCP (Model Context Protocol)](https://github.com/GLips/Figma-Context-MCP) 
+
+
+note that you have to Implement a backend server

@@ -76,22 +76,16 @@ interface OpenIDUserInfoResponse {
 }
 
 // LinkedIn configuration
-export const LINKEDIN_CONFIG = {
-  clientId: '77ftap6eqg86h5',
-  clientSecret: 'Cl0JJUq3nfbsYKR9',
-  redirectUri: 'collaborito://auth/linkedin-callback',
-  appRedirectScheme: 'collaborito://auth',
+const LINKEDIN_CONFIG = {
+  clientId: constants.auth.linkedin.clientId,
+  clientSecret: constants.auth.linkedin.clientSecret,
+  scopes: constants.auth.linkedin.scopes,
   authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
   tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
-  userInfoEndpoint: 'https://api.linkedin.com/v2/userinfo',
-  scopes: ['openid', 'profile', 'email'],
-  serviceConfiguration: {
-    authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
-    tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
-    revocationEndpoint: 'https://www.linkedin.com/oauth/v2/revoke',
-  },
-  state: Math.random().toString(36).substring(7),
-};
+  userInfoEndpoint: 'https://api.linkedin.com/v2/userinfo', // OIDC userinfo endpoint
+  redirectUri: constants.auth.linkedin.redirectUri,
+  appRedirectScheme: constants.appScheme,
+} as const;
 
 // Create context
 interface AuthContextType {
@@ -257,7 +251,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastName: 'User',
         profileImage: null,
         oauthProvider: 'email',
-        // No oauthTokens for email login
         oauthTokens: undefined
       };
       
@@ -298,7 +291,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastName: lastName,
         profileImage: null,
         oauthProvider: 'email',
-        // No oauthTokens for email signup
         oauthTokens: undefined
       };
       
@@ -368,7 +360,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (result.type === 'cancel') {
         console.log('Authentication was canceled by user');
         Alert.alert('Authentication Cancelled', 'LinkedIn sign in was cancelled');
-      } else {
+        } else {
         console.log('Auth flow completed but without success type');
         // We'll check if our deep link handler caught it instead
       }
@@ -396,8 +388,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastName: 'LinkedIn User',
         profileImage: 'https://via.placeholder.com/150',
         oauthProvider: 'linkedin_mock',
-        // Using undefined instead of null
-        oauthTokens: undefined
       };
       
       // Store user data and update state

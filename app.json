@@ -47,6 +47,15 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    },
+    "owner": "swaraj77",
+    "oauth": {
+      "redirectUrl": "collaborito://auth"
     }
   }
 }
