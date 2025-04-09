@@ -1,24 +1,27 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from '../components/ui/TextInput';
 import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring, interpolateColor } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function LoginScreen() {
   console.log('Rendering LoginScreen');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signIn, signUp, resetPassword, loading, signInWithLinkedIn } = useAuth();
+  const { signIn, signUp, loading, signInWithLinkedIn } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +29,22 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  
+  // Animation values
+  const cardScale = useSharedValue(0.95);
+  const opacity = useSharedValue(0);
+  
+  useEffect(() => {
+    cardScale.value = withSpring(1);
+    opacity.value = withSpring(1);
+  }, []);
+  
+  const cardAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: cardScale.value }],
+      opacity: opacity.value,
+    };
+  });
   
   const validateForm = () => {
     let isValid = true;
@@ -59,17 +78,22 @@ export default function LoginScreen() {
     if (!validateForm()) return;
     
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       console.log(`Authenticating with mode: ${mode}`);
       if (mode === 'signin') {
         await signIn(email, password);
         console.log('Sign in successful, navigating to tabs');
         router.replace('/(tabs)');
       } else if (mode === 'signup') {
-        await signUp(email, password, fullName);
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        await signUp(email, password, firstName, lastName);
         console.log('Sign up successful, navigating to tabs');
         router.replace('/(tabs)');
       } else if (mode === 'reset') {
-        await resetPassword(email);
+        Alert.alert('Reset Password', `An email will be sent to ${email} with instructions to reset your password.`);
         console.log('Password reset initiated, switching to signin mode');
         setMode('signin');
       }
@@ -91,6 +115,7 @@ export default function LoginScreen() {
   };
   
   const handleDemoLogin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEmail('demo@collaborito.com');
     setPassword('password123');
     setTimeout(() => {
@@ -100,6 +125,10 @@ export default function LoginScreen() {
   
   const toggleMode = (newMode: 'signin' | 'signup' | 'reset') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Add spring animation when switching modes
+    cardScale.value = withSpring(0.97, {}, () => {
+      cardScale.value = withSpring(1);
+    });
     setMode(newMode);
   };
   
@@ -143,9 +172,9 @@ export default function LoginScreen() {
             </Button>
             
             <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+              <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
+              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
             </View>
             
             <Button
@@ -158,12 +187,14 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Demo LinkedIn Sign In'
+                'Continue with LinkedIn'
               )}
             </Button>
             
             <TouchableOpacity onPress={handleDemoLogin} style={styles.demoButton}>
-              <Text style={styles.demoButtonText}>Use Demo Account</Text>
+              <Text style={[styles.demoButtonText, { color: colors.primary }]}>
+                Use Demo Account
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         );
@@ -209,14 +240,14 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Sign Up'
+                'Create Account'
               )}
             </Button>
             
             <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+              <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
+              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
             </View>
             
             <Button
@@ -229,7 +260,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Demo LinkedIn Sign Up'
+                'Continue with LinkedIn'
               )}
             </Button>
           </Animated.View>
@@ -265,73 +296,132 @@ export default function LoginScreen() {
     }
   };
   
+  const renderFormTitle = () => {
+    switch (mode) {
+      case 'signin':
+        return 'Welcome Back';
+      case 'signup':
+        return 'Create Account';
+      case 'reset':
+        return 'Reset Password';
+    }
+  };
+  
+  const renderFormSubtitle = () => {
+    switch (mode) {
+      case 'signin':
+        return 'Sign in to continue to Collaborito';
+      case 'signup':
+        return 'Join our community and start collaborating';
+      case 'reset':
+        return 'We\'ll send you a link to reset your password';
+    }
+  };
+  
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <StatusBar style="light" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <LinearGradient
-        colors={[colors.primary, colorScheme === 'dark' ? colors.background : colors.secondary]}
+        colors={[
+          colorScheme === 'dark' ? colors.primary : 'rgba(255, 255, 255, 0.8)',
+          colorScheme === 'dark' ? colors.background : 'rgba(240, 240, 250, 0.9)'
+        ]}
         style={styles.background}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Animated.View style={styles.container} entering={FadeIn.duration(800)}>
-          <Animated.View
-            style={styles.header}
-            entering={FadeInDown.duration(800)}
-          >
-            <CollaboritoLogo size={120} color={Colors.light.primary} style={styles.logo} />
-            <Text style={[styles.title, { color: colors.text }]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View style={styles.logoContainer} entering={FadeInDown.duration(800)}>
+            <CollaboritoLogo size={100} color={colors.primary} style={styles.logo} />
+            <Text style={[styles.appTitle, { color: colors.primary }]}>
               Collaborito
             </Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>
+            <Text style={[styles.appSubtitle, { color: colors.muted }]}>
               Project collaboration made simple
             </Text>
-            
-            {renderForm()}
           </Animated.View>
           
-          <Animated.View
-            style={styles.footer}
-            entering={FadeInUp.delay(500).duration(800)}
-          >
-            {mode === 'signin' && (
-              <>
-                <TouchableOpacity onPress={() => toggleMode('reset')}>
-                  <Text style={[styles.footerText, { color: colors.primary }]}>
-                    Forgot password?
+          <Animated.View style={[styles.cardContainer, cardAnimatedStyle]}>
+            <Card variant="elevated" style={styles.card} padding={24}>
+              <Text style={[styles.formTitle, { color: colors.text }]}>
+                {renderFormTitle()}
+              </Text>
+              <Text style={[styles.formSubtitle, { color: colors.muted }]}>
+                {renderFormSubtitle()}
+              </Text>
+              
+              {renderForm()}
+            </Card>
+            
+            <Animated.View
+              style={styles.footer}
+              entering={FadeInUp.delay(500).duration(800)}
+            >
+              {mode === 'signin' && (
+                <>
+                  <TouchableOpacity 
+                    onPress={() => toggleMode('reset')}
+                    style={styles.footerButton}
+                  >
+                    <Text style={[styles.footerText, { color: colors.primary }]}>
+                      Forgot password?
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.footerDivider} />
+                  <TouchableOpacity 
+                    onPress={() => toggleMode('signup')}
+                    style={styles.footerButton}
+                  >
+                    <Text style={styles.footerTextSecondary}>
+                      Don't have an account?{' '}
+                      <Text style={{ color: colors.primary, fontWeight: '600' }}>
+                        Sign Up
+                      </Text>
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {mode === 'signup' && (
+                <TouchableOpacity 
+                  onPress={() => toggleMode('signin')}
+                  style={styles.footerButton}
+                >
+                  <Text style={styles.footerTextSecondary}>
+                    Already have an account?{' '}
+                    <Text style={{ color: colors.primary, fontWeight: '600' }}>
+                      Sign In
+                    </Text>
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => toggleMode('signup')}>
+              )}
+              {mode === 'reset' && (
+                <TouchableOpacity 
+                  onPress={() => toggleMode('signin')}
+                  style={styles.footerButton}
+                >
                   <Text style={[styles.footerText, { color: colors.primary }]}>
-                    Don't have an account? Sign Up
+                    Back to Sign In
                   </Text>
                 </TouchableOpacity>
-              </>
-            )}
-            {mode === 'signup' && (
-              <TouchableOpacity onPress={() => toggleMode('signin')}>
-                <Text style={[styles.footerText, { color: colors.primary }]}>
-                  Already have an account? Sign In
-                </Text>
-              </TouchableOpacity>
-            )}
-            {mode === 'reset' && (
-              <TouchableOpacity onPress={() => toggleMode('signin')}>
-                <Text style={[styles.footerText, { color: colors.primary }]}>
-                  Back to Sign In
-                </Text>
-              </TouchableOpacity>
-            )}
+              )}
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
+        </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
+
+const { width } = Dimensions.get('window');
+const cardWidth = Math.min(width - 40, 400);
 
 const styles = StyleSheet.create({
   container: {
@@ -350,28 +440,49 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
-  },
-  header: {
     alignItems: 'center',
-    marginBottom: 24,
+    paddingVertical: 40,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
   logo: {
     marginBottom: 16,
   },
-  title: {
+  appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
   },
-  subtitle: {
+  appSubtitle: {
     fontSize: 16,
-    marginBottom: 32,
+    marginBottom: 16,
     textAlign: 'center',
   },
-  formContainer: {
+  cardContainer: {
+    width: cardWidth,
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 16,
     marginBottom: 24,
+  },
+  formContainer: {
     width: '100%',
   },
   submitButton: {
@@ -391,28 +502,37 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: 'rgba(0, 0, 0, 0.5)',
   },
   demoButton: {
-    marginTop: 12,
+    marginTop: 16,
     padding: 12,
     alignItems: 'center',
   },
   demoButtonText: {
-    color: Colors.light.primary,
     fontWeight: '600',
   },
   footer: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 24,
+    width: '100%',
+  },
+  footerButton: {
+    paddingVertical: 8,
   },
   footerText: {
     fontSize: 16,
-    marginBottom: 16,
+    fontWeight: '500',
     textAlign: 'center',
+  },
+  footerTextSecondary: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  footerDivider: {
+    height: 16,
   },
 }); 
