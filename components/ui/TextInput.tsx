@@ -139,6 +139,9 @@ export const TextInput = ({
     if (error) return colors.error;
     return borderColor;
   };
+
+  // Determine if we should show the placeholder or not
+  const shouldShowPlaceholder = isFocused || inputValue || !label;
   
   return (
     <View style={[styles.container, containerStyle]}>
@@ -189,7 +192,7 @@ export const TextInput = ({
               styles.input,
               {
                 color: colors.text,
-                paddingLeft: leftIcon ? 48 : 12,
+                paddingLeft: leftIcon ? 52 : 12,
                 paddingRight: (rightIcon || secureTextToggle) ? 40 : 12,
               },
               inputStyle,
@@ -198,9 +201,31 @@ export const TextInput = ({
             onBlur={handleBlur}
             onChangeText={handleChangeText}
             secureTextEntry={isSecureTextEntry}
-            placeholderTextColor={Platform.OS === 'ios' ? colors.muted : 'rgba(0,0,0,0.4)'}
-            placeholder={isFocused || !label ? props.placeholder : ''}
+            placeholderTextColor={colors.muted}
+            placeholder={(isFocused || inputValue) && props.placeholder ? props.placeholder : ''}
           />
+          
+          {/* Static placeholder for non-focused, empty inputs */}
+          {!isFocused && !inputValue && label && (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.staticPlaceholder,
+                {
+                  paddingLeft: leftIcon ? 52 : 16,
+                }
+              ]}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.muted,
+                }}
+              >
+                {label}
+              </Text>
+            </View>
+          )}
           
           {/* Right Icon */}
           {(rightIcon || (secureTextToggle && props.secureTextEntry)) && (
@@ -279,5 +304,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 12,
+  },
+  placeholderLabel: {
+    position: 'absolute',
+    fontSize: 16,
+    left: 0,
+    top: 16,
+    zIndex: 0,
+  },
+  staticPlaceholder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 0,
   },
 }); 
