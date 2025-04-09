@@ -14,7 +14,7 @@ export type User = {
   id: string;
   email: string;
   firstName: string;
-  lastName: string;ß
+  lastName: string;
   profileImage: string | null;
   oauthProvider: string;
   oauthTokens?: {
@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   };
-//hello this is a test
+
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -245,13 +245,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Create user data
       const userData: User = {
-        id: '12345',
+        id: 'user123',
         email: email,
         firstName: 'Demo',
         lastName: 'User',
         profileImage: null,
-        oauthProvider: 'email',
-        oauthTokens: undefined
+        oauthProvider: 'email'
       };
       
       // Store user data and update state
@@ -290,8 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: firstName,
         lastName: lastName,
         profileImage: null,
-        oauthProvider: 'email',
-        oauthTokens: undefined
+        oauthProvider: 'email'
       };
       
       // Store user data and update state
@@ -387,7 +385,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: 'Mock',
         lastName: 'LinkedIn User',
         profileImage: 'https://via.placeholder.com/150',
-        oauthProvider: 'linkedin_mock',
+        oauthProvider: 'linkedin_mock'
       };
       
       // Store user data and update state
