@@ -144,7 +144,7 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
             />
             
@@ -154,7 +154,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={passwordError}
             />
             
@@ -183,16 +183,16 @@ export default function LoginScreen() {
               variant="primary"
               disabled={loading}
             >
-              <FontAwesome5 name="linkedin" size={18} color="white" style={{ marginRight: 8 }} />
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Continue with LinkedIn'
-              )}
+              <View style={styles.buttonContent}>
+                <FontAwesome5 name="linkedin" size={20} color="white" />
+                <Text style={styles.buttonText}>
+                  {loading ? 'Loading...' : 'Continue with LinkedIn'}
+                </Text>
+              </View>
             </Button>
             
             <TouchableOpacity onPress={handleDemoLogin} style={styles.demoButton}>
-              <Text style={[styles.demoButtonText, { color: colors.primary }]}>
+              <Text style={[styles.demoButtonText, { color: 'white' }]}>
                 Use Demo Account
               </Text>
             </TouchableOpacity>
@@ -207,7 +207,7 @@ export default function LoginScreen() {
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
-              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
             />
             
             <TextInput
@@ -217,7 +217,7 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
             />
             
@@ -227,7 +227,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={passwordError}
             />
             
@@ -256,12 +256,12 @@ export default function LoginScreen() {
               variant="primary"
               disabled={loading}
             >
-              <FontAwesome5 name="linkedin" size={18} color="white" style={{ marginRight: 8 }} />
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Continue with LinkedIn'
-              )}
+              <View style={styles.buttonContent}>
+                <FontAwesome5 name="linkedin" size={20} color="white" />
+                <Text style={styles.buttonText}>
+                  {loading ? 'Loading...' : 'Continue with LinkedIn'}
+                </Text>
+              </View>
             </Button>
           </Animated.View>
         );
@@ -275,7 +275,7 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
             />
             
@@ -327,8 +327,8 @@ export default function LoginScreen() {
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <LinearGradient
         colors={[
-          colorScheme === 'dark' ? colors.primary : 'rgba(255, 255, 255, 0.8)',
-          colorScheme === 'dark' ? colors.background : 'rgba(240, 240, 250, 0.9)'
+          '#4361EE',
+          '#3A0CA3'
         ]}
         style={styles.background}
         start={{ x: 0, y: 0 }}
@@ -340,17 +340,24 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={styles.logoContainer} entering={FadeInDown.duration(800)}>
-            <CollaboritoLogo size={100} color={colors.primary} style={styles.logo} />
-            <Text style={[styles.appTitle, { color: colors.primary }]}>
+            <CollaboritoLogo size={100} color="white" style={styles.logo} />
+            <Text style={[styles.appTitle, { color: 'white' }]}>
               Collaborito
             </Text>
-            <Text style={[styles.appSubtitle, { color: colors.muted }]}>
+            <Text style={[styles.appSubtitle, { color: 'white' }]}>
               Project collaboration made simple
             </Text>
           </Animated.View>
           
           <Animated.View style={[styles.cardContainer, cardAnimatedStyle]}>
-            <Card variant="elevated" style={styles.card} padding={24}>
+            <Card 
+              variant="elevated" 
+              style={[
+                styles.card, 
+                { backgroundColor: colorScheme === 'dark' ? '#1A2437' : '#FFFFFF' }
+              ]} 
+              padding={24}
+            >
               <Text style={[styles.formTitle, { color: colors.text }]}>
                 {renderFormTitle()}
               </Text>
@@ -371,7 +378,7 @@ export default function LoginScreen() {
                     onPress={() => toggleMode('reset')}
                     style={styles.footerButton}
                   >
-                    <Text style={[styles.footerText, { color: colors.primary }]}>
+                    <Text style={[styles.footerText, { color: 'white' }]}>
                       Forgot password?
                     </Text>
                   </TouchableOpacity>
@@ -380,9 +387,9 @@ export default function LoginScreen() {
                     onPress={() => toggleMode('signup')}
                     style={styles.footerButton}
                   >
-                    <Text style={styles.footerTextSecondary}>
+                    <Text style={[styles.footerTextSecondary, { color: 'rgba(255,255,255,0.8)' }]}>
                       Don't have an account?{' '}
-                      <Text style={{ color: colors.primary, fontWeight: '600' }}>
+                      <Text style={{ color: 'white', fontWeight: '600' }}>
                         Sign Up
                       </Text>
                     </Text>
@@ -394,9 +401,9 @@ export default function LoginScreen() {
                   onPress={() => toggleMode('signin')}
                   style={styles.footerButton}
                 >
-                  <Text style={styles.footerTextSecondary}>
+                  <Text style={[styles.footerTextSecondary, { color: 'rgba(255,255,255,0.8)' }]}>
                     Already have an account?{' '}
-                    <Text style={{ color: colors.primary, fontWeight: '600' }}>
+                    <Text style={{ color: 'white', fontWeight: '600' }}>
                       Sign In
                     </Text>
                   </Text>
@@ -407,7 +414,7 @@ export default function LoginScreen() {
                   onPress={() => toggleMode('signin')}
                   style={styles.footerButton}
                 >
-                  <Text style={[styles.footerText, { color: colors.primary }]}>
+                  <Text style={[styles.footerText, { color: 'white' }]}>
                     Back to Sign In
                   </Text>
                 </TouchableOpacity>
@@ -494,6 +501,17 @@ const styles = StyleSheet.create({
     marginTop: 12,
     height: 56,
   },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -510,9 +528,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 12,
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    marginHorizontal: 20,
   },
   demoButtonText: {
     fontWeight: '600',
+    fontSize: 14,
   },
   footer: {
     alignItems: 'center',
@@ -534,5 +556,11 @@ const styles = StyleSheet.create({
   },
   footerDivider: {
     height: 16,
+  },
+  inputIcon: {
+    marginRight: 8,
+    width: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 

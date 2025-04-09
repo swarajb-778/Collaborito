@@ -172,14 +172,14 @@ export const TextInput = ({
           
           {/* Left Icon */}
           {leftIcon && (
-            <TouchableOpacity
-              style={styles.leftIcon}
-              onPress={onLeftIconPress}
-              disabled={!onLeftIconPress}
-              activeOpacity={onLeftIconPress ? 0.6 : 1}
+            <View
+              style={[
+                styles.leftIcon,
+                { opacity: isFocused || inputValue ? 1 : 0.7 }
+              ]}
             >
               {leftIcon}
-            </TouchableOpacity>
+            </View>
           )}
           
           {/* TextInput */}
@@ -189,7 +189,7 @@ export const TextInput = ({
               styles.input,
               {
                 color: colors.text,
-                paddingLeft: leftIcon ? 40 : 12,
+                paddingLeft: leftIcon ? 48 : 12,
                 paddingRight: (rightIcon || secureTextToggle) ? 40 : 12,
               },
               inputStyle,
@@ -198,7 +198,8 @@ export const TextInput = ({
             onBlur={handleBlur}
             onChangeText={handleChangeText}
             secureTextEntry={isSecureTextEntry}
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={Platform.OS === 'ios' ? colors.muted : 'rgba(0,0,0,0.4)'}
+            placeholder={isFocused || !label ? props.placeholder : ''}
           />
           
           {/* Right Icon */}
@@ -263,7 +264,10 @@ const styles = StyleSheet.create({
   },
   leftIcon: {
     position: 'absolute',
-    left: 12,
+    left: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 1,
   },
   rightIcon: {
