@@ -118,6 +118,11 @@ export default function LoginScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEmail('demo@collaborito.com');
     setPassword('password123');
+    
+    // Clear validation errors since we've filled in valid values
+    setEmailError('');
+    setPasswordError('');
+    
     setTimeout(() => {
       handleAuth();
     }, 500);
@@ -144,8 +149,9 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
               error={emailError}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <TextInput
@@ -154,8 +160,9 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
               error={passwordError}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button
@@ -207,7 +214,8 @@ export default function LoginScreen() {
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
-              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <TextInput
@@ -217,8 +225,9 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
               error={emailError}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <TextInput
@@ -227,8 +236,9 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
               error={passwordError}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button
@@ -275,8 +285,9 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
               error={emailError}
+              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button
