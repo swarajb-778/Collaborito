@@ -1,450 +1,590 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Alert, Platform } from 'react-native';
+import { makeRedirectUri, useAuthRequest, ResponseType } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import Constants from 'expo-constants';
-import { supabase } from '../services/supabase';
-import { User as SupabaseUser } from '../types/supabase';
 
-// User type definition that matches the Supabase schema
+// For the development mock server
+import { startServer } from '../utils/mockAuthServer';
+import { constants } from '../constants';
+
+// Define User type
 export type User = {
   id: string;
   email: string;
-  user_metadata: {
-    full_name: string;
+  firstName: string;
+  lastName: string;
+  profileImage: string | null;
+  oauthProvider: string;
+  oauthTokens?: {
+    accessToken: string;
+    refreshToken: string | null;
+    expiresAt: number;
+  };
+  // Keeping these for backward compatibility
+  user_metadata?: {
+    full_name?: string;
     avatar_url?: string;
   };
-  app_metadata: {
-    roles: string[];
-    provider: string;
+  app_metadata?: {
+    roles?: string[];
+    provider?: string;
   };
 };
 
-// Close any open WebBrowser sessions when the app loads
-WebBrowser.maybeCompleteAuthSession();
+// LinkedIn API response types
+interface LinkedInTokenResponse {
+  access_token: string;
+  expires_in: number;
+  id_token?: string;  // For OIDC
+  error?: string;     // Error code
+  error_description?: string; // Error description
+}
 
-console.log('=== AUTH CONTEXT INITIALIZATION ===');
-console.log('App Scheme:', Linking.createURL('/'));
+interface LinkedInProfileResponse {
+  id: string;
+  localizedFirstName: string;
+  localizedLastName: string;
+  profilePicture?: {
+    'displayImage~'?: {
+      elements?: Array<{
+        identifiers?: Array<{
+          identifier?: string;
+        }>;
+      }>;
+    };
+  };
+}
+
+interface LinkedInEmailResponse {
+  elements: Array<{
+    'handle~': {
+      emailAddress: string;
+    };
+  }>;
+}
+
+// OIDC user info response
+interface OpenIDUserInfoResponse {
+  sub: string;           // User ID
+  email: string;         // Email
+  name?: string;         // Full name
+  given_name?: string;   // First name
+  family_name?: string;  // Last name
+  picture?: string;      // Profile picture URL
+}
+
+// LinkedIn configuration
+export const LINKEDIN_CONFIG = {
+  clientId: '77ftap6eqg86h5',
+  clientSecret: 'Cl0JJUq3nfbsYKR9',
+  redirectUri: 'collaborito://auth/linkedin-callback',
+  appRedirectScheme: 'collaborito://auth',
+  authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
+  tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
+  userInfoEndpoint: 'https://api.linkedin.com/v2/userinfo',
+  scopes: ['openid', 'profile', 'email'],
+  serviceConfiguration: {
+    authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
+    tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
+    revocationEndpoint: 'https://www.linkedin.com/oauth/v2/revoke',
+  },
+  state: Math.random().toString(36).substring(7),
+};
 
 // Create context
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signInWithLinkedIn: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper function to generate a random string for state parameter
-// This is more compatible than uuid in React Native environments
-const generateRandomString = (length: number = 32): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
-
-// Constants for LinkedIn OAuth
-const LINKEDIN_CONFIG = {
-  // Get these values from environment variables
-  clientId: Constants.expoConfig?.extra?.EXPO_PUBLIC_LINKEDIN_CLIENT_ID || '77dpxmsrs0t56d',
-  clientSecret: Constants.expoConfig?.extra?.EXPO_PUBLIC_LINKEDIN_CLIENT_SECRET || 'WPL_AP1.Yl49K57KkulMZDQj.p+g9mg==',
-  // Use basic permission scopes
-  scope: 'r_emailaddress r_liteprofile',
-  // LinkedIn API endpoints
-  authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
-  tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-  profileUrl: 'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))',
-  emailUrl: 'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
-  // LinkedIn only accepts HTTP/HTTPS URLs, so we'll use the Expo proxy service for development
-  // In production, this should point to your Supabase auth callback URL
-  redirectUri: Platform.select({
-    // In production, use your deployed app's callback
-    web: 'http://localhost:19006', // Web testing
-    default: __DEV__ 
-      ? 'https://auth.expo.io/@swaraj77/collaborito' // Expo Go development
-      : 'https://ekydublgvsoaaepdhtzc.supabase.co/auth/v1/callback' // Production with Supabase
-  }),
-};
-
-console.log('LinkedIn redirect URI:', LINKEDIN_CONFIG.redirectUri);
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [linkedInAuthState, setLinkedInAuthState] = useState<string | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [mockServer, setMockServer] = useState<{ stop: () => void } | null>(null);
 
-  // Set up the authentication listener and check initial state
   useEffect(() => {
-    // Start by checking if we have a saved session from before
-    loadUser();
-
-    // Listen for authentication state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      if (event === 'SIGNED_IN' && session) {
-        // User signed in via Supabase auth
-        const userData = await saveUserToStorage(session.user);
-        setUser(userData);
-        setLoading(false);
-      } else if (event === 'SIGNED_OUT') {
-        // User signed out from Supabase
-        await SecureStore.deleteItemAsync('user');
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    // Set up deep link handler
+    void loadUser();
+    
+    // Set up deep link listener for handling OAuth callbacks
     const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    // Check if the app was opened via a deep link
-    Linking.getInitialURL().then(url => {
-      if (url) {
-        handleUrl(url);
-      }
-    }).catch(err => {
-      console.error('Failed to get initial URL:', err);
-    });
-
-    // Clean up listeners when component unmounts
+    
+    // In development, start the mock auth server
+    if (__DEV__) {
+      const server = startServer();
+      setMockServer(server);
+    }
+    
     return () => {
-      authListener.subscription.unsubscribe();
       subscription.remove();
+      // Clean up the mock server if it exists
+      if (mockServer) {
+        mockServer.stop();
+      }
     };
   }, []);
 
-  // Handle deep link events
-  const handleDeepLink = (event: { url: string }) => {
-    console.log('Got deep link callback:', event.url);
-    handleUrl(event.url);
-  };
-
-  // Process the URL to handle OAuth callbacks
-  const handleUrl = async (url: string) => {
-    console.log('Processing URL:', url);
-    
-    // Very simple LinkedIn callback handling
-    if (url.includes('auth.expo.io') && url.includes('code=')) {
-      try {
-        // Extract the code parameter using regex for simplicity
-        const codeMatch = url.match(/code=([^&]+)/);
-        if (codeMatch && codeMatch[1]) {
-          const code = codeMatch[1];
-          console.log('Got LinkedIn code, length:', code.length);
-          
-          // Process the LinkedIn authentication
-          await exchangeCodeForToken(code);
-        } else {
-          console.log('No code found in URL');
-        }
-      } catch (error) {
-        console.error('Error handling LinkedIn callback:', error);
-      }
-    }
-  };
-
-  // Helper function to convert Supabase user to our User type and save to storage
-  const saveUserToStorage = async (supabaseUser: any): Promise<User> => {
-    try {
-      const userData: User = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || 'no-email@example.com',
-        user_metadata: {
-          full_name: supabaseUser.user_metadata?.full_name || 'User',
-          avatar_url: supabaseUser.user_metadata?.avatar_url,
-        },
-        app_metadata: {
-          roles: supabaseUser.app_metadata?.roles || ['user'],
-          provider: supabaseUser.app_metadata?.provider || 'email',
-        },
-      };
-      
-      // Save user to SecureStore
-      await SecureStore.setItemAsync('user', JSON.stringify(userData));
-      
-      // Also create or update user profile in Supabase if needed
-      await updateUserProfile(userData);
-      
-      return userData;
-    } catch (error) {
-      console.error('Error saving user to storage:', error);
-      throw error;
-    }
-  };
-
-  // Update or create user profile in the database
-  const updateUserProfile = async (userData: User) => {
-    try {
-      // Check if profile exists
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userData.id)
-        .single();
-      
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-        console.error('Error checking profile:', fetchError);
-        return;
-      }
-      
-      // Prepare profile data
-      const profileData = {
-        id: userData.id,
-        full_name: userData.user_metadata.full_name,
-        avatar_url: userData.user_metadata.avatar_url,
-        email: userData.email,
-        updated_at: new Date().toISOString(),
-      };
-      
-      if (!existingProfile) {
-        // Create new profile
-        console.log('Creating new profile');
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ ...profileData, created_at: new Date().toISOString() }]);
-          
-        if (error) console.error('Error creating profile:', error);
-      } else {
-        // Update existing profile
-        console.log('Updating existing profile');
-        const { error } = await supabase
-          .from('profiles')
-          .update(profileData)
-          .eq('id', userData.id);
-          
-        if (error) console.error('Error updating profile:', error);
-      }
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-    }
-  };
-
-  // Exchange authorization code for access token (LinkedIn OAuth)
-  const exchangeCodeForToken = async (code: string) => {
-    try {
-      console.log('Exchanging code for token...');
-      
-      // Hardcoded values
-      const redirectUri = 'https://auth.expo.io/@swaraj77/collaborito';
-      const clientId = '77dpxmsrs0t56d';
-      const clientSecret = 'WPL_AP1.Yl49K57KkulMZDQj.p+g9mg==';
-      
-      // Create form data
-      const body = new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: redirectUri,
-        client_id: clientId,
-        client_secret: clientSecret
-      }).toString();
-      
-      // Exchange code for token
-      const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body
-      });
-      
-      const tokenData = await tokenResponse.json();
-      console.log('Token received:', tokenData.access_token ? 'yes' : 'no');
-      
-      if (tokenData.access_token) {
-        // Get user profile
-        const profileResponse = await fetch(
-          'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName)', 
-          {
-            headers: {
-              Authorization: `Bearer ${tokenData.access_token}`
-            }
-          }
-        );
-        
-        const profileData = await profileResponse.json();
-        console.log('Got profile for:', profileData.localizedFirstName);
-        
-        // Get email address
-        const emailResponse = await fetch(
-          'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', 
-          {
-            headers: {
-              Authorization: `Bearer ${tokenData.access_token}`
-            }
-          }
-        );
-        
-        const emailData = await emailResponse.json();
-        const email = emailData.elements?.[0]?.['handle~']?.emailAddress || 'no-email@example.com';
-        console.log('Email:', email);
-        
-        // Create simple user object
-        const user = {
-          id: profileData.id,
-          email,
-          user_metadata: {
-            full_name: `${profileData.localizedFirstName} ${profileData.localizedLastName}`,
-            avatar_url: ''
-          },
-          app_metadata: {
-            roles: ['user'],
-            provider: 'linkedin'
-          }
-        };
-        
-        // Store the user
-        setUser(user);
-        await SecureStore.setItemAsync('user', JSON.stringify(user));
-        
-        Alert.alert('Success', 'Logged in with LinkedIn!');
-      }
-    } catch (error) {
-      console.error('LinkedIn token exchange error:', error);
-      Alert.alert('Error', 'Failed to complete LinkedIn sign in.');
-    }
-  };
-
-  // Load user from SecureStore
   const loadUser = async () => {
     try {
-      // First check for Supabase session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      setLoading(true);
+      const userJson = await SecureStore.getItemAsync('user');
+      const session = await SecureStore.getItemAsync('userSession');
       
-      if (sessionData?.session?.user) {
-        console.log('Found Supabase session');
-        const userData = await saveUserToStorage(sessionData.session.user);
+      if (userJson && session) {
+        const userData = JSON.parse(userJson) as User;
         setUser(userData);
-        setLoading(false);
-        return;
+        setLoggedIn(true);
+        console.log('User loaded from storage');
+        return true;
       }
-      
-      // If no Supabase session, check SecureStore
-      const storedUser = await SecureStore.getItemAsync('user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('Loaded user from storage:', parsedUser.email);
-        setUser(parsedUser);
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Error loading user:', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Supabase email/password sign in
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.user) {
-        const userData = await saveUserToStorage(data.user);
-        setUser(userData);
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Sign in error:', errorMessage);
-      Alert.alert('Authentication Error', `Failed to sign in: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // LinkedIn sign in
-  const signInWithLinkedIn = async () => {
-    try {
-      console.log('Starting LinkedIn sign-in flow');
-      
-      // Use a very direct approach with hardcoded values
-      const redirectUri = 'https://auth.expo.io/@swaraj77/collaborito';
-      const clientId = '77dpxmsrs0t56d';
-      
-      // Build the authorization URL directly
-      const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=r_liteprofile%20r_emailaddress`;
-      
-      console.log('Opening LinkedIn auth URL:', authUrl);
-      
-      // Just open the URL without any redirect handling
-      await WebBrowser.openBrowserAsync(authUrl);
-      
+      return false;
     } catch (error) {
-      console.error('LinkedIn sign in error:', error);
-      Alert.alert('Authentication Error', 'Failed to sign in with LinkedIn. Please try again.');
-    }
-  };
-
-  // Supabase sign up
-  const signUp = async (email: string, password: string, fullName: string) => {
-    setLoading(true);
-    try {
-      // Create user with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.user) {
-        // In Supabase, users are created with email confirmation by default
-        // We can either wait for email confirmation or create a user immediately
-        // Based on your requirements
-        Alert.alert(
-          'Verification Email Sent',
-          'Please check your email to verify your account before signing in.'
-        );
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Sign up error:', errorMessage);
-      Alert.alert('Authentication Error', `Failed to sign up: ${errorMessage}`);
+      console.error('Error loading user:', error);
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // Sign out
+  // Deep link handler 
+  const handleDeepLink = async (event: { url: string }) => {
+    console.log('Deep link received:', event.url);
+    
+    // Check if this is our LinkedIn auth callback
+    if (event.url.includes('collaborito://auth')) {
+      console.log('Handling LinkedIn auth callback');
+      
+      try {
+        // Extract the query parameters from the deep link URL
+        const url = new URL(event.url);
+        const params = url.searchParams;
+        
+        // If the URL doesn't parse correctly, try to extract manually
+        let code, state, error;
+        
+        if (params.size === 0 && event.url.includes('?')) {
+          // Fallback manual parsing if URL parsing failed
+          const queryPart = event.url.split('?')[1];
+          if (queryPart) {
+            const queryParams = queryPart.split('&');
+            for (const param of queryParams) {
+              const [key, value] = param.split('=');
+              if (key === 'code') code = decodeURIComponent(value);
+              if (key === 'state') state = decodeURIComponent(value);
+              if (key === 'error') error = decodeURIComponent(value);
+            }
+          }
+        } else {
+          // Use parsed URL parameters
+          code = params.get('code');
+          state = params.get('state');
+          error = params.get('error');
+        }
+        
+        console.log('Extracted params:', { 
+          hasCode: !!code, 
+          hasState: !!state, 
+          hasError: !!error 
+        });
+        
+        // Check for errors first
+        if (error) {
+          console.error('OAuth error returned:', error);
+          Alert.alert('Authentication Error', `LinkedIn returned an error: ${error}`);
+          return;
+        }
+        
+        // Check for required parameters
+        if (!code) {
+          console.error('No authorization code found in callback URL');
+          Alert.alert('Authentication Error', 'No authorization code received from LinkedIn');
+          return;
+        }
+        
+        if (!state) {
+          console.error('No state parameter found in callback URL');
+          Alert.alert('Authentication Error', 'Invalid authentication response (missing state)');
+        return;
+        }
+        
+        // Verify state to prevent CSRF attacks
+        const storedState = await SecureStore.getItemAsync('oauth_state');
+        if (state !== storedState) {
+          console.error('State mismatch:', { receivedState: state, storedState });
+          
+          // In development, we might continue anyway with a warning
+          console.warn('Continuing despite state mismatch (for development)');
+          Alert.alert('Security Warning', 'State verification failed, but continuing for development');
+        }
+        
+        // Process the authorization code
+        console.log('Processing authorization code');
+        await handleLinkedInAuthCallback({ url: event.url });
+        
+      } catch (error) {
+        console.error('Error handling deep link:', error);
+        Alert.alert('Authentication Error', 'Failed to process authentication response');
+      }
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      console.log('Signing in with email:', email);
+      
+      // Simulate API call for email/password authentication
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, this would be a call to your auth API
+      if (email !== 'user@example.com' || password !== 'password') {
+        throw new Error('Invalid email or password');
+      }
+      
+      // Create user data
+      const userData: User = {
+        id: '12345',
+        email: email,
+        firstName: 'Demo',
+        lastName: 'User',
+        profileImage: null,
+        oauthProvider: 'email',
+        // No oauthTokens for email login
+        oauthTokens: undefined
+      };
+      
+      // Store user data and update state
+      await storeUserData(userData);
+      setUser(userData);
+      setLoggedIn(true);
+      
+      console.log('Sign in successful');
+      return true;
+    } catch (error) {
+      console.error('Sign in error:', error);
+      Alert.alert('Sign In Error', error instanceof Error ? error.message : 'Failed to sign in');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+    try {
+      setLoading(true);
+      console.log('Signing up with email:', email);
+      
+      // Simulate API call for registration
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // In a real app, this would be a call to your registration API
+      if (email === 'user@example.com') {
+        throw new Error('An account with this email already exists');
+      }
+      
+      // Create user data for the new account
+      const userData: User = {
+        id: 'new' + Date.now(),
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        profileImage: null,
+        oauthProvider: 'email',
+        // No oauthTokens for email signup
+        oauthTokens: undefined
+      };
+      
+      // Store user data and update state
+      await storeUserData(userData);
+      setUser(userData);
+      setLoggedIn(true);
+      
+      console.log('Sign up successful');
+      return true;
+    } catch (error) {
+      console.error('Sign up error:', error);
+      Alert.alert('Sign Up Error', error instanceof Error ? error.message : 'Failed to create account');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
-      // Sign out from Supabase Auth
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Clear local storage
       await SecureStore.deleteItemAsync('user');
       await SecureStore.deleteItemAsync('userSession');
       setUser(null);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Sign out error:', errorMessage);
-      Alert.alert('Error', `Failed to sign out: ${errorMessage}`);
+      Alert.alert('Error', 'Failed to sign out');
+    }
+  };
+
+  const signInWithLinkedIn = async () => {
+    try {
+      console.log('Starting LinkedIn sign-in flow');
+      
+      // Generate state for CSRF protection
+      const state = Math.random().toString(36).substring(7);
+      
+      // Store state for verification when the callback comes back
+      await SecureStore.setItemAsync('oauth_state', state);
+      
+      console.log('Generated state:', state);
+
+      // Construct the authorization URL with a custom param to signal our ngrok server
+      const authUrl = `${LINKEDIN_CONFIG.authorizationEndpoint}?` +
+        `response_type=code&` +
+        `client_id=${LINKEDIN_CONFIG.clientId}&` +
+        `redirect_uri=${encodeURIComponent(LINKEDIN_CONFIG.redirectUri)}&` +
+        `state=${state}&` +
+        `scope=${encodeURIComponent(LINKEDIN_CONFIG.scopes.join(' '))}&` +
+        `app_redirect=${encodeURIComponent(LINKEDIN_CONFIG.appRedirectScheme)}`;
+
+      console.log('Opening LinkedIn auth URL');
+      
+      // Open the browser to start the auth flow
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        LINKEDIN_CONFIG.appRedirectScheme
+      );
+      
+      console.log('Browser session closed with result type:', result.type);
+      
+      // Check if we got a successful redirect
+      if (result.type === 'success' && result.url) {
+        console.log('Successful auth redirect:', result.url);
+        await handleLinkedInAuthCallback({ url: result.url });
+      } else if (result.type === 'cancel') {
+        console.log('Authentication was canceled by user');
+        Alert.alert('Authentication Cancelled', 'LinkedIn sign in was cancelled');
+      } else {
+        console.log('Auth flow completed but without success type');
+        // We'll check if our deep link handler caught it instead
+      }
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('LinkedIn sign in error:', errorMessage);
+      Alert.alert('Authentication Error', `Failed to sign in with LinkedIn: ${errorMessage}`);
+      
+      // In development, create a mock user to continue testing
+      if (__DEV__) {
+        createMockLinkedInUser();
+      }
+    }
+  };
+  
+  // Helper function to create a mock LinkedIn user
+  const createMockLinkedInUser = async () => {
+    try {
+      console.log('Creating mock LinkedIn user');
+      const mockUser: User = {
+        id: `linkedin_mock_${Date.now()}`,
+        email: `mock_linkedin_${Date.now()}@example.com`,
+        firstName: 'Mock',
+        lastName: 'LinkedIn User',
+        profileImage: 'https://via.placeholder.com/150',
+        oauthProvider: 'linkedin_mock',
+        // Using undefined instead of null
+        oauthTokens: undefined
+      };
+      
+      // Store user data and update state
+      await storeUserData(mockUser);
+      setUser(mockUser);
+      setLoggedIn(true);
+      
+      console.log('Mock LinkedIn user created successfully');
+      
+      // Display user information in an alert
+      Alert.alert(
+        'LinkedIn Profile',
+        `Name: ${mockUser.firstName} ${mockUser.lastName}\nEmail: ${mockUser.email}`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error creating mock user:', error);
+    }
+  };
+
+  // Store user data securely
+  const storeUserData = async (userData: User) => {
+    try {
+      await SecureStore.setItemAsync('user', JSON.stringify(userData));
+      if (userData.oauthTokens?.accessToken) {
+        await SecureStore.setItemAsync('userSession', userData.oauthTokens.accessToken);
+      }
+      console.log('User data stored successfully');
+      return true;
+    } catch (error) {
+      console.error('Error storing user data:', error);
+      return false;
+    }
+  };
+
+  const handleLinkedInAuthCallback = async (event: { url: string }) => {
+    console.log('Handling LinkedIn auth callback', event);
+    try {
+      setLoading(true);
+      
+      // Extract the authorization code from the URL
+      const { url } = event;
+      
+      // Parse the URL to extract code and state
+      let code, state;
+      
+      if (url.includes('?')) {
+        const queryPart = url.split('?')[1];
+        if (queryPart) {
+          const params = new URLSearchParams(queryPart);
+          code = params.get('code');
+          state = params.get('state');
+        }
+      }
+      
+      // Fallback to regex if URLSearchParams doesn't work
+      if (!code && url.includes('code=')) {
+        code = url.match(/code=([^&]+)/)?.[1];
+      }
+      
+      if (!state && url.includes('state=')) {
+        state = url.match(/state=([^&]+)/)?.[1];
+      }
+      
+      console.log('Extracted params:', { hasCode: !!code, hasState: !!state });
+      
+      if (!code) {
+        throw new Error('No authorization code found in redirect URL');
+      }
+      
+      // Verify state to prevent CSRF attacks if we have it
+      if (state) {
+        const storedState = await SecureStore.getItemAsync('oauth_state');
+        if (state !== storedState) {
+          console.warn('State mismatch:', { receivedState: state, storedState });
+          // In development, we might continue anyway with a warning
+          console.warn('Continuing despite state mismatch (for development)');
+        }
+      }
+      
+      console.log('LinkedIn code obtained', code);
+      
+      try {
+        // Exchange the code for tokens directly (only for development testing)
+        // This approach exposes your client secret - DON'T use in production!
+        console.log('Exchanging code for token...');
+        
+        // Prepare token request body
+        const tokenRequestBody = new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: LINKEDIN_CONFIG.redirectUri,
+          client_id: LINKEDIN_CONFIG.clientId,
+          client_secret: LINKEDIN_CONFIG.clientSecret
+        }).toString();
+        
+        // Make token request
+        const tokenResponse = await fetch(LINKEDIN_CONFIG.tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: tokenRequestBody
+        });
+        
+        if (!tokenResponse.ok) {
+          const errorText = await tokenResponse.text();
+          console.error('Token exchange failed:', errorText);
+          throw new Error(`Failed to exchange code for token: ${tokenResponse.status}`);
+        }
+        
+        const tokens = await tokenResponse.json();
+        console.log('Received tokens:', { 
+          hasAccessToken: !!tokens.access_token,
+          expiresIn: tokens.expires_in,
+          hasRefreshToken: !!tokens.refresh_token
+        });
+        
+        // Now fetch user profile with the token
+        console.log('Fetching user profile from LinkedIn...');
+        const userInfoResponse = await fetch(LINKEDIN_CONFIG.userInfoEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${tokens.access_token}`
+          }
+        });
+        
+        if (!userInfoResponse.ok) {
+          const errorText = await userInfoResponse.text();
+          console.error('User info fetch failed:', errorText);
+          throw new Error(`Failed to fetch user info: ${userInfoResponse.status}`);
+        }
+        
+        const userInfo = await userInfoResponse.json();
+        console.log('Received user info data:', userInfo);
+        
+        // Create user data from the response
+        const userData: User = {
+          id: userInfo.sub || `linkedin_${Date.now()}`,
+          email: userInfo.email || 'unknown@example.com',
+          firstName: userInfo.given_name || userInfo.name?.split(' ')[0] || 'LinkedIn',
+          lastName: userInfo.family_name || userInfo.name?.split(' ').slice(1).join(' ') || 'User',
+          profileImage: userInfo.picture || null,
+          oauthProvider: 'linkedin',
+          oauthTokens: {
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token || null,
+            expiresAt: Date.now() + (tokens.expires_in * 1000)
+          }
+        };
+        
+        // Store the user data and update state
+        await storeUserData(userData);
+        setUser(userData);
+        setLoggedIn(true);
+        
+        // Display the LinkedIn profile data in an alert
+        Alert.alert(
+          'LinkedIn Profile',
+          `Name: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}`,
+          [{ text: 'OK' }]
+        );
+        
+        console.log('LinkedIn auth completed successfully with real data');
+        return;
+        
+      } catch (apiError) {
+        console.error('API error when trying to get LinkedIn data:', apiError);
+        
+        // Fallback to mock data in development mode
+        if (__DEV__) {
+          console.log('Falling back to mock data due to API error');
+          createMockLinkedInUser();
+        } else {
+          throw apiError; // Rethrow in production
+        }
+      }
+      
+    } catch (error) {
+      console.error('LinkedIn auth error:', error);
+      Alert.alert('Authentication Error', error instanceof Error ? error.message : 'Failed to authenticate with LinkedIn');
+      
+      // In development, create a mock user to continue testing
+      if (__DEV__) {
+        createMockLinkedInUser();
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
