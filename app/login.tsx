@@ -8,11 +8,22 @@ import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../src/contexts/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, router as globalRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring, interpolateColor } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
+import * as SecureStore from 'expo-secure-store';
+
+// Mock demo user data
+const DEMO_USER = {
+  id: 'demo-123',
+  email: 'demo@collaborito.com',
+  firstName: 'Demo',
+  lastName: 'User',
+  profileImage: null,
+  oauthProvider: 'demo',
+};
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -135,15 +146,25 @@ export default function LoginScreen() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       console.log('Demo login: authenticating...');
+
+      // Store demo user data in secure storage
+      const userData = JSON.stringify(DEMO_USER);
+      await SecureStore.setItemAsync('user', userData);
+      await SecureStore.setItemAsync('userSession', 'demo-session-token');
       
-      // For demo mode, we'll bypass validation and sign in directly
-      // In a production environment, these would be actual working credentials
-      // Since this is a demo, we'll just route directly to the main app
       console.log('Demo login successful, navigating to tabs');
-      router.replace('/(tabs)');
       
-      // Note: In a real app, you would use this instead:
-      // await signIn('demo@collaborito.com', 'password123');
+      // Use a timeout to ensure storage is completed before navigation
+      setTimeout(() => {
+        try {
+          // Try direct navigation first via the global router
+          globalRouter.replace('/(tabs)');
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          // Fall back to the hook-based router if needed
+          router.replace('/(tabs)');
+        }
+      }, 300);
       
     } catch (error) {
       console.error('Demo login error:', error);
