@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import * as Haptics from 'expo-haptics';
 
 // Mock project data - in a real app, you would fetch this based on the ID
@@ -35,6 +35,7 @@ const getProjectById = (id: string) => {
 export default function ProjectDetail() {
   const { id } = useLocalSearchParams();
   const colorScheme = useColorScheme();
+  const theme = colorScheme || 'light';
   const project = getProjectById(id as string);
 
   useEffect(() => {
@@ -69,17 +70,17 @@ export default function ProjectDetail() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <LinearGradient
-          colors={colorScheme === 'dark' ? ['#1a1a1a', '#121212'] : ['#f5f5f5', '#ffffff']}
+          colors={theme === 'dark' ? ['#1a1a1a', '#121212'] : ['#f5f5f5', '#ffffff']}
           style={styles.header}
         >
           <Pressable style={styles.backButton} onPress={handleGoBack}>
             <FontAwesome5 
               name="arrow-left" 
               size={18} 
-              color={Colors[colorScheme].text}
+              color={Colors[theme].text}
             />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: Colors[colorScheme].text }]}>
+          <Text style={[styles.headerTitle, { color: Colors[theme].text }]}>
             Project Details
           </Text>
           <View style={styles.headerRight} />
@@ -87,7 +88,7 @@ export default function ProjectDetail() {
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
           <View style={styles.titleContainer}>
-            <Text style={[styles.projectTitle, { color: Colors[colorScheme].text }]}>
+            <Text style={[styles.projectTitle, { color: Colors[theme].text }]}>
               {project.title}
             </Text>
             <View style={styles.categoryBadge}>
@@ -96,7 +97,7 @@ export default function ProjectDetail() {
           </View>
 
           <View style={styles.progressContainer}>
-            <Text style={[styles.progressText, { color: Colors[colorScheme].text }]}>
+            <Text style={[styles.progressText, { color: Colors[theme].text }]}>
               Progress: {project.progress}%
             </Text>
             <View style={styles.progressBar}>
@@ -105,16 +106,16 @@ export default function ProjectDetail() {
           </View>
 
           <Card style={styles.card}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme].text }]}>
+            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
               Description
             </Text>
-            <Text style={[styles.description, { color: Colors[colorScheme].secondaryText }]}>
+            <Text style={[styles.description, { color: Colors[theme].muted }]}>
               {project.description}
             </Text>
           </Card>
 
           <Card style={styles.card}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme].text }]}>
+            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
               Team Members
             </Text>
             {project.members.map(member => (
@@ -126,10 +127,10 @@ export default function ProjectDetail() {
                     </Text>
                   </View>
                   <View>
-                    <Text style={[styles.memberName, { color: Colors[colorScheme].text }]}>
+                    <Text style={[styles.memberName, { color: Colors[theme].text }]}>
                       {member.name}
                     </Text>
-                    <Text style={[styles.memberRole, { color: Colors[colorScheme].secondaryText }]}>
+                    <Text style={[styles.memberRole, { color: Colors[theme].muted }]}>
                       {member.role}
                     </Text>
                   </View>
@@ -139,18 +140,18 @@ export default function ProjectDetail() {
           </Card>
 
           <Card style={styles.card}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme].text }]}>
+            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
               Tasks
             </Text>
             {project.tasks.map(task => (
               <View key={task.id} style={styles.taskItem}>
                 <View style={styles.taskInfo}>
-                  <Text style={[styles.taskTitle, { color: Colors[colorScheme].text }]}>
+                  <Text style={[styles.taskTitle, { color: Colors[theme].text }]}>
                     {task.title}
                   </Text>
                   {renderTaskStatus(task.status)}
                 </View>
-                <Text style={[styles.taskAssignee, { color: Colors[colorScheme].secondaryText }]}>
+                <Text style={[styles.taskAssignee, { color: Colors[theme].muted }]}>
                   Assigned to: {project.members.find(m => m.id === task.assignee)?.name || 'Unassigned'}
                 </Text>
               </View>
@@ -159,22 +160,24 @@ export default function ProjectDetail() {
 
           <View style={styles.actions}>
             <Button 
-              title="Edit Project" 
-              variant="outlined"
+              variant="outline"
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 // Add edit logic
               }}
               style={{ flex: 1, marginRight: 10 }}
-            />
+            >
+              Edit Project
+            </Button>
             <Button 
-              title="Add Task" 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 // Add task logic
               }}
               style={{ flex: 1 }}
-            />
+            >
+              Add Task
+            </Button>
           </View>
         </ScrollView>
       </View>
