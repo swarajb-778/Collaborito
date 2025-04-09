@@ -116,15 +116,31 @@ export default function LoginScreen() {
   
   const handleDemoLogin = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEmail('demo@collaborito.com');
-    setPassword('password123');
-    
-    // Clear validation errors since we've filled in valid values
+    // Clear any previous error messages
     setEmailError('');
     setPasswordError('');
     
+    // Set demo credentials
+    setEmail('demo@collaborito.com');
+    setPassword('password123');
+    
+    // Use a timeout to ensure state updates before auth
     setTimeout(() => {
-      handleAuth();
+      // Skip validation since we know these are valid
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        console.log('Demo login: authenticating...');
+        signIn('demo@collaborito.com', 'password123')
+          .then(() => {
+            console.log('Demo login successful, navigating to tabs');
+            router.replace('/(tabs)');
+          })
+          .catch((error) => {
+            console.error('Demo login error:', error);
+          });
+      } catch (error) {
+        console.error('Demo auth error:', error);
+      }
     }, 500);
   };
   
@@ -149,9 +165,8 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
-              inputStyle={{ paddingLeft: 56 }}
             />
             
             <TextInput
@@ -160,9 +175,8 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={passwordError}
-              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button
@@ -214,8 +228,7 @@ export default function LoginScreen() {
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
-              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
-              inputStyle={{ paddingLeft: 56 }}
+              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
             />
             
             <TextInput
@@ -225,9 +238,8 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
-              inputStyle={{ paddingLeft: 56 }}
             />
             
             <TextInput
@@ -236,9 +248,8 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={passwordError}
-              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button
@@ -285,9 +296,8 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
+              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
               error={emailError}
-              inputStyle={{ paddingLeft: 56 }}
             />
             
             <Button

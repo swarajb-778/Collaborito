@@ -99,6 +99,11 @@ export const TextInput = ({
     outputRange: [16, -8],
   });
   
+  const labelPositionLeft = labelPositionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [leftIcon ? 48 : 12, 12],
+  });
+  
   const labelSize = labelSizeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [16, 12],
@@ -159,6 +164,7 @@ export const TextInput = ({
                 styles.label,
                 {
                   top: labelPositionTop,
+                  left: labelPositionLeft,
                   fontSize: labelSize,
                   color: error ? colors.error : labelColor,
                   backgroundColor: colors.card,
@@ -189,7 +195,7 @@ export const TextInput = ({
               styles.input,
               {
                 color: colors.text,
-                paddingLeft: leftIcon ? 56 : 12,
+                paddingLeft: leftIcon ? 48 : 12,
                 paddingRight: (rightIcon || secureTextToggle) ? 40 : 12,
               },
               inputStyle,
@@ -260,7 +266,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     paddingHorizontal: 4,
+    paddingVertical: 1,
     zIndex: 1,
+    fontWeight: '500',
   },
   leftIcon: {
     position: 'absolute',
@@ -269,7 +277,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
-    width: 24,
   },
   rightIcon: {
     position: 'absolute',
