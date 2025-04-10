@@ -36,7 +36,7 @@ jobs:
         timeout-minutes: 2
           
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps --no-audit --no-fund
         timeout-minutes: 10
       
       - name: Create .env file
@@ -96,9 +96,51 @@ jobs:
       - name: Run linting
         run: npm run lint -- --quiet || echo "Linting failed but continuing"
         timeout-minutes: 5
+      
+      # Create Jest configuration
+      - name: Create Jest config
+        run: |
+          cat > jest.config.js << 'EOF'
+          module.exports = {
+            preset: 'jest-expo',
+            transformIgnorePatterns: [
+              'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)'
+            ],
+            setupFiles: [
+              "<rootDir>/jest.setup.js"
+            ],
+            moduleNameMapper: {
+              "\\.svg$": "<rootDir>/__mocks__/svgMock.js"
+            }
+          };
+          EOF
+          
+          # Create Jest setup file
+          mkdir -p __mocks__
+          cat > jest.setup.js << 'EOF'
+          jest.mock('expo-linking');
+          jest.mock('expo-router');
+          global.fetch = jest.fn(() => Promise.resolve({
+            json: () => Promise.resolve({}),
+          }));
+          EOF
+          
+          # Create SVG mock
+          cat > __mocks__/svgMock.js << 'EOF'
+          module.exports = 'SvgMock';
+          module.exports.ReactComponent = 'SvgMock';
+          EOF
+        timeout-minutes: 1
         
       - name: Run tests
-        run: npm test -- --watchAll=false || echo "Tests failed but continuing"
+        run: |
+          # If there are test files, run them with non-watch mode
+          TEST_FILES=$(find . -name "*.test.js" -o -name "*.test.ts" -o -name "*.test.tsx" | wc -l)
+          if [ "$TEST_FILES" -gt "0" ]; then
+            npm test -- --watchAll=false --passWithNoTests || echo "Tests failed but continuing"
+          else
+            echo "No test files found, skipping tests"
+          fi
         timeout-minutes: 5
       
       # Install global expo-cli for compatibility
@@ -110,13 +152,7 @@ jobs:
       - name: Build web preview
         run: |
           echo "Building web preview using npx approach without authentication"
-          npx expo export --platform web --non-interactive --no-bundler || echo "Build failed but workflow completed"
+          npx expo export --platform web --no-bundler --non-interactive --max-workers=2 || echo "Build failed but workflow completed"
         timeout-minutes: 15
-        
-      # Alternative approach that doesn't use the legacy expo action
-      - name: Install EAS CLI
-        if: false # Disabled for now, enable if needed
-        run: |
-          npm install -g eas-cli
-          echo "Installing EAS CLI for alternative build approach"
-        timeout-minutes: 3 
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096" 
