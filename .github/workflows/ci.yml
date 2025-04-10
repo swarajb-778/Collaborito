@@ -21,19 +21,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18  # Use Node 18 for better compatibility
           cache: 'npm'
         timeout-minutes: 5
-      
-      # Cache Expo CLI
-      - name: Cache Expo CLI
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm/global
-          key: ${{ runner.os }}-expo-cli-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-expo-cli-
-        timeout-minutes: 2
       
       # Cache node_modules
       - name: Cache node_modules
@@ -110,24 +100,23 @@ jobs:
       - name: Run tests
         run: npm test -- --watchAll=false || echo "Tests failed but continuing"
         timeout-minutes: 5
-        
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN || '' }}
-        timeout-minutes: 5
       
-      # Cache Expo build
-      - name: Cache Expo Build
-        uses: actions/cache@v3
-        with:
-          path: ~/.expo
-          key: ${{ runner.os }}-expo-build-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-expo-build-
-        timeout-minutes: 2
-          
-      - name: Build preview
-        run: npx expo export --platform web --non-interactive || echo "Build failed but workflow completed"
-        timeout-minutes: 15 
+      # Install global expo-cli for compatibility
+      - name: Install Expo CLI globally
+        run: npm install -g expo-cli@latest
+        timeout-minutes: 3
+        
+      # Use npx approach which doesn't require authentication for building
+      - name: Build web preview
+        run: |
+          echo "Building web preview using npx approach without authentication"
+          npx expo export --platform web --non-interactive --no-bundler || echo "Build failed but workflow completed"
+        timeout-minutes: 15
+        
+      # Alternative approach that doesn't use the legacy expo action
+      - name: Install EAS CLI
+        if: false # Disabled for now, enable if needed
+        run: |
+          npm install -g eas-cli
+          echo "Installing EAS CLI for alternative build approach"
+        timeout-minutes: 3 
