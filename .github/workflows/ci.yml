@@ -9,11 +9,12 @@ on:
 # Prevent multiple workflow runs from overlapping
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false  # Prevent cancellation of in-progress jobs
+  cancel-in-progress: true  # Cancel in-progress jobs to avoid exceeding the time limit
 
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # Set overall job timeout to 30 minutes
     steps:
       - uses: actions/checkout@v4
       
@@ -22,6 +23,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+        timeout-minutes: 5
       
       # Cache Expo CLI
       - name: Cache Expo CLI
@@ -31,6 +33,7 @@ jobs:
           key: ${{ runner.os }}-expo-cli-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-expo-cli-
+        timeout-minutes: 2
       
       # Cache node_modules
       - name: Cache node_modules
@@ -40,9 +43,11 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-modules-
+        timeout-minutes: 2
           
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+        timeout-minutes: 10
       
       - name: Create .env file
         run: |
@@ -69,22 +74,27 @@ jobs:
             echo "CLAUDE_API_KEY=placeholder" >> .env
           fi
           echo "APP_SCHEME=collaborito" >> .env
+        timeout-minutes: 1
+      
+      - name: Create dummy ESLint config to avoid prompts
+        run: |
+          echo '{"extends": "eslint:recommended"}' > .eslintrc.json
+        timeout-minutes: 1
       
       - name: Run linting
-        continue-on-error: true  # Continue even if linting fails
         run: npm run lint || echo "Linting failed but continuing"
+        timeout-minutes: 5
         
       - name: Run tests
-        continue-on-error: true  # Continue even if tests fail
-        run: npm test || echo "Tests failed but continuing"
+        run: npm test -- --watchAll=false || echo "Tests failed but continuing"
+        timeout-minutes: 5
         
       - name: Setup Expo
-        continue-on-error: true  # Continue even if Expo setup fails
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
-          # Only use token if it exists
           token: ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN || '' }}
+        timeout-minutes: 5
       
       # Cache Expo build
       - name: Cache Expo Build
@@ -94,7 +104,8 @@ jobs:
           key: ${{ runner.os }}-expo-build-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-expo-build-
+        timeout-minutes: 2
           
       - name: Build preview
-        continue-on-error: true  # Continue even if build fails
-        run: npx expo export --platform web || echo "Build failed but workflow completed" 
+        run: npx expo export --platform web --non-interactive || echo "Build failed but workflow completed"
+        timeout-minutes: 15 
