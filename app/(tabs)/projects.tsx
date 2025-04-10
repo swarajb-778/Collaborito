@@ -1,211 +1,413 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  ActivityIndicator,
+  FlatList,
+  useWindowDimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Card } from '@/components/ui/Card';
-import { TextInput } from '@/components/ui/TextInput';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withSequence,
+  withDelay,
+  Easing,
+  FadeIn,
+  SlideInRight,
+  FadeInDown,
+} from 'react-native-reanimated';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { Colors } from '../../constants/Colors';
+import { useColorScheme } from '../../hooks/useColorScheme';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { Card } from '../../components/ui/Card';
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 
-// Project status types
-type ProjectStatus = 'active' | 'completed' | 'archived';
-
-// Project data type
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  image: string;
-  status: ProjectStatus;
-  progress: number;
-  dueDate: string;
-  members: { id: string; name: string; avatar: string }[];
-  tasks: { total: number; completed: number };
-}
-
-// Sample project data
-const PROJECTS: Project[] = [
+// Mock data for projects
+const MOCK_PROJECTS = [
   {
     id: '1',
-    name: 'Mobile App Redesign',
-    description: 'Redesign the mobile app UI/UX for better user experience',
-    image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    status: 'active',
-    progress: 65,
-    dueDate: '2023-08-15',
+    title: 'Mobile App Redesign',
+    description: 'Redesigning the user interface of our flagship mobile application with new features and improved UX.',
+    progress: 68,
+    dueDate: '2023-05-28',
+    category: 'design',
     members: [
-      { id: '1', name: 'Alex Johnson', avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=0D8ABC&color=fff' },
-      { id: '2', name: 'Sarah Chen', avatar: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=10B981&color=fff' },
-      { id: '3', name: 'Michael Wu', avatar: 'https://ui-avatars.com/api/?name=Michael+Wu&background=6366F1&color=fff' },
+      { id: '1', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
+      { id: '2', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
+      { id: '3', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
     ],
-    tasks: { total: 24, completed: 16 },
+    tasks: { total: 12, completed: 8 },
   },
   {
     id: '2',
-    name: 'Website Development',
-    description: 'Build a responsive website for client with modern technologies',
-    image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    status: 'active',
-    progress: 40,
-    dueDate: '2023-09-30',
+    title: 'Brand Identity Guidelines',
+    description: 'Creating comprehensive brand guidelines document with logo usage, typography, and color specifications.',
+    progress: 45,
+    dueDate: '2023-06-15',
+    category: 'marketing',
     members: [
-      { id: '2', name: 'Sarah Chen', avatar: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=10B981&color=fff' },
-      { id: '4', name: 'David Park', avatar: 'https://ui-avatars.com/api/?name=David+Park&background=F59E0B&color=fff' },
+      { id: '4', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' },
+      { id: '5', avatar: 'https://randomuser.me/api/portraits/women/3.jpg' },
     ],
-    tasks: { total: 40, completed: 16 },
+    tasks: { total: 8, completed: 3 },
   },
   {
     id: '3',
-    name: 'Marketing Campaign',
-    description: 'Q3 marketing campaign for product launch',
-    image: 'https://images.unsplash.com/photo-1533750516845-250ce0df2851?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    status: 'completed',
-    progress: 100,
-    dueDate: '2023-06-30',
+    title: 'Backend API Development',
+    description: 'Building RESTful APIs for the new customer management system with authentication and authorization.',
+    progress: 82,
+    dueDate: '2023-05-10',
+    category: 'development',
     members: [
-      { id: '1', name: 'Alex Johnson', avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=0D8ABC&color=fff' },
-      { id: '5', name: 'Jessica Kim', avatar: 'https://ui-avatars.com/api/?name=Jessica+Kim&background=DB2777&color=fff' },
+      { id: '6', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' },
+      { id: '7', avatar: 'https://randomuser.me/api/portraits/women/4.jpg' },
+      { id: '8', avatar: 'https://randomuser.me/api/portraits/men/4.jpg' },
+      { id: '9', avatar: 'https://randomuser.me/api/portraits/women/5.jpg' },
     ],
-    tasks: { total: 18, completed: 18 },
+    tasks: { total: 16, completed: 13 },
   },
   {
     id: '4',
-    name: 'Product Design',
-    description: 'Create wireframes and prototypes for new product features',
-    image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    status: 'active',
-    progress: 80,
-    dueDate: '2023-07-20',
+    title: 'Content Marketing Strategy',
+    description: 'Developing a comprehensive content marketing strategy including blog posts, videos, and social media.',
+    progress: 25,
+    dueDate: '2023-07-05',
+    category: 'marketing',
     members: [
-      { id: '3', name: 'Michael Wu', avatar: 'https://ui-avatars.com/api/?name=Michael+Wu&background=6366F1&color=fff' },
-      { id: '5', name: 'Jessica Kim', avatar: 'https://ui-avatars.com/api/?name=Jessica+Kim&background=DB2777&color=fff' },
-      { id: '6', name: 'Robert Lee', avatar: 'https://ui-avatars.com/api/?name=Robert+Lee&background=4F46E5&color=fff' },
+      { id: '10', avatar: 'https://randomuser.me/api/portraits/women/6.jpg' },
+      { id: '11', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
     ],
-    tasks: { total: 32, completed: 26 },
+    tasks: { total: 10, completed: 2 },
   },
   {
     id: '5',
-    name: 'Content Strategy',
-    description: 'Develop content strategy for social media channels',
-    image: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    status: 'archived',
-    progress: 100,
-    dueDate: '2023-05-15',
+    title: 'E-commerce Platform Integration',
+    description: 'Integrating payment gateways and shipping providers with our e-commerce platform.',
+    progress: 55,
+    dueDate: '2023-06-30',
+    category: 'development',
     members: [
-      { id: '2', name: 'Sarah Chen', avatar: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=10B981&color=fff' },
-      { id: '5', name: 'Jessica Kim', avatar: 'https://ui-avatars.com/api/?name=Jessica+Kim&background=DB2777&color=fff' },
+      { id: '12', avatar: 'https://randomuser.me/api/portraits/men/6.jpg' },
+      { id: '13', avatar: 'https://randomuser.me/api/portraits/women/7.jpg' },
+      { id: '14', avatar: 'https://randomuser.me/api/portraits/men/7.jpg' },
     ],
-    tasks: { total: 15, completed: 15 },
+    tasks: { total: 14, completed: 7 },
   },
 ];
 
+// Categories
+const CATEGORIES = [
+  { id: 'all', label: 'All Projects', icon: 'layer-group' },
+  { id: 'design', label: 'Design', icon: 'paint-brush' },
+  { id: 'development', label: 'Development', icon: 'code' },
+  { id: 'marketing', label: 'Marketing', icon: 'bullhorn' },
+];
+
 export default function ProjectsScreen() {
+  const { user } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
-  // State for filtering and searching
+  const { width } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
   
-  // Filter projects based on search query and status filter
-  const filteredProjects = PROJECTS.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          project.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+  // Animation values
+  const headerOpacity = useSharedValue(0);
+  const searchScale = useSharedValue(0.9);
+  const categoryTranslateY = useSharedValue(100);
+  
+  useEffect(() => {
+    // Animate header
+    headerOpacity.value = withTiming(1, { duration: 800 });
     
-    return matchesSearch && matchesStatus;
-  });
+    // Animate search
+    searchScale.value = withDelay(300, withSpring(1, { damping: 12 }));
+    
+    // Animate categories
+    categoryTranslateY.value = withDelay(600, withSpring(0, { damping: 14 }));
+  }, []);
   
-  // Function to get status color
-  const getStatusColor = (status: ProjectStatus) => {
-    switch (status) {
-      case 'active':
-        return '#10B981'; // green
-      case 'completed':
-        return '#4361EE'; // blue
-      case 'archived':
-        return '#9CA3AF'; // gray
-      default:
-        return colors.text;
-    }
+  // Filter projects based on search query and category
+  useEffect(() => {
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      let filteredProjects = [...MOCK_PROJECTS];
+      
+      // Apply category filter
+      if (selectedCategory !== 'all') {
+        filteredProjects = filteredProjects.filter(
+          (project) => project.category === selectedCategory
+        );
+      }
+      
+      // Apply search filter
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        filteredProjects = filteredProjects.filter(
+          (project) =>
+            project.title.toLowerCase().includes(query) ||
+            project.description.toLowerCase().includes(query)
+        );
+      }
+      
+      setProjects(filteredProjects);
+      setLoading(false);
+    }, 500);
+  }, [searchQuery, selectedCategory]);
+  
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+  }));
+  
+  const searchAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: searchScale.value }],
+  }));
+  
+  const categoryAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: categoryTranslateY.value }],
+  }));
+  
+  // Handler for category selection
+  const handleCategorySelect = (categoryId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedCategory(categoryId);
   };
   
-  // Render project card
-  const renderProjectCard = ({ item }: { item: Project }) => {
-    const statusColor = getStatusColor(item.status);
+  // Handler for project press
+  const handleProjectPress = (projectId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(`/(tabs)/projects/${projectId}` as any);
+  };
+  
+  // Component for category item
+  const CategoryItem = ({ item, isSelected }: { item: typeof CATEGORIES[0], isSelected: boolean }) => {
+    const scale = useSharedValue(1);
+    
+    const onPressIn = () => {
+      scale.value = withTiming(0.95, { duration: 100 });
+    };
+    
+    const onPressOut = () => {
+      scale.value = withTiming(1, { duration: 200 });
+    };
+    
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
     
     return (
-      <Animated.View entering={FadeInDown.delay(100 * parseInt(item.id)).duration(400)}>
+      <Animated.View style={animatedStyle}>
         <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => console.log(`Navigate to project ${item.id}`)}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={() => handleCategorySelect(item.id)}
+          style={[
+            styles.categoryItem,
+            {
+              backgroundColor: isSelected
+                ? colors.primary
+                : colorScheme === 'dark'
+                ? 'rgba(255, 255, 255, 0.1)'
+                : 'rgba(0, 0, 0, 0.05)',
+            },
+          ]}
         >
-          <Card style={styles.projectCard}>
-            <Image 
-              source={{ uri: item.image }} 
-              style={styles.projectImage}
-              resizeMode="cover"
-            />
-            
-            <View style={styles.projectContent}>
-              <View style={styles.projectHeader}>
-                <Text style={[styles.projectName, { color: colors.text }]}>{item.name}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-                  <Text style={[styles.statusText, { color: statusColor }]}>
-                    {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                  </Text>
-                </View>
-              </View>
-              
-              <Text style={[styles.projectDescription, { color: colors.muted }]} numberOfLines={2}>
-                {item.description}
-              </Text>
-              
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBarContainer}>
-                  <View 
-                    style={[
-                      styles.progressBar, 
-                      { 
-                        width: `${item.progress}%`, 
-                        backgroundColor: statusColor 
-                      }
-                    ]} 
-                  />
-                </View>
-                <Text style={[styles.progressText, { color: colors.muted }]}>
-                  {item.progress}%
+          <FontAwesome5
+            name={item.icon}
+            size={14}
+            color={isSelected ? '#FFFFFF' : colors.text}
+            style={styles.categoryIcon}
+          />
+          <Text
+            style={[
+              styles.categoryLabel,
+              { color: isSelected ? '#FFFFFF' : colors.text },
+            ]}
+          >
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+  
+  // Component for project card
+  const ProjectCard = ({ item, index }: { item: typeof MOCK_PROJECTS[0], index: number }) => {
+    const scale = useSharedValue(1);
+    
+    const onPressIn = () => {
+      scale.value = withTiming(0.97, { duration: 100 });
+    };
+    
+    const onPressOut = () => {
+      scale.value = withTiming(1, { duration: 200 });
+    };
+    
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+    
+    const getTaskStatusColor = () => {
+      const ratio = item.tasks.completed / item.tasks.total;
+      if (ratio >= 0.8) return colors.success;
+      if (ratio >= 0.5) return colors.warning;
+      return colors.error;
+    };
+    
+    const getCategoryColor = () => {
+      switch (item.category) {
+        case 'design':
+          return '#8B5CF6'; // Purple
+        case 'development':
+          return '#3F83F8'; // Blue
+        case 'marketing':
+          return '#F59E0B'; // Yellow
+        default:
+          return colors.primary;
+      }
+    };
+    
+    // Calculate days left for the project
+    const getDaysLeft = () => {
+      const dueDate = new Date(item.dueDate);
+      const today = new Date();
+      const diffTime = dueDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    };
+    
+    const daysLeft = getDaysLeft();
+    
+    return (
+      <Animated.View
+        entering={FadeInDown.delay(index * 100).springify()}
+        style={animatedStyle}
+      >
+        <TouchableOpacity
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={() => handleProjectPress(item.id)}
+          activeOpacity={0.9}
+        >
+          <Card style={[styles.projectCard, { backgroundColor: colors.card }]}>
+            <View style={styles.projectHeader}>
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: getCategoryColor() + '30' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    { color: getCategoryColor() },
+                  ]}
+                >
+                  {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
                 </Text>
               </View>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressTextContainer}>
+                  <Text style={[styles.progressText, { color: colors.text }]}>{item.progress}%</Text>
+                </View>
+                <View
+                  style={[
+                    styles.progressBackground,
+                    { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${item.progress}%`,
+                        backgroundColor: getCategoryColor(),
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+            
+            <Text style={[styles.projectTitle, { color: colors.text }]}>{item.title}</Text>
+            <Text
+              style={[styles.projectDescription, { color: colors.muted }]}
+              numberOfLines={2}
+            >
+              {item.description}
+            </Text>
+            
+            <View style={styles.projectFooter}>
+              <View style={styles.membersContainer}>
+                {item.members.slice(0, 3).map((member, memberIndex) => (
+                  <Image
+                    key={member.id}
+                    source={{ uri: member.avatar }}
+                    style={[
+                      styles.memberAvatar,
+                      { marginLeft: memberIndex > 0 ? -8 : 0 },
+                    ]}
+                  />
+                ))}
+                {item.members.length > 3 && (
+                  <View style={[styles.memberMore, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.memberMoreText}>+{item.members.length - 3}</Text>
+                  </View>
+                )}
+              </View>
               
-              <View style={styles.projectFooter}>
-                <View style={styles.avatarsContainer}>
-                  {item.members.slice(0, 3).map((member, index) => (
-                    <Image 
-                      key={member.id}
-                      source={{ uri: member.avatar }}
-                      style={[
-                        styles.memberAvatar,
-                        { marginLeft: index > 0 ? -10 : 0 }
-                      ]}
-                    />
-                  ))}
-                  
-                  {item.members.length > 3 && (
-                    <View style={styles.extraMembersContainer}>
-                      <Text style={styles.extraMembersText}>
-                        +{item.members.length - 3}
-                      </Text>
-                    </View>
-                  )}
+              <View style={styles.projectStats}>
+                <View style={styles.projectStat}>
+                  <FontAwesome5 name="tasks" size={12} color={getTaskStatusColor()} />
+                  <Text style={[styles.projectStatText, { color: colors.muted }]}>
+                    {item.tasks.completed}/{item.tasks.total} tasks
+                  </Text>
                 </View>
                 
-                <View style={styles.taskContainer}>
-                  <FontAwesome5 name="tasks" size={14} color={colors.muted} />
-                  <Text style={[styles.taskText, { color: colors.muted }]}>
-                    {item.tasks.completed}/{item.tasks.total}
+                <View
+                  style={[
+                    styles.projectStat,
+                    { marginLeft: 12 },
+                  ]}
+                >
+                  <FontAwesome5
+                    name="calendar-day"
+                    size={12}
+                    color={daysLeft <= 0 ? colors.error : daysLeft <= 3 ? colors.warning : colors.muted}
+                  />
+                  <Text
+                    style={[
+                      styles.projectStatText,
+                      {
+                        color:
+                          daysLeft <= 0
+                            ? colors.error
+                            : daysLeft <= 3
+                            ? colors.warning
+                            : colors.muted,
+                      },
+                    ]}
+                  >
+                    {daysLeft <= 0
+                      ? 'Overdue'
+                      : daysLeft === 1
+                      ? '1 day left'
+                      : `${daysLeft} days left`}
                   </Text>
                 </View>
               </View>
@@ -216,115 +418,118 @@ export default function ProjectsScreen() {
     );
   };
   
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={[colors.primary, colorScheme === 'dark' ? colors.background : colors.secondary]}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Projects</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => console.log('Add new project')}
-          >
-            <FontAwesome5 name="plus" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-      
-      <View style={styles.searchContainer}>
-        <TextInput
-          placeholder="Search projects..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          leftIcon={<FontAwesome5 name="search" size={16} color={colors.muted} />}
-          style={styles.searchInput}
-        />
-      </View>
-      
-      <View style={styles.filterContainer}>
-        <ScrollableTabs
-          tabs={[
-            { id: 'all', label: 'All' },
-            { id: 'active', label: 'Active' },
-            { id: 'completed', label: 'Completed' },
-            { id: 'archived', label: 'Archived' }
-          ]}
-          selectedTab={statusFilter}
-          onSelectTab={(id) => setStatusFilter(id as any)}
-          colors={colors}
-        />
-      </View>
-      
-      <FlatList
-        data={filteredProjects}
-        renderItem={renderProjectCard}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <FontAwesome5 name="folder-open" size={50} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>
-              No projects found
-            </Text>
-            <Button
-              onPress={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-              }}
-              variant="secondary"
-              style={styles.resetButton}
-            >
-              Reset Filters
-            </Button>
-          </View>
-        }
-      />
+  // Render empty state if no projects found
+  const renderEmptyState = () => (
+    <View style={styles.emptyStateContainer}>
+      <FontAwesome5 name="folder-open" size={50} color={colors.muted} />
+      <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+        No projects found
+      </Text>
+      <Text style={[styles.emptyStateDescription, { color: colors.muted }]}>
+        {searchQuery.trim() !== '' ? 
+          'Try changing your search query' : 
+          'Create a new project to get started'}
+      </Text>
     </View>
   );
-}
+  
+  if (!user) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
-// Scrollable tabs component for filters
-interface Tab {
-  id: string;
-  label: string;
-}
-
-function ScrollableTabs({ 
-  tabs, 
-  selectedTab, 
-  onSelectTab,
-  colors
-}: { 
-  tabs: Tab[]; 
-  selectedTab: string; 
-  onSelectTab: (id: string) => void;
-  colors: any;
-}) {
   return (
-    <View style={styles.tabsContainer}>
-      {tabs.map(tab => (
-        <TouchableOpacity
-          key={tab.id}
-          style={[
-            styles.tab,
-            selectedTab === tab.id && [styles.selectedTab, { borderColor: colors.primary }]
-          ]}
-          onPress={() => onSelectTab(tab.id)}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <Animated.View style={[styles.header, headerAnimatedStyle]}>
+        <LinearGradient
+          colors={[colors.primary, colors.secondary]}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <Text 
-            style={[
-              styles.tabText, 
-              { color: colors.text },
-              selectedTab === tab.id && { color: colors.primary, fontWeight: 'bold' }
-            ]}
-          >
-            {tab.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Projects</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/(tabs)/projects/new' as any);
+              }}
+            >
+              <FontAwesome5 name="plus" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </Animated.View>
+      
+      {/* Search Bar */}
+      <Animated.View style={[styles.searchContainer, searchAnimatedStyle]}>
+        <View
+          style={[
+            styles.searchBar,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <FontAwesome5
+            name="search"
+            size={16}
+            color={colors.muted}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search projects..."
+            placeholderTextColor={colors.muted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+            >
+              <FontAwesome5 name="times-circle" size={16} color={colors.muted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </Animated.View>
+      
+      {/* Categories */}
+      <Animated.View style={[styles.categoriesContainer, categoryAnimatedStyle]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {CATEGORIES.map((category) => (
+            <CategoryItem
+              key={category.id}
+              item={category}
+              isSelected={selectedCategory === category.id}
+            />
+          ))}
+        </ScrollView>
+      </Animated.View>
+      
+      {/* Projects List */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={projects}
+          renderItem={({ item, index }) => <ProjectCard item={item} index={index} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.projectsContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyState}
+        />
+      )}
     </View>
   );
 }
@@ -334,17 +539,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    width: '100%',
+    height: 150,
+  },
+  headerGradient: {
+    flex: 1,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'hidden',
   },
   headerContent: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
@@ -352,106 +565,120 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   searchContainer: {
     paddingHorizontal: 16,
-    marginTop: -20,
     marginBottom: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+  },
+  searchIcon: {
+    marginRight: 10,
   },
   searchInput: {
-    marginBottom: 0,
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 4,
   },
-  filterContainer: {
-    paddingHorizontal: 16,
+  clearButton: {
+    padding: 4,
   },
-  tabsContainer: {
-    flexDirection: 'row',
+  categoriesContainer: {
     marginBottom: 16,
   },
-  tab: {
+  categoriesContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginRight: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
-  selectedTab: {
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+  categoryIcon: {
+    marginRight: 6,
   },
-  tabText: {
+  categoryLabel: {
     fontSize: 14,
+    fontWeight: '500',
   },
-  listContainer: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  projectsContent: {
     padding: 16,
-    paddingTop: 8,
+    paddingBottom: 80,
+    gap: 16,
   },
   projectCard: {
-    marginBottom: 16,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  projectImage: {
-    width: '100%',
-    height: 120,
-  },
-  projectContent: {
+    borderRadius: 16,
     padding: 16,
   },
   projectHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  projectName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    marginRight: 8,
-  },
-  statusBadge: {
+  categoryBadge: {
     paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 12,
+    borderRadius: 10,
   },
-  statusText: {
+  categoryText: {
     fontSize: 12,
     fontWeight: '500',
   },
-  projectDescription: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  progressBarContainer: {
     flex: 1,
-    height: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 4,
-    marginRight: 8,
+    marginLeft: 12,
   },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
+  progressTextContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 4,
   },
   progressText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  progressBackground: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  projectTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  projectDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
   },
   projectFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  avatarsContainer: {
+  membersContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -460,44 +687,48 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: 'white',
   },
-  extraMembersContainer: {
+  memberMore: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -10,
+    alignItems: 'center',
+    marginLeft: -8,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: 'white',
   },
-  extraMembersText: {
+  memberMoreText: {
+    color: 'white',
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666666',
+    fontWeight: '600',
   },
-  taskContainer: {
+  projectStats: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  taskText: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 6,
+  projectStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  emptyContainer: {
+  projectStatText: {
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  emptyStateContainer: {
+    padding: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
   },
-  emptyText: {
-    fontSize: 16,
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginTop: 16,
-    marginBottom: 20,
+    marginBottom: 8,
   },
-  resetButton: {
-    paddingHorizontal: 20,
+  emptyStateDescription: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 }); 

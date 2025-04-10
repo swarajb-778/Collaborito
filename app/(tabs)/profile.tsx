@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -32,6 +30,14 @@ const USER = {
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { user, signOut } = useAuth();
+  
+  // Determine theme-based styles
+  const themeStyles = {
+    backgroundColor: colorScheme === 'dark' ? '#121212' : '#fff',
+    textColor: colorScheme === 'dark' ? '#fff' : '#000',
+    cardBackground: colorScheme === 'dark' ? '#1E1E1E' : '#fff',
+    mutedTextColor: colorScheme === 'dark' ? '#BBBBBB' : '#666666',
+  };
   
   useEffect(() => {
     // Log the user info to verify what data we have

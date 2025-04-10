@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from '../components/ui/TextInput';
 import { Button } from '../components/ui/Button';
@@ -9,12 +9,10 @@ import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useRouter, router as globalRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring, interpolateColor } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
-
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function LoginScreen() {
   console.log('Rendering LoginScreen');

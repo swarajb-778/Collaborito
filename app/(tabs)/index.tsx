@@ -1,235 +1,358 @@
-import React from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolate } from 'react-native-reanimated';
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { Colors } from '../../constants/Colors';
+import { useColorScheme } from '../../hooks/useColorScheme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+  FadeIn,
+  SlideInRight,
+} from 'react-native-reanimated';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import * as Haptics from 'expo-haptics';
+import { Card } from '../../components/ui/Card';
+import { router } from 'expo-router';
 
-// Placeholder data for recent activity
-const RECENT_ACTIVITY = [
+// Mock data for recent activities
+const RECENT_ACTIVITIES = [
   {
     id: '1',
-    type: 'message',
-    project: 'Mobile App Development',
-    user: {
-      name: 'Sarah Johnson',
-      avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=0D8ABC&color=fff',
-    },
-    content: 'added new wireframes to the project',
-    timestamp: '2 hours ago',
+    type: 'comment',
+    title: 'Jane Smith commented on Mobile App Redesign',
+    time: '10 minutes ago',
+    avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
   },
   {
     id: '2',
     type: 'task',
-    project: 'Website Redesign',
-    user: {
-      name: 'Alex Chen',
-      avatar: 'https://ui-avatars.com/api/?name=Alex+Chen&background=6366F1&color=fff',
-    },
-    content: 'completed task "Update color palette"',
-    timestamp: '4 hours ago',
+    title: 'Task "Create wireframes" marked as complete',
+    time: '2 hours ago',
+    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
   },
   {
     id: '3',
-    type: 'invite',
-    project: 'Marketing Campaign',
-    user: {
-      name: 'Marketing Team',
-      avatar: 'https://ui-avatars.com/api/?name=Marketing+Team&background=10B981&color=fff',
-    },
-    content: 'invited you to join the project',
-    timestamp: 'Yesterday',
+    type: 'project',
+    title: 'You were added to Web Development project',
+    time: '1 day ago',
+    avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
+  },
+  {
+    id: '4',
+    type: 'meeting',
+    title: 'Team meeting scheduled for tomorrow at 10 AM',
+    time: '2 days ago',
+    avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
   },
 ];
 
-// Placeholder stats
+// Mock statistics
 const STATS = [
-  { id: '1', label: 'Projects', value: 8, icon: 'project-diagram', color: '#4361EE' },
-  { id: '2', label: 'Tasks', value: 17, icon: 'tasks', color: '#F59E0B' },
-  { id: '3', label: 'Messages', value: 24, icon: 'comment-dots', color: '#10B981' },
+  { id: '1', title: 'Projects', value: 5, icon: 'briefcase', color: '#4361EE' },
+  { id: '2', title: 'Tasks', value: 12, icon: 'tasks', color: '#3F83F8' },
+  { id: '3', title: 'Messages', value: 8, icon: 'comment-alt', color: '#8B5CF6' },
 ];
 
-export default function HomeScreen() {
+// Quick action items
+const QUICK_ACTIONS = [
+  { id: '1', title: 'New Project', icon: 'plus-square', color: '#4361EE', route: '/(tabs)/projects' },
+  { id: '2', title: 'Start Meeting', icon: 'video', color: '#3F83F8', route: '/(tabs)/projects' },
+  { id: '3', title: 'Add Task', icon: 'clipboard-list', color: '#8B5CF6', route: '/(tabs)/projects' },
+  { id: '4', title: 'Send Message', icon: 'paper-plane', color: '#10B981', route: '/(tabs)/messages' },
+];
+
+export default function Dashboard() {
+  const { user } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { user } = useAuth();
   
   // Animation values
-  const scrollY = useSharedValue(0);
+  const headerOpacity = useSharedValue(0);
+  const statsScale = useSharedValue(0.8);
+  const activityOpacity = useSharedValue(0);
+  const quickActionsTranslateY = useSharedValue(100);
   
-  const handleScroll = (event: any) => {
-    scrollY.value = event.nativeEvent.contentOffset.y;
+  // Animate stats values
+  const animatedStats = STATS.map(stat => ({
+    ...stat,
+    animatedValue: useSharedValue(0),
+  }));
+  
+  useEffect(() => {
+    // Animate header
+    headerOpacity.value = withTiming(1, { duration: 800 });
+    
+    // Animate stats
+    statsScale.value = withDelay(400, withTiming(1, { duration: 800 }));
+    
+    // Animate activity section
+    activityOpacity.value = withDelay(600, withTiming(1, { duration: 800 }));
+    
+    // Animate quick actions
+    quickActionsTranslateY.value = withDelay(800, withTiming(0, { duration: 800 }));
+    
+    // Animate stat numbers
+    animatedStats.forEach((stat, index) => {
+      stat.animatedValue.value = withDelay(
+        500 + index * 100,
+        withTiming(stat.value, { duration: 1500, easing: Easing.out(Easing.cubic) })
+      );
+    });
+  }, []);
+  
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+  }));
+  
+  const statsAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: statsScale.value }],
+  }));
+  
+  const activityAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: activityOpacity.value,
+  }));
+  
+  const quickActionsAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: quickActionsTranslateY.value }],
+  }));
+  
+  // Handle button press with haptic feedback
+  const handleQuickAction = (route: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(route as any);
   };
   
-  const headerAnimatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      scrollY.value,
-      [0, 100],
-      [1, 0.9],
-      { extrapolateRight: 'clamp' }
-    );
+  // Component for the activity item
+  const ActivityItem = ({ item }: { item: typeof RECENT_ACTIVITIES[0] }) => {
+    const scale = useSharedValue(1);
     
-    const translateY = interpolate(
-      scrollY.value,
-      [0, 100],
-      [0, -20],
-      { extrapolateRight: 'clamp' }
-    );
-    
-    return {
-      transform: [
-        { scale },
-        { translateY },
-      ],
+    const onPressIn = () => {
+      scale.value = withTiming(0.97, { duration: 100 });
     };
-  });
-
-  const renderActivityItem = (item: typeof RECENT_ACTIVITY[0]) => {
-    let iconName = '';
-    let iconColor = '';
     
-    switch (item.type) {
-      case 'message':
-        iconName = 'comment-dots';
-        iconColor = colors.secondary;
-        break;
-      case 'task':
-        iconName = 'check-circle';
-        iconColor = colors.success;
-        break;
-      case 'invite':
-        iconName = 'user-plus';
-        iconColor = colors.tertiary;
-        break;
-    }
+    const onPressOut = () => {
+      scale.value = withTiming(1, { duration: 200 });
+    };
+    
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
     
     return (
-      <TouchableOpacity 
-        key={item.id}
-        style={[styles.activityItem, { borderBottomColor: colors.border }]}
-        activeOpacity={0.7}
-        onPress={() => console.log(`Navigate to ${item.type} ${item.id}`)}
+      <Animated.View entering={SlideInRight.delay(300).springify()} style={animatedStyle}>
+        <TouchableOpacity
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={0.8}
+          style={[styles.activityItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
+          <View style={styles.activityItemLeft}>
+            <Image source={{ uri: item.avatar }} style={styles.activityAvatar} />
+            <View style={styles.activityContent}>
+              <Text style={[styles.activityTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.activityTime, { color: colors.muted }]}>{item.time}</Text>
+            </View>
+          </View>
+          <View style={[styles.activityBadge, { backgroundColor: colors.primary + '20' }]}>
+            <FontAwesome5
+              name={
+                item.type === 'comment'
+                  ? 'comment'
+                  : item.type === 'task'
+                  ? 'check-circle'
+                  : item.type === 'project'
+                  ? 'folder-plus'
+                  : 'calendar'
+              }
+              size={12}
+              color={colors.primary}
+            />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+  
+  // Component for the stat card
+  const StatCard = ({ item }: { item: typeof animatedStats[0] }) => {
+    const animatedValueStyle = useAnimatedStyle(() => {
+      return {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: item.color,
+      };
+    });
+    
+    const animatedTextValue = useAnimatedStyle(() => {
+      return {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: item.color,
+      };
+    });
+    
+    return (
+      <Card
+        style={[
+          styles.statCard,
+          { backgroundColor: colors.card, borderColor: colors.border }
+        ]}
       >
-        <View style={[styles.activityIconContainer, { backgroundColor: `${iconColor}20` }]}>
-          <FontAwesome5 name={iconName} size={16} color={iconColor} />
+        <View style={styles.statIconContainer}>
+          <LinearGradient
+            colors={[item.color + '40', item.color + '10']}
+            style={styles.statIconBackground}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <FontAwesome5 name={item.icon} size={20} color={item.color} />
+          </LinearGradient>
         </View>
-        
-        <View style={styles.activityContent}>
-          <View style={styles.activityHeader}>
-            <Image source={{ uri: item.user.avatar }} style={styles.activityAvatar} />
-            <Text style={[styles.activityUserName, { color: colors.text }]}>{item.user.name}</Text>
-          </View>
-          
-          <Text style={[styles.activityText, { color: colors.text }]}>
-            {item.content}
-          </Text>
-          
-          <View style={styles.activityFooter}>
-            <Text style={[styles.activityProject, { color: colors.primary }]}>
-              {item.project}
-            </Text>
-            <Text style={[styles.activityTimestamp, { color: colors.muted }]}>
-              {item.timestamp}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+        <Animated.Text style={animatedTextValue}>
+          {Math.round(item.animatedValue.value)}
+        </Animated.Text>
+        <Text style={[styles.statTitle, { color: colors.muted }]}>{item.title}</Text>
+      </Card>
+    );
+  };
+  
+  // Component for the quick action button
+  const QuickActionButton = ({ item }: { item: typeof QUICK_ACTIONS[0] }) => {
+    const scale = useSharedValue(1);
+    
+    const onPressIn = () => {
+      scale.value = withTiming(0.92, { duration: 100 });
+    };
+    
+    const onPressOut = () => {
+      scale.value = withSequence(
+        withTiming(1.05, { duration: 100 }),
+        withTiming(1, { duration: 150 })
+      );
+    };
+    
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+    
+    return (
+      <Animated.View style={[styles.quickActionContainer, animatedStyle]}>
+        <TouchableOpacity
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={() => handleQuickAction(item.route)}
+          style={styles.quickActionButton}
+        >
+          <LinearGradient
+            colors={[item.color, item.color + 'AA']}
+            style={styles.quickActionGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <FontAwesome5 name={item.icon} size={22} color="#FFF" />
+          </LinearGradient>
+          <Text style={[styles.quickActionTitle, { color: colors.text }]}>{item.title}</Text>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
+  if (!user) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Animated.View style={[styles.header, headerAnimatedStyle]}>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header Section */}
+      <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
-          colors={[colors.primary, colorScheme === 'dark' ? colors.background : colors.secondary]}
+          colors={[colors.primary, colors.secondary]}
           style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.welcomeText}>Welcome back,</Text>
-              <Text style={styles.userName}>{user?.user_metadata?.full_name || 'User'}</Text>
+              <Text style={styles.userName}>
+                {user.firstName} {user.lastName}
+              </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => console.log('Navigate to profile')}
-            >
-              <Image 
-                source={{ 
-                  uri: user?.user_metadata?.avatar_url || 
-                    'https://ui-avatars.com/api/?name=User&background=3F83F8&color=fff'
-                }}
-                style={styles.userAvatar}
-              />
-            </TouchableOpacity>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoText}>C</Text>
+            </View>
           </View>
         </LinearGradient>
       </Animated.View>
-      
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        <View style={styles.statsContainer}>
-          {STATS.map(stat => (
-            <Card key={stat.id} style={styles.statCard} variant="elevated">
-              <View style={[styles.statIconContainer, { backgroundColor: `${stat.color}20` }]}>
-                <FontAwesome5 name={stat.icon} size={20} color={stat.color} />
-              </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>{stat.label}</Text>
-            </Card>
-          ))}
-        </View>
-        
+
+      {/* Stats Section */}
+      <Animated.View style={[styles.statsContainer, statsAnimatedStyle]}>
+        <FlatList
+          data={animatedStats}
+          renderItem={({ item }) => <StatCard item={item} />}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statsContent}
+        />
+      </Animated.View>
+
+      {/* Recent Activity Section */}
+      <Animated.View style={[styles.sectionContainer, activityAnimatedStyle]}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
-          <TouchableOpacity>
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>See all</Text>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          >
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>
         
-        <Card style={styles.activityCard}>
-          {RECENT_ACTIVITY.map(renderActivityItem)}
-          
-          {RECENT_ACTIVITY.length === 0 && (
-            <View style={styles.emptyActivity}>
-              <FontAwesome5 name="history" size={40} color={colors.muted} />
-              <Text style={[styles.emptyActivityText, { color: colors.muted }]}>
-                No recent activity
-              </Text>
-            </View>
-          )}
-        </Card>
+        <View style={styles.activitiesContainer}>
+          {RECENT_ACTIVITIES.map((item) => (
+            <ActivityItem key={item.id} item={item} />
+          ))}
+        </View>
+      </Animated.View>
+
+      {/* Quick Actions Section */}
+      <Animated.View style={[styles.sectionContainer, quickActionsAnimatedStyle]}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+        </View>
         
-        <Card style={styles.aiCard}>
-          <View style={styles.aiCardHeader}>
-            <View style={styles.aiIconContainer}>
-              <FontAwesome5 name="robot" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={[styles.aiCardTitle, { color: colors.text }]}>AI Assistant</Text>
-          </View>
-          
-          <Text style={[styles.aiCardDescription, { color: colors.muted }]}>
-            Use Claude AI to generate tasks, summarize discussions, or get help with your projects.
-          </Text>
-          
-          <Button
-            onPress={() => console.log('Open AI Assistant')}
-            style={styles.aiCardButton}
-            variant="primary"
-            rightIcon={<FontAwesome5 name="arrow-right" size={14} color="#FFFFFF" />}
-          >
-            Open Assistant
-          </Button>
-        </Card>
-      </ScrollView>
-    </View>
+        <View style={styles.quickActionsGrid}>
+          {QUICK_ACTIONS.map((item) => (
+            <QuickActionButton key={item.id} item={item} />
+          ))}
+        </View>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
@@ -237,19 +360,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  contentContainer: {
+    paddingBottom: 30,
+  },
+  headerContainer: {
+    width: '100%',
+    height: 180,
+    marginBottom: 16,
   },
   headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
+    flex: 1,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'hidden',
   },
   headerContent: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -264,53 +392,63 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  userAvatar: {
+  logoContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 140,
-    paddingBottom: 40,
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
+  statsContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   statCard: {
-    width: '30%',
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
   },
   statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 8,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  statIconBackground: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  statLabel: {
-    fontSize: 14,
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  statTitle: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  sectionContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
@@ -318,94 +456,72 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 14,
+    fontWeight: '500',
   },
-  activityCard: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    padding: 0,
+  activitiesContainer: {
+    gap: 12,
   },
   activityItem: {
     flexDirection: 'row',
-    padding: 16,
-    borderBottomWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  activityIconContainer: {
+  activityItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  activityAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
   },
   activityContent: {
+    marginLeft: 12,
     flex: 1,
   },
-  activityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  activityTitle: {
+    fontSize: 14,
+    fontWeight: '500',
     marginBottom: 4,
   },
-  activityAvatar: {
+  activityTime: {
+    fontSize: 12,
+  },
+  activityBadge: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
-  activityUserName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activityText: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  activityFooter: {
+  quickActionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  activityProject: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  activityTimestamp: {
-    fontSize: 12,
-  },
-  emptyActivity: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyActivityText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-  aiCard: {
-    marginHorizontal: 16,
+  quickActionContainer: {
+    width: '48%',
     marginBottom: 16,
-    backgroundColor: '#F0F5FF', // Light blue background for AI card
   },
-  aiCardHeader: {
-    flexDirection: 'row',
+  quickActionButton: {
     alignItems: 'center',
-    marginBottom: 12,
   },
-  aiIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4361EE',
-    alignItems: 'center',
+  quickActionGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
-    marginRight: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  aiCardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  aiCardDescription: {
+  quickActionTitle: {
     fontSize: 14,
-    marginBottom: 16,
-  },
-  aiCardButton: {
-    alignSelf: 'flex-end',
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
