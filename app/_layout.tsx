@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
-import { useColorScheme, View, ActivityIndicator } from 'react-native';
+import { useColorScheme, View, ActivityIndicator, Text, Platform } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,39 +26,59 @@ const LoadingScreen = () => (
 
 // Root layout component that wraps the entire app
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+  // Try to use the system monospace font as a fallback if SpaceMono fails
+  const monospaceFontFamily = Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'monospace',
+  });
+
+  const [fontsLoaded] = useFonts({
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) {
-      logger.error('Error loading fonts:', error);
-    }
-  }, [error]);
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
-    if (loaded) {
+    async function prepare() {
+      try {
+        // Keep the splash screen visible while we prepare
+        await SplashScreen.preventAutoHideAsync();
+        
+        // Artificial delay to let things load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (e) {
+        logger.error('Error preparing app:', e);
+      } finally {
+        // Tell the application to render
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  useEffect(() => {
+    if (appIsReady && fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {
         /* ignore errors */
       });
     }
-  }, [loaded]);
+  }, [appIsReady, fontsLoaded]);
 
-  if (!loaded) {
+  if (!appIsReady || !fontsLoaded) {
     return <LoadingScreen />;
   }
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <RootLayoutNav monospaceFontFamily={monospaceFontFamily} />
     </AuthProvider>
   );
 }
 
 // Navigation component that handles auth state and initial route
-function RootLayoutNav() {
+function RootLayoutNav({ monospaceFontFamily }: { monospaceFontFamily: string }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [hasCompletedWelcome, setHasCompletedWelcome] = useState<boolean | null>(null);
   const colorScheme = useColorScheme();

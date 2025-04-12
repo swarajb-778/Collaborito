@@ -8,6 +8,13 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function TabTwoScreen() {
+  // Get the system monospace font
+  const monospaceFontFamily = Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'monospace',
+  });
+  
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -57,7 +64,7 @@ export default function TabTwoScreen() {
       <Collapsible title="Custom fonts">
         <ThemedText>
           Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
+          <ThemedText style={{ fontFamily: monospaceFontFamily }}>
             custom fonts such as this one.
           </ThemedText>
         </ThemedText>

@@ -54,9 +54,6 @@
       }
     },
     "owner": "swaraj77",
-    "fonts": [
-      "./assets/fonts/SpaceMono-Regular.ttf"
-    ],
     "newArchEnabled": true
   }
 }
