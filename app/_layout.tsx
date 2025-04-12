@@ -9,7 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createLogger } from '../src/utils/logger';
 
 // Keep the splash screen visible until ready
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* ignore errors */
+});
 
 const WELCOME_COMPLETED_KEY = 'welcome_completed';
 
@@ -25,23 +27,27 @@ const LoadingScreen = () => (
 // Root layout component that wraps the entire app
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      logger.error('Error loading fonts:', error);
+    }
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        /* ignore errors */
+      });
     }
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return <LoadingScreen />;
   }
 
   return (

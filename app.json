@@ -53,6 +53,10 @@
         "projectId": "your-eas-project-id"
       }
     },
-    "owner": "swaraj77"
+    "owner": "swaraj77",
+    "fonts": [
+      "./assets/fonts/SpaceMono-Regular.ttf"
+    ],
+    "newArchEnabled": true
   }
 }
