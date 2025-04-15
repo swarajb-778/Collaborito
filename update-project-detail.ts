@@ -1,4 +1,23 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * Script to implement Supabase integration for the Project detail screen
+ * 
+ * This script will:
+ * 1. Update the Project detail screen to fetch real data from Supabase
+ * 2. Implement proper error handling and loading states
+ * 3. Add functionality for project actions (edit, add task)
+ */
+
+import fs from 'fs';
+import path from 'path';
+
+// Path to the project detail screen
+const projectDetailPath = path.join(process.cwd(), 'app/projects/[id].tsx');
+
+// Read the current implementation
+const currentImplementation = fs.readFileSync(projectDetailPath, 'utf-8');
+
+// Updated implementation with Supabase integration
+const updatedImplementation = `import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,7 +59,7 @@ export default function ProjectDetail() {
           .single();
           
         if (projectError) {
-          throw new Error(`Error fetching project: ${projectError.message}`);
+          throw new Error(\`Error fetching project: \${projectError.message}\`);
         }
         
         setProject(projectData);
@@ -48,10 +67,10 @@ export default function ProjectDetail() {
         // Fetch project members with profiles
         const { data: memberData, error: memberError } = await supabase
           .from('project_members')
-          .select(`
+          .select(\`
             *,
             profile:profiles(*)
-          `)
+          \`)
           .eq('project_id', id);
           
         if (memberError) {
@@ -93,13 +112,13 @@ export default function ProjectDetail() {
   const handleEditProject = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Navigate to edit project screen
-    router.push(`/projects/${id}/edit`);
+    router.push(\`/projects/\${id}/edit\`);
   };
   
   const handleAddTask = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Navigate to add task screen
-    router.push(`/projects/${id}/tasks/new`);
+    router.push(\`/projects/\${id}/tasks/new\`);
   };
   
   const renderTaskStatus = (status: string) => {
@@ -115,7 +134,7 @@ export default function ProjectDetail() {
     return (
       <View style={[styles.statusBadge, { backgroundColor: style.bg }]}>
         <Text style={[styles.statusText, { color: style.text }]}>
-          {status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          {status.replace('_', ' ').replace(/\\b\\w/g, l => l.toUpperCase())}
         </Text>
       </View>
     );
@@ -186,7 +205,7 @@ export default function ProjectDetail() {
               Progress: {progressPercentage}%
             </Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+              <View style={[styles.progressFill, { width: \`\${progressPercentage}%\` }]} />
             </View>
           </View>
 
@@ -239,7 +258,7 @@ export default function ProjectDetail() {
                 <Pressable
                   key={task.id}
                   style={styles.taskItem}
-                  onPress={() => router.push(`/projects/${id}/tasks/${task.id}`)}
+                  onPress={() => router.push(\`/projects/\${id}/tasks/\${task.id}\`)}
                 >
                   <View style={styles.taskInfo}>
                     <Text style={[styles.taskTitle, { color: Colors[theme].text }]}>
@@ -248,7 +267,7 @@ export default function ProjectDetail() {
                     {renderTaskStatus(task.status)}
                   </View>
                   <Text style={[styles.taskAssignee, { color: Colors[theme].muted }]}>
-                    {task.due_date ? `Due: ${new Date(task.due_date).toLocaleDateString()}` : 'No due date'}
+                    {task.due_date ? \`Due: \${new Date(task.due_date).toLocaleDateString()}\` : 'No due date'}
                   </Text>
                 </Pressable>
               ))
@@ -456,4 +475,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
   },
-});
+});`;
+
+// Write the updated implementation to the file
+fs.writeFileSync(projectDetailPath, updatedImplementation);
+
+console.log('Project detail screen has been updated with Supabase integration!');
+console.log('The implementation includes:');
+console.log('- Real-time data fetching from Supabase');
+console.log('- Proper loading and error states');
+console.log('- Navigation to edit project and add tasks');
+console.log('- Progress calculation based on completed tasks');
+console.log('- Displaying project members and tasks from the database');
+
+// Note: This is just a script to update the file. In a real scenario,
+// you would want to also implement the edit project and add task screens.
+console.log('\nNext steps:');
+console.log('1. Implement the project edit screen at "/projects/[id]/edit"');
+console.log('2. Implement the task creation screen at "/projects/[id]/tasks/new"');
+console.log('3. Implement the task detail screen at "/projects/[id]/tasks/[taskId]"'); 
