@@ -13,6 +13,8 @@ export function useAuthRedirect() {
       return;
     }
 
+    console.log('Current segments:', segments);
+
     // Check if the user is on the login screen or welcome screens
     const isLoginScreen = segments[0] === 'login';
     const isWelcomeScreen = segments[0] === 'welcome';
@@ -22,7 +24,7 @@ export function useAuthRedirect() {
       router.replace('/welcome');
     }
 
-    // If signed in and on login, redirect to home
+    // If signed in and on login or welcome, redirect to home
     if (user && (isLoginScreen || isWelcomeScreen)) {
       router.replace('/');
     }
