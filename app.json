@@ -53,6 +53,7 @@
         "projectId": "your-eas-project-id"
       }
     },
-    "owner": "swaraj77"
+    "owner": "swaraj77",
+    "newArchEnabled": true
   }
 }
