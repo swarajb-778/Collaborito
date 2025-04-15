@@ -57,6 +57,7 @@ function RootLayoutNav() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="register" options={{ headerShown: false, presentation: 'fullScreenModal' }} />

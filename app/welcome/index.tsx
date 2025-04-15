@@ -13,97 +13,40 @@ import {
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Button } from '../../components/ui/Button';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-// Gallery component to display images
+// Gallery component to display grid of images
 const Gallery = () => {
-  // Animation values for image opacity
-  const opacity1 = useRef(new Animated.Value(1)).current;
-  const opacity2 = useRef(new Animated.Value(0)).current;
-  const opacity3 = useRef(new Animated.Value(0)).current;
-
-  // Set up animation sequence
-  useEffect(() => {
-    const startAnimation = () => {
-      // Sequence to fade between images
-      Animated.sequence([
-        // Show image 1
-        Animated.timing(opacity1, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.delay(2000),
-        // Fade to image 2
-        Animated.parallel([
-          Animated.timing(opacity1, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacity2, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(2000),
-        // Fade to image 3
-        Animated.parallel([
-          Animated.timing(opacity2, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacity3, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(2000),
-        // Fade back to image 1
-        Animated.parallel([
-          Animated.timing(opacity3, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacity1, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start(() => {
-        // Restart animation
-        startAnimation();
-      });
-    };
-
-    startAnimation();
-    
-    // Clean up animations on unmount
-    return () => {
-      opacity1.stopAnimation();
-      opacity2.stopAnimation();
-      opacity3.stopAnimation();
-    };
-  }, []);
-
   return (
     <View style={styles.galleryContainer}>
-      <Animated.View 
-        style={[styles.galleryImage, { opacity: opacity1, backgroundColor: '#3B82F6' }]}
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#FFD663', '#F48D3B']}
+        locations={[0.2, 0.8]}
+        style={styles.gradientBackground}
       />
-      <Animated.View 
-        style={[styles.galleryImage, { opacity: opacity2, backgroundColor: '#1E3A8A' }]}
-      />
-      <Animated.View 
-        style={[styles.galleryImage, { opacity: opacity3, backgroundColor: '#60A5FA' }]}
-      />
+      
+      {/* Grid of images */}
+      <View style={styles.galleryGrid}>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#3B82F6' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#1E3A8A' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#60A5FA' }]} />
+        </View>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#4ADE80' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#059669' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#A7F3D0' }]} />
+        </View>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#F87171' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#B91C1C' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#FCA5A5' }]} />
+        </View>
+      </View>
     </View>
   );
 };
@@ -112,7 +55,6 @@ export default function WelcomeScreen() {
   // Animation values
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
-  const buttonScale = useRef(new Animated.Value(1)).current;
   
   useEffect(() => {
     // Animate logo and content on screen load
@@ -137,46 +79,47 @@ export default function WelcomeScreen() {
   
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       
       {/* Background gallery */}
       <Gallery />
       
-      {/* Overlay gradient */}
-      <View style={styles.overlay} />
-      
-      {/* Content */}
-      <View style={styles.contentContainer}>
-        {/* Logo */}
+      {/* Logo */}
+      <View style={styles.logoContainer}>
         <Animated.Image 
           source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
           style={[styles.logo, { transform: [{ scale: logoScale }] }]}
           resizeMode="contain"
         />
-        
-        {/* Main content card */}
-        <Animated.View 
-          style={[styles.card, { opacity: contentOpacity }]}
-        >
-          <Text style={styles.title}>
-            Collaborate on projects seamlessly
-          </Text>
-          <Text style={styles.subtitle}>
-            Join a community of professionals and find the perfect project match for your skills
-          </Text>
-          
-          <View style={styles.buttonContainer}>
-            <Button 
-              onPress={handleGetStarted}
-              variant="primary"
-              size="lg"
-              style={styles.getStartedButton}
-            >
-              Get Started
-            </Button>
-          </View>
-        </Animated.View>
+        <Animated.Image 
+          source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+          style={[styles.textLogo, { transform: [{ scale: logoScale }] }]}
+          resizeMode="contain"
+        />
       </View>
+      
+      {/* Main content card */}
+      <Animated.View 
+        style={[styles.card, { opacity: contentOpacity }]}
+      >
+        <Text style={styles.title}>
+          Discover like-minded individuals to collaborate on projects together
+        </Text>
+        <Text style={styles.subtitle}>
+          Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
+        </Text>
+        
+        <View style={styles.buttonContainer}>
+          <Button 
+            onPress={handleGetStarted}
+            variant="primary"
+            size="lg"
+            style={styles.getStartedButton}
+          >
+            Get Started
+          </Button>
+        </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -184,63 +127,78 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
+  },
+  gradientBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
   galleryContainer: {
     position: 'absolute',
     width: width,
     height: height,
   },
-  galleryImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    opacity: 0.7,
+  galleryGrid: {
+    flexDirection: 'row',
+    padding: 15,
+    gap: 9,
   },
-  overlay: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  contentContainer: {
+  galleryColumn: {
     flex: 1,
-    justifyContent: 'space-between',
+    gap: 9,
+  },
+  galleryImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 10,
+  },
+  logoContainer: {
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 40,
+    marginTop: 60,
   },
   logo: {
     width: 120,
     height: 120,
   },
+  textLogo: {
+    width: 200,
+    height: 40,
+    marginTop: 20,
+  },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 16,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FCFCFC',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 24,
-    width: '85%',
-    alignItems: 'center',
+    paddingBottom: 40,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: '#242428',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     fontFamily: 'Nunito',
   },
   subtitle: {
     fontSize: 14,
     color: '#575757',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
     fontFamily: 'Nunito',
+    lineHeight: 22,
   },
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
   },
   getStartedButton: {
+    width: 335,
     backgroundColor: '#000',
     paddingVertical: 14,
     paddingHorizontal: 40,

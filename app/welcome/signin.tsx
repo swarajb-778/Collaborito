@@ -18,6 +18,40 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Gallery component to display grid of images
+const Gallery = () => {
+  return (
+    <View style={styles.galleryContainer}>
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#FFD663', '#F48D3B']}
+        locations={[0.2, 0.8]}
+        style={styles.gradientBackground}
+      />
+      
+      {/* Grid of images */}
+      <View style={styles.galleryGrid}>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#3B82F6' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#1E3A8A' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#60A5FA' }]} />
+        </View>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#4ADE80' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#059669' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#A7F3D0' }]} />
+        </View>
+        <View style={styles.galleryColumn}>
+          <View style={[styles.galleryImage, { backgroundColor: '#F87171' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#B91C1C' }]} />
+          <View style={[styles.galleryImage, { backgroundColor: '#FCA5A5' }]} />
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -65,6 +99,18 @@ export default function SignInScreen() {
     }
   };
   
+  const handleGoogleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Implementation for Google Sign-In would go here
+    router.push('/login');
+  };
+  
+  const handleAppleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Implementation for Apple Sign-In would go here
+    router.push('/login');
+  };
+  
   const navigateToRegister = () => {
     router.push('/register');
   };
@@ -76,119 +122,76 @@ export default function SignInScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Header with back button */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-            <Image 
-              source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <View style={{ width: 24 }} />
+      
+      {/* Background gallery */}
+      <Gallery />
+      
+      {/* Logo */}
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+          style={styles.textLogo}
+          resizeMode="contain"
+        />
+      </View>
+      
+      {/* Main content card */}
+      <View style={styles.card}>
+        <Text style={styles.title}>
+          Discover like-minded individuals to collaborate on projects together
+        </Text>
+        <Text style={styles.subtitle}>
+          Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
+        </Text>
+        
+        <View style={styles.buttonsContainer}>
+          {/* Google Sign In */}
+          <TouchableOpacity 
+            style={styles.socialButton}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+          >
+            <AntDesign name="google" size={20} color="#000" style={styles.socialIcon} />
+            <Text style={styles.socialButtonText}>Sign in with Google</Text>
+          </TouchableOpacity>
+          
+          {/* Apple Sign In */}
+          <TouchableOpacity 
+            style={[styles.socialButton, styles.appleButton]}
+            onPress={handleAppleSignIn}
+            disabled={isLoading}
+          >
+            <AntDesign name="apple1" size={20} color="#fff" style={styles.socialIcon} />
+            <Text style={[styles.socialButtonText, styles.appleButtonText]}>Sign in with Apple</Text>
+          </TouchableOpacity>
+          
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
           </View>
           
-          {/* Main Content */}
-          <View style={styles.content}>
-            <Text style={styles.title}>Welcome back!</Text>
-            <Text style={styles.subtitle}>Sign in to continue collaborating on projects</Text>
-            
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            ) : null}
-            
-            {/* Form */}
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-              
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                      size={22} 
-                      color="#575757" 
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.primaryButton}
-                onPress={handleSignIn}
-                disabled={isLoading}
-                activeOpacity={0.8}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Sign In</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-            
-            {/* OR Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            
-            {/* Social Login */}
-            <TouchableOpacity 
-              style={styles.socialButton}
-              onPress={handleLinkedInSignIn}
-              disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              <AntDesign name="linkedin-square" size={20} color="#0077B5" />
-              <Text style={styles.socialButtonText}>Continue with LinkedIn</Text>
-            </TouchableOpacity>
-            
-            {/* Register */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account?</Text>
-              <TouchableOpacity onPress={navigateToRegister}>
-                <Text style={styles.registerLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          {/* Email Sign In */}
+          <TouchableOpacity 
+            style={[styles.socialButton, styles.emailButton]}
+            onPress={handleSignIn}
+            disabled={isLoading}
+          >
+            <Text style={styles.socialButtonText}>Sign in with email</Text>
+          </TouchableOpacity>
+          
+          {/* Sign Up Link */}
+          <TouchableOpacity onPress={navigateToRegister} style={styles.signUpContainer}>
+            <Text style={styles.signUpText}>Don't have an account? Sign up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -196,172 +199,132 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 20,
+  gradientBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
-  header: {
+  galleryContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  galleryGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 10 : 20,
-    paddingBottom: 10,
+    padding: 15,
+    gap: 9,
   },
-  backButton: {
-    padding: 4,
+  galleryColumn: {
+    flex: 1,
+    gap: 9,
+  },
+  galleryImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 10,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 40,
   },
   logo: {
-    height: 30,
-    width: 150,
+    width: 120,
+    height: 120,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    alignItems: 'center',
+  textLogo: {
+    width: 200,
+    height: 40,
+    marginTop: 20,
+  },
+  card: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FCFCFC',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 30,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#242428',
+    textAlign: 'center',
     marginBottom: 8,
     fontFamily: 'Nunito',
   },
   subtitle: {
     fontSize: 14,
     color: '#575757',
-    marginBottom: 32,
     textAlign: 'center',
+    marginBottom: 32,
     fontFamily: 'Nunito',
+    lineHeight: 22,
   },
-  form: {
-    width: '100%',
+  buttonsContainer: {
+    alignItems: 'center',
     gap: 16,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 4,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#242428',
-    marginBottom: 8,
-    fontWeight: '600',
-    fontFamily: 'Nunito',
-  },
-  input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 14,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    fontFamily: 'Nunito',
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    alignItems: 'center',
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 14,
-    fontSize: 14,
-    fontFamily: 'Nunito',
-  },
-  eyeIcon: {
-    padding: 14,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 8,
-  },
-  forgotPasswordText: {
-    color: '#F48D3B',
-    fontSize: 14,
-    fontFamily: 'Nunito',
-  },
-  primaryButton: {
-    backgroundColor: '#000',
-    borderRadius: 8,
-    paddingVertical: 14,
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  primaryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Nunito',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E8E8E8',
-  },
-  dividerText: {
-    paddingHorizontal: 16,
-    color: '#575757',
-    fontSize: 14,
-    fontFamily: 'Nunito',
   },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    width: 335,
+    height: 48,
     borderRadius: 8,
-    padding: 14,
-    width: '100%',
     borderWidth: 1,
-    borderColor: '#E8E8E8',
-    gap: 8,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
+  socialIcon: {
+    marginRight: 8,
   },
   socialButtonText: {
-    color: '#242428',
     fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
     fontFamily: 'Nunito',
   },
-  registerContainer: {
-    flexDirection: 'row',
-    marginTop: 24,
-    gap: 4,
+  appleButton: {
+    backgroundColor: '#000',
+    borderColor: '#000',
   },
-  registerText: {
+  appleButtonText: {
+    color: '#fff',
+  },
+  emailButton: {
+    backgroundColor: '#EBF2FC',
+    borderColor: '#000',
+  },
+  divider: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 8,
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: '#E5E6E8',
+    flex: 1,
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#81848F',
+    marginHorizontal: 16,
+    fontFamily: 'Nunito',
+  },
+  signUpContainer: {
+    marginTop: 8,
+  },
+  signUpText: {
     fontSize: 14,
     color: '#575757',
-    fontFamily: 'Nunito',
-  },
-  registerLink: {
-    fontSize: 14,
-    color: '#F48D3B',
-    fontWeight: '600',
-    fontFamily: 'Nunito',
-  },
-  errorContainer: {
-    backgroundColor: '#FFEBEE',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    width: '100%',
-  },
-  errorText: {
-    color: '#D32F2F',
-    fontSize: 14,
     fontFamily: 'Nunito',
   },
 }); 
