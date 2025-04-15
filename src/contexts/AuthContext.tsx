@@ -91,8 +91,6 @@ const LINKEDIN_CONFIG = {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isAuthenticated: boolean;
-  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -107,10 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [mockServer, setMockServer] = useState<{ stop: () => void } | null>(null);
-
-  // Derived state for authentication status
-  const isAuthenticated = !!user;
-  const isLoading = loading;
 
   useEffect(() => {
     void loadUser();
@@ -618,8 +612,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextType = {
     user,
     loading,
-    isAuthenticated,
-    isLoading,
     signIn,
     signUp,
     signOut,

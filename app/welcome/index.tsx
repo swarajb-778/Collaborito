@@ -1,234 +1,249 @@
-import React, { useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
+  StyleSheet, 
   View, 
   Text, 
-  StyleSheet, 
   Image, 
-  Dimensions, 
   TouchableOpacity, 
-  StatusBar,
-  Platform
+  SafeAreaView,
+  Animated,
+  Dimensions,
+  StatusBar
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import { Animated } from 'react-native';
-import { MotiView, MotiImage, MotiText } from 'moti';
 import { router } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
-import { APP_NAME } from '../../src/constants/AppConfig';
-import { createLogger } from '../../src/utils/logger';
+import * as Haptics from 'expo-haptics';
+import { Button } from '../../components/ui/Button';
 
-const logger = createLogger('WelcomeScreen');
+// Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
+// Gallery component to display images
+const Gallery = () => {
+  // Animation values for image opacity
+  const opacity1 = useRef(new Animated.Value(1)).current;
+  const opacity2 = useRef(new Animated.Value(0)).current;
+  const opacity3 = useRef(new Animated.Value(0)).current;
+
+  // Set up animation sequence
+  useEffect(() => {
+    const startAnimation = () => {
+      // Sequence to fade between images
+      Animated.sequence([
+        // Show image 1
+        Animated.timing(opacity1, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.delay(2000),
+        // Fade to image 2
+        Animated.parallel([
+          Animated.timing(opacity1, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity2, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(2000),
+        // Fade to image 3
+        Animated.parallel([
+          Animated.timing(opacity2, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity3, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(2000),
+        // Fade back to image 1
+        Animated.parallel([
+          Animated.timing(opacity3, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity1, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => {
+        // Restart animation
+        startAnimation();
+      });
+    };
+
+    startAnimation();
+    
+    // Clean up animations on unmount
+    return () => {
+      opacity1.stopAnimation();
+      opacity2.stopAnimation();
+      opacity3.stopAnimation();
+    };
+  }, []);
+
+  return (
+    <View style={styles.galleryContainer}>
+      <Animated.View 
+        style={[styles.galleryImage, { opacity: opacity1, backgroundColor: '#3B82F6' }]}
+      />
+      <Animated.View 
+        style={[styles.galleryImage, { opacity: opacity2, backgroundColor: '#1E3A8A' }]}
+      />
+      <Animated.View 
+        style={[styles.galleryImage, { opacity: opacity3, backgroundColor: '#60A5FA' }]}
+      />
+    </View>
+  );
+};
+
 export default function WelcomeScreen() {
-  // Animation states
-  const logoOpacity = React.useRef(new Animated.Value(0)).current;
-  const logoScale = React.useRef(new Animated.Value(0.8)).current;
+  // Animation values
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
   
   useEffect(() => {
-    logger.debug('Welcome screen mounted');
-    
-    // Sequence of animations
+    // Animate logo and content on screen load
     Animated.sequence([
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
       Animated.timing(logoScale, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
     ]).start();
-    
-    // Auto-navigate after 3 seconds if user doesn't press anything
-    const timer = setTimeout(() => {
-      handleContinue();
-    }, 3000);
-    
-    return () => clearTimeout(timer);
   }, []);
   
-  const handleContinue = () => {
-    logger.debug('Navigating to welcome details');
-    router.replace('/welcome/details');
+  const handleGetStarted = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/welcome/signin');
   };
   
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={['#1E2747', '#0B1121']}
-        style={styles.background}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <MotiView
-          from={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            type: 'timing',
-            duration: 1500,
-          }}
-          style={styles.contentContainer}
+      
+      {/* Background gallery */}
+      <Gallery />
+      
+      {/* Overlay gradient */}
+      <View style={styles.overlay} />
+      
+      {/* Content */}
+      <View style={styles.contentContainer}>
+        {/* Logo */}
+        <Animated.Image 
+          source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+          style={[styles.logo, { transform: [{ scale: logoScale }] }]}
+          resizeMode="contain"
+        />
+        
+        {/* Main content card */}
+        <Animated.View 
+          style={[styles.card, { opacity: contentOpacity }]}
         >
-          {/* Logo */}
-          <Animated.View style={[
-            styles.logoContainer,
-            { opacity: logoOpacity, transform: [{ scale: logoScale }] }
-          ]}>
-            <FontAwesome name="connectdevelop" size={80} color="#6C63FF" />
-          </Animated.View>
+          <Text style={styles.title}>
+            Collaborate on projects seamlessly
+          </Text>
+          <Text style={styles.subtitle}>
+            Join a community of professionals and find the perfect project match for your skills
+          </Text>
           
-          {/* App Name */}
-          <MotiText
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 500, duration: 1000 }}
-            style={styles.title}
-          >
-            {APP_NAME}
-          </MotiText>
-          
-          {/* Tagline */}
-          <MotiText
-            from={{ opacity: 0 }}
-            animate={{ opacity: 0.8 }}
-            transition={{ delay: 800, duration: 1000 }}
-            style={styles.tagline}
-          >
-            Collaborate. Create. Succeed.
-          </MotiText>
-          
-          {/* Continue Button */}
-          <MotiView
-            from={{ opacity: 0, translateY: 50 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 1200, duration: 800 }}
-            style={styles.buttonContainer}
-          >
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={handleContinue}
-              activeOpacity={0.8}
+          <View style={styles.buttonContainer}>
+            <Button 
+              onPress={handleGetStarted}
+              variant="primary"
+              size="lg"
+              style={styles.getStartedButton}
             >
-              <Text style={styles.buttonText}>Get Started</Text>
-              <FontAwesome name="arrow-right" size={16} color="#FFFFFF" style={styles.buttonIcon} />
-            </TouchableOpacity>
-          </MotiView>
-        </MotiView>
-        
-        {/* Decorative elements */}
-        <MotiView
-          from={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 0.7, scale: 1 }}
-          transition={{ delay: 1000, duration: 1200 }}
-          style={styles.decorativeShape1}
-        />
-        
-        <MotiView
-          from={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 0.5, scale: 1 }}
-          transition={{ delay: 1300, duration: 1200 }}
-          style={styles.decorativeShape2}
-        />
-      </LinearGradient>
-    </View>
+              Get Started
+            </Button>
+          </View>
+        </Animated.View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000',
   },
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  galleryContainer: {
+    position: 'absolute',
+    width: width,
+    height: height,
+  },
+  galleryImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.7,
+  },
+  overlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   contentContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  logoContainer: {
+  logo: {
     width: 120,
     height: 120,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
     alignItems: 'center',
-    marginBottom: 24,
-    elevation: 5,
-    shadowColor: '#6C63FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-    letterSpacing: 1,
-  },
-  tagline: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#242428',
     textAlign: 'center',
-    marginBottom: 40,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-    fontStyle: 'italic',
+    marginBottom: 12,
+    fontFamily: 'Nunito',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#575757',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: 'Nunito',
   },
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 20,
   },
-  button: {
-    backgroundColor: '#6C63FF',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#6C63FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    minWidth: 200,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-  buttonIcon: {
-    marginLeft: 8,
-  },
-  decorativeShape1: {
-    position: 'absolute',
-    top: height * 0.1,
-    right: width * 0.1,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(108, 99, 255, 0.2)',
-  },
-  decorativeShape2: {
-    position: 'absolute',
-    bottom: height * 0.15,
-    left: width * 0.1,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  getStartedButton: {
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 8,
   },
 }); 
