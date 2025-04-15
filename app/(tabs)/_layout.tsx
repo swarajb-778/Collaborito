@@ -14,8 +14,8 @@ export default function TabLayout() {
   
   useEffect(() => {
     if (!loading && !user) {
-      // Redirect to login if not authenticated
-      router.replace('/login');
+      // Redirect to welcome screen if not authenticated
+      router.replace('/welcome');
     }
   }, [user, loading, router]);
   
