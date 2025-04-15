@@ -204,7 +204,7 @@ export default function MessagesScreen() {
           placeholder="Search messages..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          leftIcon="search"
+          leftIcon={<FontAwesome5 name="search" size={16} color="#666" />}
           style={styles.searchInput}
         />
       </View>
