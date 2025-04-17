@@ -49,71 +49,61 @@ const Gallery = () => {
   }, []);
   
   // Calculate responsive image height based on screen dimensions
-  const imageHeight = Math.min(height * 0.22, 150); // Increased height for better visibility
+  const imageHeight = Math.min(height * 0.20, 140); // Adjusted height for better visibility
   
   return (
-    <View style={styles.galleryContainer}>
-      {/* Background gradient */}
-      <LinearGradient
-        colors={['rgba(255,214,99,0.25)', 'rgba(244,141,59,0.15)']}
-        locations={[0.2, 0.8]}
-        style={styles.gradientBackground}
-      />
-      
-      {/* Grid of images */}
-      <View style={styles.galleryGrid}>
-        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-2.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-3.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-        </Animated.View>
-        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-5.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-6.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-        </Animated.View>
-        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-8.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/gallery/gallery-9.png')} 
-            style={[styles.galleryImage, { height: imageHeight }]} 
-            resizeMode="cover"
-          />
-        </Animated.View>
-      </View>
+    <View style={styles.galleryGrid}>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-2.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-3.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+      </Animated.View>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-5.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-6.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+      </Animated.View>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-8.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/gallery/gallery-9.png')} 
+          style={[styles.galleryImage, { height: imageHeight }]} 
+          resizeMode="cover"
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -168,17 +158,21 @@ export default function WelcomeScreen() {
   };
   
   // Calculate card height as a percentage of screen height
-  const cardHeight = height * 0.38;
+  const cardHeight = height * 0.35;
   
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Background gallery */}
-      <Gallery />
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['rgba(255,214,99,0.25)', 'rgba(244,141,59,0.15)']}
+        locations={[0.2, 0.8]}
+        style={styles.gradientBackground}
+      />
       
-      {/* Logo at the top */}
-      <SafeAreaView style={styles.topContainer}>
+      <SafeAreaView style={styles.mainContent}>
+        {/* Logo at the top */}
         <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
           <Image 
             source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
@@ -190,6 +184,11 @@ export default function WelcomeScreen() {
             style={styles.textLogo}
             resizeMode="contain"
           />
+        </Animated.View>
+        
+        {/* Gallery below the logo */}
+        <Animated.View style={{ opacity: contentOpacity, width: '100%' }}>
+          <Gallery />
         </Animated.View>
       </SafeAreaView>
       
@@ -242,23 +241,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  topContainer: {
+  mainContent: {
+    flex: 1,
     width: '100%',
-    position: 'absolute',
-    top: 0,
-    zIndex: 2,
+    alignItems: 'center',
   },
   gradientBackground: {
     position: 'absolute',
     width: '100%',
     height: '100%',
     opacity: 0.7,
-  },
-  galleryContainer: {
-    position: 'absolute',
-    width: width,
-    height: height,
-    overflow: 'hidden',
   },
   galleryGrid: {
     flexDirection: 'row',
@@ -267,7 +259,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginTop: Platform.OS === 'ios' ? height * 0.14 : height * 0.08, // Adjusted to make room for logo
+    marginVertical: 15,
   },
   galleryColumn: {
     flex: 1,
@@ -286,7 +278,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 20 : 40,
+    paddingTop: 10,
+    marginBottom: 10,
   },
   logo: {
     width: 80,
