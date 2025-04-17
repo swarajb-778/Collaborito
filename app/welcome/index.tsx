@@ -8,12 +8,14 @@ import {
   SafeAreaView,
   Animated,
   Dimensions,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Button } from '../../components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -47,14 +49,13 @@ const Gallery = () => {
   }, []);
   
   // Calculate responsive image height based on screen dimensions
-  const columnWidth = (width - 30 - 18) / 3; // Width minus padding minus gaps
-  const imageHeight = Math.min(height * 0.18, 130); // Responsive height based on screen height
+  const imageHeight = Math.min(height * 0.22, 150); // Increased height for better visibility
   
   return (
     <View style={styles.galleryContainer}>
       {/* Background gradient */}
       <LinearGradient
-        colors={['rgba(255,214,99,0.3)', 'rgba(244,141,59,0.2)']}
+        colors={['rgba(255,214,99,0.25)', 'rgba(244,141,59,0.15)']}
         locations={[0.2, 0.8]}
         style={styles.gradientBackground}
       />
@@ -118,9 +119,12 @@ const Gallery = () => {
 };
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
+  
   // Animation values
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(0.95)).current;
   
   useEffect(() => {
     // Animate logo and content on screen load
@@ -135,58 +139,101 @@ export default function WelcomeScreen() {
         duration: 600,
         useNativeDriver: true,
       }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, []);
   
   const handleGetStarted = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/welcome/signin');
+    
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      router.push('/welcome/signin');
+    });
   };
   
+  // Calculate card height as a percentage of screen height
+  const cardHeight = height * 0.38;
+  
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
       {/* Background gallery */}
       <Gallery />
       
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Animated.Image 
-          source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
-          style={[styles.logo, { transform: [{ scale: logoScale }] }]}
-          resizeMode="contain"
-        />
-        <Animated.Image 
-          source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
-          style={[styles.textLogo, { transform: [{ scale: logoScale }] }]}
-          resizeMode="contain"
-        />
-      </View>
+      {/* Logo at the top */}
+      <SafeAreaView style={styles.topContainer}>
+        <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+          <Image 
+            source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+            style={styles.textLogo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      </SafeAreaView>
       
       {/* Main content card */}
       <Animated.View 
-        style={[styles.card, { opacity: contentOpacity }]}
+        style={[
+          styles.card, 
+          { 
+            opacity: contentOpacity,
+            height: cardHeight,
+            paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
+          }
+        ]}
       >
-        <Text style={styles.title}>
-          Discover like-minded individuals to collaborate on projects together
-        </Text>
-        <Text style={styles.subtitle}>
-          Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
-        </Text>
-        
-        <View style={styles.buttonContainer}>
-          <Button 
-            onPress={handleGetStarted}
-            variant="primary"
-            size="lg"
-            style={styles.getStartedButton}
-          >
-            Get Started
-          </Button>
+        <View style={styles.cardContent}>
+          <Text style={styles.title}>
+            Discover like-minded individuals to collaborate on projects together
+          </Text>
+          <Text style={styles.subtitle}>
+            Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
+          </Text>
+          
+          <Animated.View style={[
+            styles.buttonContainer, 
+            { transform: [{ scale: buttonScale }] }
+          ]}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleGetStarted}
+              style={styles.getStartedButton}
+            >
+              <LinearGradient
+                colors={['#000000', '#333333']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.buttonText}>Get Started</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -194,6 +241,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  topContainer: {
+    width: '100%',
+    position: 'absolute',
+    top: 0,
+    zIndex: 2,
   },
   gradientBackground: {
     position: 'absolute',
@@ -214,7 +267,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginTop: height * 0.08, // Add space from top of screen
+    marginTop: Platform.OS === 'ios' ? height * 0.14 : height * 0.08, // Adjusted to make room for logo
   },
   galleryColumn: {
     flex: 1,
@@ -227,22 +280,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 20 : 40,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
   },
   textLogo: {
-    width: 200,
-    height: 40,
-    marginTop: 20,
+    width: 180,
+    height: 30,
+    marginTop: 8,
   },
   card: {
     position: 'absolute',
@@ -250,41 +303,60 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#FCFCFC',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  cardContent: {
+    padding: 28,
+    flex: 1,
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: '#242428',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
     fontFamily: 'Nunito',
+    lineHeight: 32,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#575757',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 30,
     fontFamily: 'Nunito',
-    lineHeight: 22,
+    lineHeight: 24,
   },
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
+    marginTop: 'auto',
   },
   getStartedButton: {
-    width: 335,
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 8,
+    width: '90%',
+    overflow: 'hidden',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
+  buttonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Nunito',
+  }
 }); 
