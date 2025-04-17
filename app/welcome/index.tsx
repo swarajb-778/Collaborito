@@ -46,6 +46,10 @@ const Gallery = () => {
     ]).start();
   }, []);
   
+  // Calculate responsive image height based on screen dimensions
+  const columnWidth = (width - 30 - 18) / 3; // Width minus padding minus gaps
+  const imageHeight = Math.min(height * 0.18, 130); // Responsive height based on screen height
+  
   return (
     <View style={styles.galleryContainer}>
       {/* Background gradient */}
@@ -60,51 +64,51 @@ const Gallery = () => {
         <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-2.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-3.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
         </Animated.View>
         <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-5.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-6.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
         </Animated.View>
         <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-8.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
           <Image 
             source={require('../../assets/images/welcome/gallery/gallery-9.png')} 
-            style={styles.galleryImage} 
+            style={[styles.galleryImage, { height: imageHeight }]} 
             resizeMode="cover"
           />
         </Animated.View>
@@ -201,19 +205,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: width,
     height: height,
+    overflow: 'hidden',
   },
   galleryGrid: {
     flexDirection: 'row',
     padding: 15,
     gap: 9,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: height * 0.08, // Add space from top of screen
   },
   galleryColumn: {
     flex: 1,
     gap: 9,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   galleryImage: {
     width: '100%',
-    height: 120,
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
