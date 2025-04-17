@@ -20,32 +20,94 @@ const { width, height } = Dimensions.get('window');
 
 // Gallery component to display grid of images
 const Gallery = () => {
+  // Animation values for staggered entrance
+  const fadeAnim1 = useRef(new Animated.Value(0)).current;
+  const fadeAnim2 = useRef(new Animated.Value(0)).current;
+  const fadeAnim3 = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    // Create staggered animation for columns
+    Animated.stagger(200, [
+      Animated.timing(fadeAnim1, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim2, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim3, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+  
   return (
     <View style={styles.galleryContainer}>
       {/* Background gradient */}
       <LinearGradient
-        colors={['#FFD663', '#F48D3B']}
+        colors={['rgba(255,214,99,0.3)', 'rgba(244,141,59,0.2)']}
         locations={[0.2, 0.8]}
         style={styles.gradientBackground}
       />
       
       {/* Grid of images */}
       <View style={styles.galleryGrid}>
-        <View style={styles.galleryColumn}>
-          <View style={[styles.galleryImage, { backgroundColor: '#3B82F6' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#1E3A8A' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#60A5FA' }]} />
-        </View>
-        <View style={styles.galleryColumn}>
-          <View style={[styles.galleryImage, { backgroundColor: '#4ADE80' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#059669' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#A7F3D0' }]} />
-        </View>
-        <View style={styles.galleryColumn}>
-          <View style={[styles.galleryImage, { backgroundColor: '#F87171' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#B91C1C' }]} />
-          <View style={[styles.galleryImage, { backgroundColor: '#FCA5A5' }]} />
-        </View>
+        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-2.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-3.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+        </Animated.View>
+        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-5.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-6.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+        </Animated.View>
+        <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-8.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+          <Image 
+            source={require('../../assets/images/welcome/gallery/gallery-9.png')} 
+            style={styles.galleryImage} 
+            resizeMode="cover"
+          />
+        </Animated.View>
       </View>
     </View>
   );
@@ -133,6 +195,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
+    opacity: 0.7,
   },
   galleryContainer: {
     position: 'absolute',
@@ -152,6 +215,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 120,
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   logoContainer: {
     alignItems: 'center',
@@ -176,6 +244,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 24,
     paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: {
     fontSize: 20,
