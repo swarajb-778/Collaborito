@@ -591,12 +591,12 @@ export default function SignInScreen() {
                     />
                     
                     <SocialLoginButton
-                      icon={<MaterialCommunityIcons name="account-outline" size={20} color="#FFFFFF" />}
-                      text="Demo Account"
-                      onPress={handleDemoSignIn}
-                      color="#6366F1"
+                      icon={<MaterialCommunityIcons name="email-outline" size={20} color="#FFFFFF" />}
+                      text="Sign in with Email"
+                      onPress={toggleEmailForm}
+                      color={colors.secondary}
                       textColor="#FFFFFF"
-                      isLoading={demoLoading ? 'demo' : null}
+                      isLoading={isLoading === 'email' ? 'email' : null}
                       muted={colors.muted}
                       border={colors.border}
                     />
@@ -620,9 +620,11 @@ export default function SignInScreen() {
                     <View style={[styles.successCircle, { backgroundColor: colors.success }]}>
                       <FontAwesome5 name="check" size={24} color="#FFFFFF" />
                     </View>
-                    <Text style={[styles.successText, { color: colors.text }]}>
-                      Sign In Successful!
-                    </Text>
+                    <View style={styles.successTextContainer}>
+                      <Text style={[styles.successText, { color: colors.accent }]}>
+                        Sign In Successful!
+                      </Text>
+                    </View>
                   </RNAnimated.View>
                   
                   <View style={styles.orDivider}>
@@ -639,12 +641,12 @@ export default function SignInScreen() {
                     <Text style={[styles.signUpButtonText, { color: colors.primary }]}>Create an Account</Text>
                   </TouchableOpacity>
                   
-                  {/* Sign In with Email */}
+                  {/* Demo Account */}
                   <TouchableOpacity 
-                    style={styles.emailSignInButton}
-                    onPress={toggleEmailForm}
+                    style={styles.demoAccountButton}
+                    onPress={handleDemoSignIn}
                   >
-                    <Text style={[styles.emailSignInText, { color: colors.muted }]}>Sign in with Email</Text>
+                    <Text style={[styles.demoAccountText, { color: colors.muted }]}>Try Demo Account</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -938,8 +940,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  successTextContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   successText: {
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  demoAccountButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  demoAccountText: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 }); 

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { TextInput } from '@/components/ui/TextInput';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
+import { Colors, Gradients } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -40,11 +40,13 @@ const { width, height } = Dimensions.get('window');
 const Checkbox = ({ 
   checked, 
   onPress,
-  size = 22
+  size = 22,
+  color = '#000',
 }: { 
   checked: boolean; 
   onPress: () => void;
   size?: number;
+  color?: string;
 }) => {
   return (
     <TouchableOpacity 
@@ -53,8 +55,9 @@ const Checkbox = ({
         { 
           width: size, 
           height: size, 
-          backgroundColor: checked ? '#000' : 'transparent',
-          borderWidth: checked ? 0 : 1
+          backgroundColor: checked ? color : 'transparent',
+          borderWidth: checked ? 0 : 1,
+          borderColor: color
         }
       ]} 
       onPress={onPress}
@@ -202,12 +205,12 @@ export default function RegisterScreen() {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ ...styles.container, backgroundColor: colors.primary }}>
       <StatusBar barStyle="dark-content" />
       
       {/* Background circles */}
-      <View style={styles.backgroundCircle1} />
-      <View style={styles.backgroundCircle2} />
+      <View style={{ ...styles.backgroundCircle1, backgroundColor: colors.primaryDark }} />
+      <View style={{ ...styles.backgroundCircle2, backgroundColor: colors.primaryLight }} />
       
       {/* Main content */}
       <KeyboardAvoidingView
@@ -241,7 +244,7 @@ export default function RegisterScreen() {
             entering={FadeInDown.delay(300).duration(800)}
             style={[styles.formContainer, errorAnimatedStyle]}
           >
-            <Text style={styles.title}>Create account</Text>
+            <Text style={{ ...styles.title, color: colors.accent }}>Create account</Text>
             
             <View style={styles.form}>
               <TextInput
@@ -280,19 +283,20 @@ export default function RegisterScreen() {
                 <Checkbox 
                   checked={acceptTerms} 
                   onPress={() => setAcceptTerms(!acceptTerms)} 
+                  color={colors.accent}
                 />
-                <Text style={styles.termsText}>
+                <Text style={{ ...styles.termsText, color: colors.accent }}>
                   I accept the terms and privacy policy
                 </Text>
               </View>
               
               {termsError ? (
-                <Text style={styles.errorText}>{termsError}</Text>
+                <Text style={{ ...styles.errorText, color: colors.error }}>{termsError}</Text>
               ) : null}
               
               {/* Primary button */}
               <Button
-                style={styles.primaryButton}
+                style={{ ...styles.primaryButton, backgroundColor: colors.accent }}
                 onPress={handleRegister}
                 variant="primary"
                 disabled={loading}
@@ -306,7 +310,7 @@ export default function RegisterScreen() {
               
               {/* Secondary button */}
               <Button
-                style={styles.secondaryButton}
+                style={{ ...styles.secondaryButton, borderColor: colors.accent }}
                 onPress={handleMobileRegister}
                 variant="outline"
                 disabled={loading}
@@ -321,7 +325,7 @@ export default function RegisterScreen() {
             entering={FadeInUp.delay(500).duration(800)}
           >
             <TouchableOpacity onPress={handleBackToLogin}>
-              <Text style={styles.footerText}>
+              <Text style={{ ...styles.footerText, color: colors.accent }}>
                 Already have an account? <Text style={styles.footerLink}>Log in</Text>
               </Text>
             </TouchableOpacity>
@@ -335,7 +339,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFDF5A',
   },
   backgroundCircle1: {
     position: 'absolute',
@@ -344,7 +347,6 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: '#FFD529',
   },
   backgroundCircle2: {
     position: 'absolute',
@@ -353,7 +355,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#FFE98F',
     opacity: 0.7,
   },
   keyboardAvoidingView: {
@@ -389,7 +390,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
     fontFamily: 'Nunito',
-    color: '#000',
   },
   form: {
     width: '100%',
@@ -406,18 +406,15 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     borderRadius: 11,
-    borderColor: '#000',
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   termsText: {
     fontSize: 14,
-    color: '#000',
     fontFamily: 'Nunito',
   },
   errorText: {
-    color: '#EF4444',
     fontSize: 14,
     marginTop: 5,
     marginBottom: 5,
@@ -425,11 +422,9 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 10,
     height: 56,
-    backgroundColor: '#000',
   },
   secondaryButton: {
     height: 56,
-    borderColor: '#000',
     borderWidth: 1,
     backgroundColor: 'transparent',
   },
@@ -439,7 +434,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#000',
     fontFamily: 'Inter',
   },
   footerLink: {
