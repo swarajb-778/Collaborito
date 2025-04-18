@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   StyleSheet, 
@@ -10,141 +10,60 @@ import {
   ScrollView, 
   ActivityIndicator,
   StatusBar,
-  Dimensions
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from '@/components/ui/TextInput';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSequence, withTiming, withDelay, interpolateColor } from 'react-native-reanimated';
+import Animated, { 
+  FadeIn, 
+  FadeInDown, 
+  FadeInUp, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSequence, 
+  withTiming 
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CollaboritoLogo } from '@/components/ui/CollaboritoLogo';
 import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
-// PasswordStrengthMeter component
-const PasswordStrengthMeter = ({ 
-  password,
-  containerStyle
+/**
+ * Checkbox component for terms acceptance
+ */
+const Checkbox = ({ 
+  checked, 
+  onPress,
+  size = 22
 }: { 
-  password: string;
-  containerStyle?: any;
+  checked: boolean; 
+  onPress: () => void;
+  size?: number;
 }) => {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  
-  // Calculate password strength
-  const getStrength = (pass: string) => {
-    if (!pass) return 0;
-    
-    let score = 0;
-    
-    // Length check
-    if (pass.length > 5) score += 1;
-    if (pass.length > 8) score += 1;
-    
-    // Complexity checks
-    if (/[A-Z]/.test(pass)) score += 1;  // Has uppercase
-    if (/[0-9]/.test(pass)) score += 1;  // Has number
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;  // Has special char
-    
-    return Math.min(score, 4);  // Max score of 4
-  };
-  
-  const strength = getStrength(password);
-  
-  // Get color based on strength
-  const getColor = () => {
-    switch (strength) {
-      case 0: return colors.muted;
-      case 1: return colors.error;
-      case 2: return colors.warning;
-      case 3: return colors.tertiary;
-      case 4: return colors.success;
-      default: return colors.muted;
-    }
-  };
-  
-  // Get text based on strength
-  const getText = () => {
-    switch (strength) {
-      case 0: return 'Enter password';
-      case 1: return 'Weak';
-      case 2: return 'Fair';
-      case 3: return 'Good';
-      case 4: return 'Strong';
-      default: return '';
-    }
-  };
-  
   return (
-    <View style={[styles.strengthContainer, containerStyle]}>
-      {/* Strength meter bars */}
-      <View style={styles.meterContainer}>
-        {[...Array(4)].map((_, index) => (
-          <View 
-            key={index}
-            style={[
-              styles.meterBar,
-              { 
-                backgroundColor: index < strength 
-                  ? getColor() 
-                  : `${colors.muted}40`
-              }
-            ]}
-          />
-        ))}
-      </View>
-      
-      {/* Strength text */}
-      <Text style={[styles.strengthText, { color: getColor() }]}>
-        {getText()}
-      </Text>
-    </View>
-  );
-};
-
-// Password requirements component
-const PasswordRequirements = ({ 
-  password 
-}: { 
-  password: string 
-}) => {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  
-  // Define requirements
-  const requirements = [
-    { id: 'length', text: 'At least 6 characters', test: (pass: string) => pass.length >= 6 },
-    { id: 'uppercase', text: 'At least 1 uppercase letter', test: (pass: string) => /[A-Z]/.test(pass) },
-    { id: 'number', text: 'At least 1 number', test: (pass: string) => /[0-9]/.test(pass) },
-    { id: 'special', text: 'At least 1 special character', test: (pass: string) => /[^A-Za-z0-9]/.test(pass) }
-  ];
-  
-  return (
-    <View style={styles.requirementsContainer}>
-      {requirements.map(req => (
-        <View key={req.id} style={styles.requirementRow}>
-          <FontAwesome5 
-            name={req.test(password) ? 'check-circle' : 'circle'} 
-            size={12} 
-            color={req.test(password) ? colors.success : colors.muted} 
-            style={styles.requirementIcon}
-          />
-          <Text style={[
-            styles.requirementText, 
-            { color: req.test(password) ? colors.success : colors.muted }
-          ]}>
-            {req.text}
-          </Text>
-        </View>
-      ))}
-    </View>
+    <TouchableOpacity 
+      style={[
+        styles.checkbox, 
+        { 
+          width: size, 
+          height: size, 
+          backgroundColor: checked ? '#000' : 'transparent',
+          borderWidth: checked ? 0 : 1
+        }
+      ]} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      {checked && (
+        <FontAwesome5 name="check" size={size * 0.6} color="#FFF" />
+      )}
+    </TouchableOpacity>
   );
 };
 
@@ -155,30 +74,19 @@ export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const { signUp, loading } = useAuth();
   
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   
-  const [firstNameError, setFirstNameError] = useState('');
-  const [lastNameError, setLastNameError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [termsError, setTermsError] = useState('');
   
   // Animation values
   const buttonScale = useSharedValue(1);
-  const buttonOpacity = useSharedValue(1);
   const errorShake = useSharedValue(0);
-  
-  // Animated styles for register button
-  const buttonAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: buttonScale.value }],
-      opacity: buttonOpacity.value
-    };
-  });
   
   // Animated style for error shake animation
   const errorAnimatedStyle = useAnimatedStyle(() => {
@@ -187,16 +95,6 @@ export default function RegisterScreen() {
     };
   });
 
-  // Register button animation on press
-  const animateButton = () => {
-    buttonScale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  };
-  
   // Error shake animation
   const shakeError = () => {
     errorShake.value = withSequence(
@@ -210,41 +108,17 @@ export default function RegisterScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   };
   
-  // Validate password strength
-  const isStrongPassword = (pass: string) => {
-    // At least 6 chars, 1 uppercase, 1 number, and 1 special char
-    if (pass.length < 6) return false;
-    
-    // Count the number of criteria met
-    let criteriaCount = 0;
-    if (/[A-Z]/.test(pass)) criteriaCount++;
-    if (/[0-9]/.test(pass)) criteriaCount++;
-    if (/[^A-Za-z0-9]/.test(pass)) criteriaCount++;
-    
-    // Need to meet at least 2 complexity criteria
-    return criteriaCount >= 2;
-  };
-  
   const validateForm = () => {
     let isValid = true;
     let hasError = false;
     
-    // Validate first name
-    if (!firstName.trim()) {
-      setFirstNameError('First name is required');
+    // Validate username
+    if (!username.trim()) {
+      setUsernameError('Username is required');
       isValid = false;
       hasError = true;
     } else {
-      setFirstNameError('');
-    }
-    
-    // Validate last name
-    if (!lastName.trim()) {
-      setLastNameError('Last name is required');
-      isValid = false;
-      hasError = true;
-    } else {
-      setLastNameError('');
+      setUsernameError('');
     }
     
     // Validate email
@@ -265,25 +139,21 @@ export default function RegisterScreen() {
       setPasswordError('Password is required');
       isValid = false;
       hasError = true;
-    } else if (!isStrongPassword(password)) {
-      setPasswordError('Password must meet strength requirements');
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
       isValid = false;
       hasError = true;
     } else {
       setPasswordError('');
     }
     
-    // Validate password confirmation
-    if (!confirmPassword) {
-      setConfirmPasswordError('Please confirm your password');
-      isValid = false;
-      hasError = true;
-    } else if (confirmPassword !== password) {
-      setConfirmPasswordError('Passwords do not match');
+    // Validate terms acceptance
+    if (!acceptTerms) {
+      setTermsError('You must accept the terms and privacy policy');
       isValid = false;
       hasError = true;
     } else {
-      setConfirmPasswordError('');
+      setTermsError('');
     }
     
     // Trigger error animation if there are errors
@@ -295,14 +165,16 @@ export default function RegisterScreen() {
   };
   
   const handleRegister = async () => {
-    animateButton();
-    
     if (!validateForm()) return;
     
     try {
-      // Feedback and animation when starting registration
+      // Provide haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      buttonOpacity.value = withTiming(0.7, { duration: 300 });
+      
+      // Split username into first and last name (for demo purposes)
+      const nameParts = username.split(' ');
+      const firstName = nameParts[0] || username;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
       await signUp(email, password, firstName, lastName);
       
@@ -314,9 +186,14 @@ export default function RegisterScreen() {
     } catch (error) {
       console.error('Registration error:', error);
       shakeError();
-    } finally {
-      buttonOpacity.value = withTiming(1, { duration: 300 });
     }
+  };
+
+  const handleMobileRegister = () => {
+    // This would integrate with phone number verification in a real app
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // For demo, just show error animation
+    shakeError();
   };
 
   const handleBackToLogin = () => {
@@ -325,33 +202,12 @@ export default function RegisterScreen() {
   };
   
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       
-      {/* Header with gradient background */}
-      <LinearGradient
-        colors={[
-          colorScheme === 'dark' ? colors.card : colors.primary, 
-          colorScheme === 'dark' ? colors.background : colors.secondary
-        ]}
-        style={[styles.header, { paddingTop: insets.top + 20 }]}
-      >
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={handleBackToLogin}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
-          <FontAwesome5 name="arrow-left" size={18} color="#fff" />
-        </TouchableOpacity>
-        
-        <Animated.View 
-          style={styles.logoContainer}
-          entering={FadeIn.delay(200).duration(800)}
-        >
-          <CollaboritoLogo size={50} color="#fff" />
-          <Text style={styles.appName}>Collaborito</Text>
-        </Animated.View>
-      </LinearGradient>
+      {/* Background circles */}
+      <View style={styles.backgroundCircle1} />
+      <View style={styles.backgroundCircle2} />
       
       {/* Main content */}
       <KeyboardAvoidingView
@@ -360,107 +216,103 @@ export default function RegisterScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView 
-          style={[styles.scrollView, { backgroundColor: colors.background }]}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent, 
+            { paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }
+          ]}
           showsVerticalScrollIndicator={false}
         >
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../assets/images/welcome/collaborito-dark-logo.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Image 
+              source={require('../assets/images/welcome/collaborito-text-logo.png')} 
+              style={styles.textLogo}
+              resizeMode="contain"
+            />
+          </View>
+          
           <Animated.View 
             entering={FadeInDown.delay(300).duration(800)}
-            style={errorAnimatedStyle}
+            style={[styles.formContainer, errorAnimatedStyle]}
           >
-            <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>
-              Sign up to start collaborating on projects
-            </Text>
+            <Text style={styles.title}>Create account</Text>
             
             <View style={styles.form}>
-              {/* First and Last Name in a row */}
-              <View style={styles.nameRow}>
-                <View style={styles.nameField}>
-                  <TextInput
-                    label="First Name"
-                    placeholder="First name"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
-                    error={firstNameError}
-                    containerStyle={styles.nameInputContainer}
-                  />
-                </View>
-                
-                <View style={styles.nameField}>
-                  <TextInput
-                    label="Last Name"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
-                    error={lastNameError}
-                    containerStyle={styles.nameInputContainer}
-                  />
-                </View>
-              </View>
+              <TextInput
+                label="Username"
+                placeholder="Your username"
+                value={username}
+                onChangeText={setUsername}
+                error={usernameError}
+                containerStyle={styles.inputContainer}
+              />
               
               <TextInput
                 label="Email"
-                placeholder="Enter your email"
+                placeholder="Your email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
                 error={emailError}
+                containerStyle={styles.inputContainer}
               />
               
               <TextInput
                 label="Password"
-                placeholder="Create a password"
+                placeholder="Your password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
+                secureTextToggle
                 error={passwordError}
-                secureTextToggle
+                containerStyle={styles.inputContainer}
               />
               
-              {/* Password strength meter */}
-              <PasswordStrengthMeter 
-                password={password} 
-                containerStyle={{ marginTop: -8, marginBottom: 8 }}
-              />
+              {/* Terms and conditions */}
+              <View style={styles.termsContainer}>
+                <Checkbox 
+                  checked={acceptTerms} 
+                  onPress={() => setAcceptTerms(!acceptTerms)} 
+                />
+                <Text style={styles.termsText}>
+                  I accept the terms and privacy policy
+                </Text>
+              </View>
               
-              {/* Password requirements */}
-              {password.length > 0 && (
-                <Animated.View entering={FadeIn.duration(200)}>
-                  <PasswordRequirements password={password} />
-                </Animated.View>
-              )}
+              {termsError ? (
+                <Text style={styles.errorText}>{termsError}</Text>
+              ) : null}
               
-              <TextInput
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
-                error={confirmPasswordError}
-                secureTextToggle
-              />
+              {/* Primary button */}
+              <Button
+                style={styles.primaryButton}
+                onPress={handleRegister}
+                variant="primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  'Create account'
+                )}
+              </Button>
               
-              <Animated.View style={buttonAnimatedStyle}>
-                <Button
-                  style={styles.registerButton}
-                  onPress={handleRegister}
-                  variant="primary"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </Animated.View>
+              {/* Secondary button */}
+              <Button
+                style={styles.secondaryButton}
+                onPress={handleMobileRegister}
+                variant="outline"
+                disabled={loading}
+              >
+                Create account with mobile
+              </Button>
             </View>
           </Animated.View>
           
@@ -468,166 +320,129 @@ export default function RegisterScreen() {
             style={styles.footer}
             entering={FadeInUp.delay(500).duration(800)}
           >
-            <Text style={[styles.footerText, { color: colors.muted }]}>
-              Already have an account?
-            </Text>
-            <TouchableOpacity 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/login');
-              }}
-            >
-              <Text style={[styles.loginLink, { color: colors.primary }]}>
-                Sign In
+            <TouchableOpacity onPress={handleBackToLogin}>
+              <Text style={styles.footerText}>
+                Already have an account? <Text style={styles.footerLink}>Log in</Text>
               </Text>
             </TouchableOpacity>
           </Animated.View>
-          
-          <Animated.View 
-            style={styles.termsContainer}
-            entering={FadeInUp.delay(600).duration(800)}
-          >
-            <Text style={[styles.termsText, { color: colors.muted }]}>
-              By signing up, you agree to our{' '}
-              <Text style={[styles.termsLink, { color: colors.primary }]}>
-                Terms of Service
-              </Text>
-              {' '}and{' '}
-              <Text style={[styles.termsLink, { color: colors.primary }]}>
-                Privacy Policy
-              </Text>
-            </Text>
-          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFDF5A',
   },
-  header: {
-    paddingBottom: 30,
-    alignItems: 'center',
-    position: 'relative',
+  backgroundCircle1: {
+    position: 'absolute',
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#FFD529',
   },
-  backButton: {
+  backgroundCircle2: {
     position: 'absolute',
     top: 50,
-    left: 20,
-    zIndex: 10,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginTop: 8,
+    right: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FFE98F',
+    opacity: 0.7,
   },
   keyboardAvoidingView: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -20,
   },
   scrollContent: {
     padding: 24,
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  textLogo: {
+    width: 180,
+    height: 30,
+    marginTop: 8,
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 24,
-    textAlign: 'center',
+    marginBottom: 30,
+    fontFamily: 'Nunito',
+    color: '#000',
   },
   form: {
+    width: '100%',
     gap: 16,
   },
-  nameRow: {
+  inputContainer: {
+    width: '100%',
+  },
+  termsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 5,
   },
-  nameField: {
-    flex: 1,
-  },
-  nameInputContainer: {
-    marginBottom: 0,
-  },
-  registerButton: {
-    marginTop: 8,
-    height: 56,
-  },
-  footer: {
-    flexDirection: 'row',
+  checkbox: {
+    borderRadius: 11,
+    borderColor: '#000',
+    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    gap: 4,
+  },
+  termsText: {
+    fontSize: 14,
+    color: '#000',
+    fontFamily: 'Nunito',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  primaryButton: {
+    marginTop: 10,
+    height: 56,
+    backgroundColor: '#000',
+  },
+  secondaryButton: {
+    height: 56,
+    borderColor: '#000',
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  footer: {
+    marginTop: 40,
+    alignItems: 'center',
   },
   footerText: {
     fontSize: 14,
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  loginLink: {
-    fontSize: 14,
+  footerLink: {
     fontWeight: 'bold',
-  },
-  termsContainer: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-  },
-  termsText: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  termsLink: {
-    fontWeight: 'bold',
-  },
-  strengthContainer: {
-    marginBottom: 12,
-  },
-  meterContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: 4,
-  },
-  meterBar: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-  },
-  strengthText: {
-    fontSize: 12,
-    alignSelf: 'flex-end',
-  },
-  requirementsContainer: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  requirementIcon: {
-    marginRight: 8,
-  },
-  requirementText: {
-    fontSize: 12,
   },
 }); 
