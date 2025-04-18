@@ -20,6 +20,8 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -121,11 +123,13 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
   
   // Animation values
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const buttonScale = useRef(new Animated.Value(0.95)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
   
   const { signIn, signInWithLinkedIn } = useAuth();
   
@@ -149,6 +153,18 @@ export default function SignInScreen() {
       }),
     ]).start();
   }, []);
+  
+  const toggleEmailForm = () => {
+    setShowEmailForm(!showEmailForm);
+    if (!showEmailForm) {
+      // Animate form appearance
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
   
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -187,16 +203,17 @@ export default function SignInScreen() {
     }
   };
   
-  const handleGoogleSignIn = () => {
+  const handleDemoSignIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Implementation for Google Sign-In would go here
-    router.push('/login');
-  };
-  
-  const handleAppleSignIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Implementation for Apple Sign-In would go here
-    router.push('/login');
+    
+    // Set default demo credentials
+    setEmail('demo@collaborito.com');
+    setPassword('demo123');
+    
+    // Auto login after a brief delay
+    setTimeout(() => {
+      handleSignIn();
+    }, 500);
   };
   
   const navigateToRegister = () => {
@@ -208,7 +225,7 @@ export default function SignInScreen() {
   };
   
   // Calculate card height as a percentage of screen height
-  const cardHeight = height * 0.5; // Increased height for more content
+  const cardHeight = height * 0.55; // Increased height for email form
   
   return (
     <View style={styles.container}>
@@ -248,86 +265,162 @@ export default function SignInScreen() {
       </SafeAreaView>
       
       {/* Main content card */}
-      <Animated.View 
-        style={[
-          styles.card, 
-          { 
-            opacity: contentOpacity,
-            height: cardHeight,
-            paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
-          }
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: showEmailForm ? 1 : 0 }}
       >
-        <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.cardContent}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue your journey with Collaborito
-            </Text>
-            
-            <Animated.View style={[
-              styles.buttonsContainer, 
-              { transform: [{ scale: buttonScale }] }
-            ]}>
-              {/* Google Sign In */}
-              <TouchableOpacity 
-                style={styles.socialButton}
-                onPress={handleGoogleSignIn}
-                disabled={isLoading}
-                activeOpacity={0.85}
-              >
-                <AntDesign name="google" size={20} color="#000" style={styles.socialIcon} />
-                <Text style={styles.socialButtonText}>Sign in with Google</Text>
-              </TouchableOpacity>
+        <Animated.View 
+          style={[
+            styles.card, 
+            { 
+              opacity: contentOpacity,
+              height: showEmailForm ? cardHeight : undefined,
+              paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
+            }
+          ]}
+        >
+          <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.cardContent}>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>
+                Sign in to continue your journey with Collaborito
+              </Text>
               
-              {/* Apple Sign In */}
-              <TouchableOpacity 
-                style={[styles.socialButton, styles.appleButton]}
-                onPress={handleAppleSignIn}
-                disabled={isLoading}
-                activeOpacity={0.85}
-              >
-                <AntDesign name="apple1" size={20} color="#fff" style={styles.socialIcon} />
-                <Text style={[styles.socialButtonText, styles.appleButtonText]}>Sign in with Apple</Text>
-              </TouchableOpacity>
-              
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.dividerLine} />
-              </View>
-              
-              {/* Email Sign In */}
-              <TouchableOpacity 
-                style={[styles.socialButton, styles.emailButton]}
-                onPress={handleSignIn}
-                disabled={isLoading}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={['#000000', '#333333']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                    {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with email"}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              {/* Error message if any */}
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-              
-              {/* Sign Up Link */}
-              <TouchableOpacity onPress={navigateToRegister} style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account? <Text style={styles.signUpTextBold}>Sign up</Text></Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </ScrollView>
-      </Animated.View>
+              {showEmailForm ? (
+                <Animated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
+                  {/* Email input */}
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email address"
+                      placeholderTextColor="#8C8C8C"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                      editable={!isLoading}
+                    />
+                  </View>
+                  
+                  {/* Password input */}
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor="#8C8C8C"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      editable={!isLoading}
+                    />
+                    <TouchableOpacity 
+                      style={styles.visibilityIcon} 
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons 
+                        name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                        size={20} 
+                        color="#8C8C8C" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Sign In Button */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.emailButton]}
+                    onPress={handleSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#000000', '#333333']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Back to options */}
+                  <TouchableOpacity 
+                    style={styles.backToOptions}
+                    onPress={toggleEmailForm}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.backToOptionsText}>Back to other options</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : (
+                <Animated.View style={[
+                  styles.buttonsContainer, 
+                  { transform: [{ scale: buttonScale }] }
+                ]}>
+                  {/* LinkedIn Sign In */}
+                  <TouchableOpacity 
+                    style={styles.socialButton}
+                    onPress={handleLinkedInSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <AntDesign name="linkedin-square" size={20} color="#0077B5" style={styles.socialIcon} />
+                    <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Demo Account Sign In */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.demoButton]}
+                    onPress={handleDemoSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
+                    <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Divider */}
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  
+                  {/* Email Sign In */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.emailButton]}
+                    onPress={toggleEmailForm}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#000000', '#333333']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with email"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Error message if any */}
+                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                  
+                  {/* Sign Up Link */}
+                  <TouchableOpacity onPress={navigateToRegister} style={styles.signUpContainer}>
+                    <Text style={styles.signUpText}>Don't have an account? <Text style={styles.signUpTextBold}>Sign up</Text></Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
+            </View>
+          </ScrollView>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -447,6 +540,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
+  emailFormContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 16,
+  },
+  inputContainer: {
+    width: '100%',
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: '#242428',
+    fontFamily: 'Nunito',
+  },
+  visibilityIcon: {
+    padding: 8,
+  },
   socialButton: {
     width: '100%',
     height: 54,
@@ -472,11 +596,11 @@ const styles = StyleSheet.create({
     color: '#242428',
     fontFamily: 'Nunito',
   },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
+  demoButton: {
+    backgroundColor: '#4B5563',
+    borderColor: '#4B5563',
   },
-  appleButtonText: {
+  demoButtonText: {
     color: '#FFF',
   },
   emailButton: {
@@ -534,5 +658,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontFamily: 'Nunito',
+  },
+  backToOptions: {
+    marginTop: 20,
+  },
+  backToOptionsText: {
+    fontSize: 14,
+    color: '#0077B5',
+    fontFamily: 'Nunito',
+    fontWeight: '600',
   }
 }); 
