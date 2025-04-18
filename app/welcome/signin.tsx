@@ -131,7 +131,7 @@ export default function SignInScreen() {
   const buttonScale = useRef(new Animated.Value(0.95)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
   
-  const { signIn, signInWithLinkedIn } = useAuth();
+  const { signIn, signInWithLinkedIn, signInWithDemo } = useAuth();
   
   useEffect(() => {
     // Animate logo and content on screen load
@@ -180,19 +180,25 @@ export default function SignInScreen() {
       // Log the credentials for debugging
       console.log('Attempting to sign in with:', { email, password });
       
-      // For demo account, show mock successful login
+      // For demo account, use the dedicated demo login function
       if (email === 'demo@collaborito.com' && password === 'demo123') {
-        // Simulate loading
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Use the signInWithDemo function from auth context
+        const success = await signInWithDemo();
         
-        // Simulate successful login and redirect
-        router.replace('/(tabs)');
+        if (success) {
+          // Directly navigate to tabs
+          router.replace('/(tabs)');
+        } else {
+          setError('Demo sign in failed');
+        }
         return;
       }
       
       // Regular authentication for non-demo accounts
       await signIn(email, password);
-      // Navigation will be handled by auth redirect
+      
+      // After successful sign in, manually navigate to tabs
+      router.replace('/(tabs)');
     } catch (error) {
       setError('Invalid email or password');
       console.error('Login error:', error);
@@ -208,7 +214,8 @@ export default function SignInScreen() {
     
     try {
       await signInWithLinkedIn();
-      // Navigation will be handled by auth redirect
+      // After successful LinkedIn sign in, manually navigate to tabs
+      router.replace('/(tabs)');
     } catch (error) {
       setError('LinkedIn sign in failed');
       console.error('LinkedIn login error:', error);
@@ -219,22 +226,25 @@ export default function SignInScreen() {
   
   const handleDemoSignIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsLoading(true);
     
-    // Set default demo credentials
-    setEmail('demo@collaborito.com');
-    setPassword('demo123');
-    
-    // Show the email form first
-    if (!showEmailForm) {
-      toggleEmailForm();
-    }
-    
-    // Allow form to render before attempting sign in
-    setTimeout(() => {
-      if (!isLoading) {
-        handleSignIn();
-      }
-    }, 800);
+    // Directly use the signInWithDemo function
+    signInWithDemo()
+      .then(success => {
+        if (success) {
+          // Navigate directly to tabs on success
+          router.replace('/(tabs)');
+        } else {
+          setError('Demo sign in failed');
+        }
+      })
+      .catch(error => {
+        console.error('Demo login error:', error);
+        setError('Failed to sign in with demo account');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
   
   const navigateToRegister = () => {
