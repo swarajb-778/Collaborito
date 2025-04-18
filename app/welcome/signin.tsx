@@ -177,6 +177,20 @@ export default function SignInScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     try {
+      // Log the credentials for debugging
+      console.log('Attempting to sign in with:', { email, password });
+      
+      // For demo account, show mock successful login
+      if (email === 'demo@collaborito.com' && password === 'demo123') {
+        // Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Simulate successful login and redirect
+        router.replace('/(tabs)');
+        return;
+      }
+      
+      // Regular authentication for non-demo accounts
       await signIn(email, password);
       // Navigation will be handled by auth redirect
     } catch (error) {
@@ -210,10 +224,17 @@ export default function SignInScreen() {
     setEmail('demo@collaborito.com');
     setPassword('demo123');
     
-    // Auto login after a brief delay
+    // Show the email form first
+    if (!showEmailForm) {
+      toggleEmailForm();
+    }
+    
+    // Allow form to render before attempting sign in
     setTimeout(() => {
-      handleSignIn();
-    }, 500);
+      if (!isLoading) {
+        handleSignIn();
+      }
+    }, 800);
   };
   
   const navigateToRegister = () => {
