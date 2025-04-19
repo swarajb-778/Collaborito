@@ -1,30 +1,10 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { Redirect, Stack } from 'expo-router';
-import { useAuth } from '../context/AuthContext';
-import { useColorScheme } from '../components/ui/useColorScheme';
+import { Redirect } from 'expo-router';
+import { useAuth } from '../src/contexts/AuthContext';
 
-export default function HomeScreen() {
-  const { isLoading, isAuthenticated, loadState } = useAuth();
-  const { colors } = useColorScheme();
+export default function Index() {
+  const { user } = useAuth();
   
-  useEffect(() => {
-    // Load authentication state when the app starts
-    loadState();
-  }, [loadState]);
-  
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
-  }
-  
-  // Redirect based on authentication status
-  if (isAuthenticated) {
-    return <Redirect href="home" />;
-  } else {
-    return <Redirect href="login" />;
-  }
+  // If user is authenticated, redirect to the home screen
+  // Otherwise, redirect to welcome screen
+  return user ? <Redirect href="/(tabs)" /> : <Redirect href="/welcome" />;
 } 
