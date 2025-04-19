@@ -71,7 +71,8 @@ const Gallery = () => {
   }, []);
   
   // Calculate responsive image height based on screen dimensions
-  const imageHeight = Math.min(height * 0.20, 140); // Adjusted height for better visibility
+  // Reduced image height to prevent overlap with the card
+  const imageHeight = Math.min(height * 0.15, 110);
   
   return (
     <View style={styles.galleryGrid}>
@@ -441,8 +442,8 @@ export default function SignInScreen() {
     router.back();
   };
   
-  // Calculate card height as a percentage of screen height
-  const cardHeight = height * 0.55; // Increased height for email form
+  // Calculate card height as a percentage of screen height - adjusted to avoid overlap
+  const cardHeight = showEmailForm ? height * 0.55 : height * 0.48;
   
   return (
     <View style={styles.container}>
@@ -475,8 +476,16 @@ export default function SignInScreen() {
           />
         </RNAnimated.View>
         
-        {/* Gallery below the logo */}
-        <RNAnimated.View style={{ opacity: contentOpacity, width: '100%' }}>
+        {/* Gallery below the logo - wrapped in a container with fixed height to prevent overlap */}
+        <RNAnimated.View 
+          style={{ 
+            opacity: contentOpacity, 
+            width: '100%', 
+            height: height * 0.4,  // Fixed height for gallery container
+            maxHeight: 380,        // Maximum height to prevent overflow
+            marginBottom: 80       // Add margin at bottom to create space before card
+          }}
+        >
           <Gallery />
         </RNAnimated.View>
       </SafeAreaView>
@@ -491,7 +500,7 @@ export default function SignInScreen() {
             styles.card, 
             { 
               opacity: contentOpacity,
-              height: showEmailForm ? cardHeight : undefined,
+              height: cardHeight,
               paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
             }
           ]}
@@ -667,6 +676,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
+    paddingBottom: 60, // Added padding to create space before the card
   },
   gradientBackground: {
     position: 'absolute',
@@ -693,16 +703,16 @@ const styles = StyleSheet.create({
   },
   galleryGrid: {
     flexDirection: 'row',
-    padding: 15,
-    gap: 9,
+    padding: 12, // Reduced padding
+    gap: 8,      // Reduced gap
     width: '100%',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginVertical: 15,
+    marginVertical: 10, // Reduced vertical margin
   },
   galleryColumn: {
     flex: 1,
-    gap: 9,
+    gap: 8, // Reduced gap between images
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
@@ -718,11 +728,11 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     paddingTop: 10,
-    marginBottom: 10,
+    marginBottom: 5, // Reduced margin
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 70,  // Slightly smaller logo
+    height: 70, // Slightly smaller logo
   },
   textLogo: {
     width: 180,
@@ -742,6 +752,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
+    zIndex: 5, // Added zIndex to ensure card appears on top
   },
   cardScroll: {
     flex: 1,
