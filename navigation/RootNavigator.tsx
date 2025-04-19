@@ -1,10 +1,24 @@
 import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { ActivityIndicator, View } from 'react-native';
-import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
+import AuthNavigator from './AuthNavigator';
 import { useColorScheme } from '../components/ui/useColorScheme';
+import HomeScreen from '../screens/HomeScreen';
+import { createStackNavigator } from '@react-navigation/stack';
 
-export default function HomeScreen() {
+const Stack = createStackNavigator();
+
+// App navigator for authenticated users
+const AppNavigator = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+    </Stack.Navigator>
+  );
+};
+
+export default function RootNavigator() {
   const { isLoading, isAuthenticated, loadState } = useAuth();
   const { colors } = useColorScheme();
   
@@ -21,10 +35,9 @@ export default function HomeScreen() {
     );
   }
   
-  // Redirect based on authentication status
-  if (isAuthenticated) {
-    return <Redirect href="home" />;
-  } else {
-    return <Redirect href="login" />;
-  }
+  return (
+    <NavigationContainer>
+      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
+    </NavigationContainer>
+  );
 } 

@@ -49,8 +49,7 @@ const Gallery = () => {
   }, []);
   
   // Calculate responsive image height based on screen dimensions
-  // Reduced image height to match signin page
-  const imageHeight = Math.min(height * 0.15, 110);
+  const imageHeight = Math.min(height * 0.20, 140); // Adjusted height for better visibility
   
   return (
     <View style={styles.galleryGrid}>
@@ -159,7 +158,7 @@ export default function WelcomeScreen() {
   };
   
   // Calculate card height as a percentage of screen height
-  const cardHeight = height * 0.40; // Increased height slightly to accommodate content
+  const cardHeight = height * 0.35;
   
   return (
     <View style={styles.container}>
@@ -187,16 +186,8 @@ export default function WelcomeScreen() {
           />
         </Animated.View>
         
-        {/* Gallery below the logo - with fixed height container to match signin page */}
-        <Animated.View 
-          style={{ 
-            opacity: contentOpacity, 
-            width: '100%', 
-            height: height * 0.4,
-            maxHeight: 380,
-            marginBottom: 80
-          }}
-        >
+        {/* Gallery below the logo */}
+        <Animated.View style={{ opacity: contentOpacity, width: '100%' }}>
           <Gallery />
         </Animated.View>
       </SafeAreaView>
@@ -209,7 +200,6 @@ export default function WelcomeScreen() {
             opacity: contentOpacity,
             height: cardHeight,
             paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
-            zIndex: 5 // Added zIndex to ensure card appears on top
           }
         ]}
       >
@@ -255,7 +245,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    paddingBottom: 60, // Added padding to match signin page
   },
   gradientBackground: {
     position: 'absolute',
@@ -265,16 +254,16 @@ const styles = StyleSheet.create({
   },
   galleryGrid: {
     flexDirection: 'row',
-    padding: 12, // Reduced padding to match signin page
-    gap: 8,      // Reduced gap to match signin page
+    padding: 15,
+    gap: 9,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginVertical: 10, // Reduced margin to match signin page
+    marginVertical: 15,
   },
   galleryColumn: {
     flex: 1,
-    gap: 8, // Reduced gap to match signin page
+    gap: 9,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
@@ -290,11 +279,11 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     paddingTop: 10,
-    marginBottom: 5, // Reduced margin to match signin page
+    marginBottom: 10,
   },
   logo: {
-    width: 70,  // Smaller logo to match signin page
-    height: 70, // Smaller logo to match signin page
+    width: 80,
+    height: 80,
   },
   textLogo: {
     width: 180,

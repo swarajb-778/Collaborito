@@ -13,7 +13,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
-  Animated as RNAnimated
+  Animated
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -21,23 +21,9 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
-import Reanimated, { 
-  FadeIn, 
-  FadeInDown, 
-  FadeInUp, 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSequence, 
-  withTiming, 
-  Easing,
-  SlideInDown,
-  SlideInUp  
-} from 'react-native-reanimated';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -45,24 +31,24 @@ const { width, height } = Dimensions.get('window');
 // Gallery component to display grid of images
 const Gallery = () => {
   // Animation values for staggered entrance
-  const fadeAnim1 = useRef(new RNAnimated.Value(0)).current;
-  const fadeAnim2 = useRef(new RNAnimated.Value(0)).current;
-  const fadeAnim3 = useRef(new RNAnimated.Value(0)).current;
+  const fadeAnim1 = useRef(new Animated.Value(0)).current;
+  const fadeAnim2 = useRef(new Animated.Value(0)).current;
+  const fadeAnim3 = useRef(new Animated.Value(0)).current;
   
   useEffect(() => {
     // Create staggered animation for columns
-    RNAnimated.stagger(200, [
-      RNAnimated.timing(fadeAnim1, {
+    Animated.stagger(200, [
+      Animated.timing(fadeAnim1, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
-      RNAnimated.timing(fadeAnim2, {
+      Animated.timing(fadeAnim2, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
-      RNAnimated.timing(fadeAnim3, {
+      Animated.timing(fadeAnim3, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
@@ -71,12 +57,11 @@ const Gallery = () => {
   }, []);
   
   // Calculate responsive image height based on screen dimensions
-  // Reduced image height to prevent overlap with the card
-  const imageHeight = Math.min(height * 0.15, 110);
+  const imageHeight = Math.min(height * 0.20, 140); // Adjusted height for better visibility
   
   return (
     <View style={styles.galleryGrid}>
-      <RNAnimated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -92,8 +77,8 @@ const Gallery = () => {
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-      </RNAnimated.View>
-      <RNAnimated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
+      </Animated.View>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -109,8 +94,8 @@ const Gallery = () => {
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-      </RNAnimated.View>
-      <RNAnimated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
+      </Animated.View>
+      <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -126,151 +111,42 @@ const Gallery = () => {
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-      </RNAnimated.View>
+      </Animated.View>
     </View>
-  );
-};
-
-// Add email validation function
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-// Define the type for the SocialLoginButton component
-type SocialLoginButtonProps = {
-  icon: React.ReactNode;
-  text: string;
-  onPress: () => void;
-  color?: string;
-  textColor?: string;
-  border?: string;
-  muted?: string;
-  isLoading?: string | null;
-};
-
-// Social Login Button Component with animation
-const SocialLoginButton = ({
-  icon,
-  text,
-  onPress,
-  color = '#FFFFFF',
-  textColor = '#000000',
-  border = 'transparent',
-  isLoading = null,
-  muted = '#8C8C8C'
-}: SocialLoginButtonProps) => {
-  // Local animation values for button press feedback
-  const scale = useSharedValue(1);
-  
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }]
-    };
-  });
-  
-  const handlePress = () => {
-    // Animate scale and trigger haptic feedback
-    scale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
-  };
-  
-  return (
-    <Reanimated.View style={animatedStyle}>
-      <TouchableOpacity 
-        style={[styles.socialButton, { backgroundColor: color }]} 
-        onPress={handlePress}
-        disabled={!!isLoading}
-        activeOpacity={0.9}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color={textColor} />
-        ) : (
-          <>
-            <View style={styles.socialIcon}>{icon}</View>
-            <Text style={[styles.socialButtonText, { color: textColor }]}>{text}</Text>
-          </>
-        )}
-      </TouchableOpacity>
-    </Reanimated.View>
   );
 };
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   
   // Animation values
-  const logoScale = useRef(new RNAnimated.Value(0.8)).current;
-  const contentOpacity = useRef(new RNAnimated.Value(0)).current;
-  const buttonScale = useRef(new RNAnimated.Value(0.95)).current;
-  const formOpacity = useRef(new RNAnimated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(0.95)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
   
   const { signIn, signInWithLinkedIn, signInWithDemo } = useAuth();
   
-  // Add these additional animation values to the component
-  const signInButtonScale = useSharedValue(1);
-  const socialButtonsOpacity = useSharedValue(1);
-  const loadingIndicatorOpacity = useSharedValue(0);
-  const loadingProgress = useSharedValue(0);
-  const successCheckOpacity = useSharedValue(0);
-  const successCheckScale = useSharedValue(0);
-  
-  // Add these animated styles
-  const signInButtonAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: signInButtonScale.value }],
-    };
-  });
-  
-  const socialButtonsAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: socialButtonsOpacity.value,
-    };
-  });
-  
-  const loadingIndicatorStyle = useAnimatedStyle(() => {
-    return {
-      opacity: loadingIndicatorOpacity.value,
-      transform: [{ scale: loadingIndicatorOpacity.value }],
-    };
-  });
-  
-  const successCheckStyle = useAnimatedStyle(() => {
-    return {
-      opacity: successCheckOpacity.value,
-      transform: [{ scale: successCheckScale.value }],
-    };
-  });
-  
   useEffect(() => {
     // Animate logo and content on screen load
-    RNAnimated.sequence([
-      RNAnimated.timing(logoScale, {
+    Animated.sequence([
+      Animated.timing(logoScale, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
-      RNAnimated.timing(contentOpacity, {
+      Animated.timing(contentOpacity, {
         toValue: 1,
         duration: 600,
         useNativeDriver: true,
       }),
-      RNAnimated.timing(buttonScale, {
+      Animated.timing(buttonScale, {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
@@ -282,7 +158,7 @@ export default function SignInScreen() {
     setShowEmailForm(!showEmailForm);
     if (!showEmailForm) {
       // Animate form appearance
-      RNAnimated.timing(formOpacity, {
+      Animated.timing(formOpacity, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
@@ -291,159 +167,96 @@ export default function SignInScreen() {
   };
   
   const handleSignIn = async () => {
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+    
+    setError('');
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     try {
-      // Validate inputs
-      if (!validateEmail(email)) {
-        setError('Please enter a valid email');
+      // Log the credentials for debugging
+      console.log('Attempting to sign in with:', { email, password });
+      
+      // For demo account, use the dedicated demo login function
+      if (email === 'demo@collaborito.com' && password === 'demo123') {
+        // Use the signInWithDemo function from auth context
+        const success = await signInWithDemo();
+        
+        if (success) {
+          // Directly navigate to tabs
+          router.replace('/(tabs)');
+        } else {
+          setError('Demo sign in failed');
+        }
         return;
       }
-      if (!password) {
-        setError('Please enter your password');
-        return;
-      }
       
-      setError('');
-      setIsLoading('signin');
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Regular authentication for non-demo accounts
+      await signIn(email, password);
       
-      // Implement your auth logic here
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // On successful login
+      // After successful sign in, manually navigate to tabs
       router.replace('/(tabs)');
     } catch (error) {
-      setError('Login failed. Please check your credentials.');
+      setError('Invalid email or password');
       console.error('Login error:', error);
     } finally {
-      setIsLoading(null);
+      setIsLoading(false);
     }
   };
   
   const handleLinkedInSignIn = async () => {
+    setError('');
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     try {
-      // Start animation and haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
-      signInButtonScale.value = withSequence(
-        withTiming(0.95, { duration: 100 }),
-        withTiming(1, { duration: 200 })
-      );
-      
-      socialButtonsOpacity.value = withTiming(0.7, { duration: 300 });
-      loadingIndicatorOpacity.value = withTiming(1, { duration: 300 });
-      
-      // Simulate a loading progress animation
-      const animateProgress = () => {
-        loadingProgress.value = withTiming(1, { 
-          duration: 1200,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-        });
-      };
-      
-      animateProgress();
-      
-      console.log('Starting LinkedIn login flow');
       await signInWithLinkedIn();
-      
-      // Show success animation before navigating
-      socialButtonsOpacity.value = withTiming(0, { duration: 200 });
-      loadingIndicatorOpacity.value = withTiming(0, { duration: 200 });
-      
-      successCheckOpacity.value = withTiming(1, { duration: 300 });
-      successCheckScale.value = withSequence(
-        withTiming(1.2, { duration: 200 }),
-        withTiming(1, { duration: 200 })
-      );
-      
-      // Success haptic feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      // Wait a moment to show success animation before navigating
-      setTimeout(() => {
-        router.replace('/(tabs)');
-      }, 500);
+      // After successful LinkedIn sign in, manually navigate to tabs
+      router.replace('/(tabs)');
     } catch (error) {
-      console.error('LinkedIn sign in error:', error);
-      
-      // Error animation and haptic feedback
-      socialButtonsOpacity.value = withTiming(1, { duration: 300 });
-      loadingIndicatorOpacity.value = withTiming(0, { duration: 200 });
-      loadingProgress.value = withTiming(0, { duration: 200 });
-      
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setError('LinkedIn sign in failed');
+      console.error('LinkedIn login error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const handleDemoSignIn = async () => {
-    try {
-      // Start animation and haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setDemoLoading(true);
-      
-      signInButtonScale.value = withSequence(
-        withTiming(0.95, { duration: 100 }),
-        withTiming(1, { duration: 200 })
-      );
-      
-      socialButtonsOpacity.value = withTiming(0.7, { duration: 300 });
-      loadingIndicatorOpacity.value = withTiming(1, { duration: 300 });
-      
-      // Simulate a loading progress animation
-      loadingProgress.value = withTiming(1, { 
-        duration: 1200,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-      });
-      
-      // For visual feedback, wait a bit
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const success = await signInWithDemo();
-      
-      if (success) {
-        // Show success animation before navigating
-        socialButtonsOpacity.value = withTiming(0, { duration: 200 });
-        loadingIndicatorOpacity.value = withTiming(0, { duration: 200 });
-        
-        successCheckOpacity.value = withTiming(1, { duration: 300 });
-        successCheckScale.value = withSequence(
-          withTiming(1.2, { duration: 200 }),
-          withTiming(1, { duration: 200 })
-        );
-        
-        // Success haptic feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Wait a moment to show success animation before navigating
-        setTimeout(() => {
+  const handleDemoSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsLoading(true);
+    
+    // Directly use the signInWithDemo function
+    signInWithDemo()
+      .then(success => {
+        if (success) {
+          // Navigate directly to tabs on success
           router.replace('/(tabs)');
-        }, 500);
-      }
-    } catch (error) {
-      console.error('Demo sign in error:', error);
-      
-      // Error animation and haptic feedback
-      socialButtonsOpacity.value = withTiming(1, { duration: 300 });
-      loadingIndicatorOpacity.value = withTiming(0, { duration: 200 });
-      loadingProgress.value = withTiming(0, { duration: 200 });
-      
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setDemoLoading(false);
-    }
+        } else {
+          setError('Demo sign in failed');
+        }
+      })
+      .catch(error => {
+        console.error('Demo login error:', error);
+        setError('Failed to sign in with demo account');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
   
   const navigateToRegister = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/register');
   };
   
   const navigateBack = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
   
-  // Calculate card height as a percentage of screen height - adjusted for content
-  const cardHeight = showEmailForm ? height * 0.55 : height * 0.46;
+  // Calculate card height as a percentage of screen height
+  const cardHeight = height * 0.55; // Increased height for email form
   
   return (
     <View style={styles.container}>
@@ -463,7 +276,7 @@ export default function SignInScreen() {
         </TouchableOpacity>
         
         {/* Logo at the top */}
-        <RNAnimated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+        <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
           <Image 
             source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
             style={styles.logo}
@@ -474,20 +287,12 @@ export default function SignInScreen() {
             style={styles.textLogo}
             resizeMode="contain"
           />
-        </RNAnimated.View>
+        </Animated.View>
         
-        {/* Gallery below the logo - wrapped in a container with fixed height to prevent overlap */}
-        <RNAnimated.View 
-          style={{ 
-            opacity: contentOpacity, 
-            width: '100%', 
-            height: height * 0.4,  // Fixed height for gallery container
-            maxHeight: 380,        // Maximum height to prevent overflow
-            marginBottom: 80       // Add margin at bottom to create space before card
-          }}
-        >
+        {/* Gallery below the logo */}
+        <Animated.View style={{ opacity: contentOpacity, width: '100%' }}>
           <Gallery />
-        </RNAnimated.View>
+        </Animated.View>
       </SafeAreaView>
       
       {/* Main content card */}
@@ -495,173 +300,157 @@ export default function SignInScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: showEmailForm ? 1 : 0 }}
       >
-        <RNAnimated.View 
+        <Animated.View 
           style={[
             styles.card, 
             { 
               opacity: contentOpacity,
-              height: cardHeight,
+              height: showEmailForm ? cardHeight : undefined,
               paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
-              zIndex: 5, // Ensure card appears on top
             }
           ]}
         >
-          <View style={styles.cardContent}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue your journey with Collaborito
-            </Text>
-            
-            {showEmailForm ? (
-              <RNAnimated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
-                {/* Email input */}
-                <View style={styles.inputContainer}>
-                  <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email address"
-                    placeholderTextColor="#8C8C8C"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                    editable={!isLoading}
-                  />
-                </View>
-                
-                {/* Password input */}
-                <View style={styles.inputContainer}>
-                  <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="#8C8C8C"
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={setPassword}
-                    editable={!isLoading}
-                  />
-                  <TouchableOpacity 
-                    style={styles.visibilityIcon} 
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                      size={20} 
-                      color="#8C8C8C" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                
-                {/* Sign In Button */}
-                <TouchableOpacity 
-                  style={[styles.socialButton, styles.emailButton]}
-                  onPress={handleSignIn}
-                  disabled={!!isLoading}
-                  activeOpacity={0.85}
-                >
-                  <LinearGradient
-                    colors={['#000000', '#333333']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.buttonGradient}
-                  >
-                    <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                      {isLoading === 'signin' ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-                
-                {/* Back to options */}
-                <TouchableOpacity 
-                  style={styles.backToOptions}
-                  onPress={toggleEmailForm}
-                  disabled={!!isLoading}
-                >
-                  <Text style={styles.backToOptionsText}>Back to other options</Text>
-                </TouchableOpacity>
-              </RNAnimated.View>
-            ) : (
-              <View style={styles.socialLoginContainer}>
-                <Text style={[styles.socialLoginTitle, { color: colors.muted }]}>
-                  Continue with
-                </Text>
-                
-                <RNAnimated.View style={socialButtonsAnimatedStyle}>
-                  <SocialLoginButton
-                    icon={<FontAwesome name="linkedin" size={20} color="#FFFFFF" />}
-                    text="LinkedIn"
-                    onPress={handleLinkedInSignIn}
-                    color="#0077B5"
-                    textColor="#FFFFFF"
-                    isLoading={isLoading === 'linkedin' ? 'linkedin' : null}
-                    muted={colors.muted}
-                    border={colors.border}
-                  />
-                  
-                  <SocialLoginButton
-                    icon={<MaterialCommunityIcons name="email-outline" size={20} color="#FFFFFF" />}
-                    text="Sign in with Email"
-                    onPress={toggleEmailForm}
-                    color={colors.secondary}
-                    textColor="#FFFFFF"
-                    isLoading={isLoading === 'email' ? 'email' : null}
-                    muted={colors.muted}
-                    border={colors.border}
-                  />
-                </RNAnimated.View>
-                
-                <View style={styles.orDivider}>
-                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                  <Text style={[styles.dividerText, { color: colors.muted }]}>OR</Text>
-                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                </View>
-                
-                {/* Sign up button */}
-                <TouchableOpacity 
-                  style={[styles.signUpButton, { borderColor: colors.primary }]}
-                  onPress={navigateToRegister}
-                >
-                  <Text style={[styles.signUpButtonText, { color: colors.primary }]}>Create an Account</Text>
-                </TouchableOpacity>
-                
-                {/* Demo Account */}
-                <TouchableOpacity 
-                  style={styles.demoAccountButton}
-                  onPress={handleDemoSignIn}
-                >
-                  <Text style={[styles.demoAccountText, { color: colors.muted }]}>Try Demo Account</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          
-          {/* Loading and success indicators moved outside the main content */}
-          <RNAnimated.View 
-            style={[styles.loadingContainer, loadingIndicatorStyle]}
-            pointerEvents="none"
-          >
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>
-              Signing In...
-            </Text>
-          </RNAnimated.View>
-          
-          {/* Sign in success overlay - moved outside main card content and adjusted z-index */}
-          <RNAnimated.View 
-            style={[styles.successContainer, successCheckStyle]}
-            pointerEvents="none"
-          >
-            <View style={[styles.successCircle, { backgroundColor: colors.success }]}>
-              <FontAwesome5 name="check" size={24} color="#FFFFFF" />
-            </View>
-            <View style={styles.successTextContainer}>
-              <Text style={[styles.successText, { color: colors.accent }]}>
-                Sign In Successful!
+          <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.cardContent}>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>
+                Sign in to continue your journey with Collaborito
               </Text>
+              
+              {showEmailForm ? (
+                <Animated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
+                  {/* Email input */}
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email address"
+                      placeholderTextColor="#8C8C8C"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                      editable={!isLoading}
+                    />
+                  </View>
+                  
+                  {/* Password input */}
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor="#8C8C8C"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      editable={!isLoading}
+                    />
+                    <TouchableOpacity 
+                      style={styles.visibilityIcon} 
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons 
+                        name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                        size={20} 
+                        color="#8C8C8C" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Sign In Button */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.emailButton]}
+                    onPress={handleSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#000000', '#333333']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Back to options */}
+                  <TouchableOpacity 
+                    style={styles.backToOptions}
+                    onPress={toggleEmailForm}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.backToOptionsText}>Back to other options</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : (
+                <Animated.View style={[
+                  styles.buttonsContainer, 
+                  { transform: [{ scale: buttonScale }] }
+                ]}>
+                  {/* LinkedIn Sign In */}
+                  <TouchableOpacity 
+                    style={styles.socialButton}
+                    onPress={handleLinkedInSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <AntDesign name="linkedin-square" size={20} color="#0077B5" style={styles.socialIcon} />
+                    <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Demo Account Sign In */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.demoButton]}
+                    onPress={handleDemoSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
+                    <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Divider */}
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  
+                  {/* Email Sign In */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.emailButton]}
+                    onPress={toggleEmailForm}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#000000', '#333333']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with email"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Error message if any */}
+                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                  
+                  {/* Sign Up Link */}
+                  <TouchableOpacity onPress={navigateToRegister} style={styles.signUpContainer}>
+                    <Text style={styles.signUpText}>Don't have an account? <Text style={styles.signUpTextBold}>Sign up</Text></Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
             </View>
-          </RNAnimated.View>
-        </RNAnimated.View>
+          </ScrollView>
+        </Animated.View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -676,7 +465,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    paddingBottom: 60, // Added padding to create space before the card
   },
   gradientBackground: {
     position: 'absolute',
@@ -703,16 +491,16 @@ const styles = StyleSheet.create({
   },
   galleryGrid: {
     flexDirection: 'row',
-    padding: 12, // Reduced padding
-    gap: 8,      // Reduced gap
+    padding: 15,
+    gap: 9,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginVertical: 10, // Reduced vertical margin
+    marginVertical: 15,
   },
   galleryColumn: {
     flex: 1,
-    gap: 8, // Reduced gap between images
+    gap: 9,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
@@ -728,11 +516,11 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     paddingTop: 10,
-    marginBottom: 5, // Reduced margin
+    marginBottom: 10,
   },
   logo: {
-    width: 70,  // Slightly smaller logo
-    height: 70, // Slightly smaller logo
+    width: 80,
+    height: 80,
   },
   textLogo: {
     width: 180,
@@ -752,12 +540,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
-    zIndex: 5, // Added zIndex to ensure card appears on top
+  },
+  cardScroll: {
+    flex: 1,
   },
   cardContent: {
     padding: 28,
     flex: 1,
-    justifyContent: 'flex-start', // Changed from space-between to flex-start
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 24,
@@ -776,44 +566,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     lineHeight: 24,
   },
-  socialLoginContainer: {
+  buttonsContainer: {
     width: '100%',
-    marginBottom: 20,
-  },
-  socialLoginTitle: {
-    textAlign: 'center',
-    marginBottom: 16,
-    fontSize: 14,
-  },
-  socialButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 48,
-    borderRadius: 8,
-    marginBottom: 12,
-    position: 'relative',
-  },
-  socialIcon: {
-    position: 'absolute',
-    left: 16,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  orDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: 14,
-    paddingHorizontal: 10,
+    gap: 16,
   },
   emailFormContainer: {
     width: '100%',
@@ -846,6 +602,38 @@ const styles = StyleSheet.create({
   visibilityIcon: {
     padding: 8,
   },
+  socialButton: {
+    width: '100%',
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  socialIcon: {
+    marginRight: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#242428',
+    fontFamily: 'Nunito',
+  },
+  demoButton: {
+    backgroundColor: '#4B5563',
+    borderColor: '#4B5563',
+  },
+  demoButtonText: {
+    color: '#FFF',
+  },
   emailButton: {
     borderWidth: 0,
     overflow: 'hidden',
@@ -864,6 +652,23 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  divider: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5E5',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#8C8C8C',
+    fontSize: 14,
+    fontFamily: 'Nunito',
   },
   signUpContainer: {
     marginTop: 20,
@@ -893,86 +698,5 @@ const styles = StyleSheet.create({
     color: '#0077B5',
     fontFamily: 'Nunito',
     fontWeight: '600',
-  },
-  signUpButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  signUpButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  emailSignInButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  emailSignInText: {
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10, // Increased z-index to ensure it's above all other content
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Added semi-transparent background
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  successContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 15, // Higher z-index than loading indicator
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Added semi-transparent background
-  },
-  successCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  successTextContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  successText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  demoAccountButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  demoAccountText: {
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  }
 }); 
