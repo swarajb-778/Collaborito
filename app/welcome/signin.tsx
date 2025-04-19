@@ -442,8 +442,8 @@ export default function SignInScreen() {
     router.back();
   };
   
-  // Calculate card height as a percentage of screen height - adjusted to avoid overlap
-  const cardHeight = showEmailForm ? height * 0.55 : height * 0.48;
+  // Calculate card height as a percentage of screen height - adjusted for content
+  const cardHeight = showEmailForm ? height * 0.55 : height * 0.46;
   
   return (
     <View style={styles.container}>
@@ -502,165 +502,165 @@ export default function SignInScreen() {
               opacity: contentOpacity,
               height: cardHeight,
               paddingBottom: Math.max(insets.bottom + 16, 40), // Adjust for safe area
+              zIndex: 5, // Ensure card appears on top
             }
           ]}
         >
-          <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.cardContent}>
-              <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>
-                Sign in to continue your journey with Collaborito
-              </Text>
-              
-              {showEmailForm ? (
-                <RNAnimated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
-                  {/* Email input */}
-                  <View style={styles.inputContainer}>
-                    <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Email address"
-                      placeholderTextColor="#8C8C8C"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      value={email}
-                      onChangeText={setEmail}
-                      editable={!isLoading}
-                    />
-                  </View>
-                  
-                  {/* Password input */}
-                  <View style={styles.inputContainer}>
-                    <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Password"
-                      placeholderTextColor="#8C8C8C"
-                      secureTextEntry={!showPassword}
-                      value={password}
-                      onChangeText={setPassword}
-                      editable={!isLoading}
-                    />
-                    <TouchableOpacity 
-                      style={styles.visibilityIcon} 
-                      onPress={() => setShowPassword(!showPassword)}
-                    >
-                      <Ionicons 
-                        name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                        size={20} 
-                        color="#8C8C8C" 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  {/* Sign In Button */}
+          <View style={styles.cardContent}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+              Sign in to continue your journey with Collaborito
+            </Text>
+            
+            {showEmailForm ? (
+              <RNAnimated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
+                {/* Email input */}
+                <View style={styles.inputContainer}>
+                  <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email address"
+                    placeholderTextColor="#8C8C8C"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                    editable={!isLoading}
+                  />
+                </View>
+                
+                {/* Password input */}
+                <View style={styles.inputContainer}>
+                  <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#8C8C8C"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    editable={!isLoading}
+                  />
                   <TouchableOpacity 
-                    style={[styles.socialButton, styles.emailButton]}
-                    onPress={handleSignIn}
-                    disabled={!!isLoading}
-                    activeOpacity={0.85}
+                    style={styles.visibilityIcon} 
+                    onPress={() => setShowPassword(!showPassword)}
                   >
-                    <LinearGradient
-                      colors={['#000000', '#333333']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.buttonGradient}
-                    >
-                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                        {isLoading === 'signin' ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  
-                  {/* Back to options */}
-                  <TouchableOpacity 
-                    style={styles.backToOptions}
-                    onPress={toggleEmailForm}
-                    disabled={!!isLoading}
-                  >
-                    <Text style={styles.backToOptionsText}>Back to other options</Text>
-                  </TouchableOpacity>
-                </RNAnimated.View>
-              ) : (
-                <View style={styles.socialLoginContainer}>
-                  <Text style={[styles.socialLoginTitle, { color: colors.muted }]}>
-                    Continue with
-                  </Text>
-                  
-                  <RNAnimated.View style={socialButtonsAnimatedStyle}>
-                    <SocialLoginButton
-                      icon={<FontAwesome name="linkedin" size={20} color="#FFFFFF" />}
-                      text="LinkedIn"
-                      onPress={handleLinkedInSignIn}
-                      color="#0077B5"
-                      textColor="#FFFFFF"
-                      isLoading={isLoading === 'linkedin' ? 'linkedin' : null}
-                      muted={colors.muted}
-                      border={colors.border}
+                    <Ionicons 
+                      name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                      size={20} 
+                      color="#8C8C8C" 
                     />
-                    
-                    <SocialLoginButton
-                      icon={<MaterialCommunityIcons name="email-outline" size={20} color="#FFFFFF" />}
-                      text="Sign in with Email"
-                      onPress={toggleEmailForm}
-                      color={colors.secondary}
-                      textColor="#FFFFFF"
-                      isLoading={isLoading === 'email' ? 'email' : null}
-                      muted={colors.muted}
-                      border={colors.border}
-                    />
-                  </RNAnimated.View>
-                  
-                  {/* Loading and success indicators */}
-                  <RNAnimated.View 
-                    style={[styles.loadingContainer, loadingIndicatorStyle]}
-                    pointerEvents="none"
-                  >
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: colors.text }]}>
-                      Signing In...
-                    </Text>
-                  </RNAnimated.View>
-                  
-                  <RNAnimated.View 
-                    style={[styles.successContainer, successCheckStyle]}
-                    pointerEvents="none"
-                  >
-                    <View style={[styles.successCircle, { backgroundColor: colors.success }]}>
-                      <FontAwesome5 name="check" size={24} color="#FFFFFF" />
-                    </View>
-                    <View style={styles.successTextContainer}>
-                      <Text style={[styles.successText, { color: colors.accent }]}>
-                        Sign In Successful!
-                      </Text>
-                    </View>
-                  </RNAnimated.View>
-                  
-                  <View style={styles.orDivider}>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                    <Text style={[styles.dividerText, { color: colors.muted }]}>OR</Text>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                  </View>
-                  
-                  {/* Sign up button */}
-                  <TouchableOpacity 
-                    style={[styles.signUpButton, { borderColor: colors.primary }]}
-                    onPress={navigateToRegister}
-                  >
-                    <Text style={[styles.signUpButtonText, { color: colors.primary }]}>Create an Account</Text>
-                  </TouchableOpacity>
-                  
-                  {/* Demo Account */}
-                  <TouchableOpacity 
-                    style={styles.demoAccountButton}
-                    onPress={handleDemoSignIn}
-                  >
-                    <Text style={[styles.demoAccountText, { color: colors.muted }]}>Try Demo Account</Text>
                   </TouchableOpacity>
                 </View>
-              )}
+                
+                {/* Sign In Button */}
+                <TouchableOpacity 
+                  style={[styles.socialButton, styles.emailButton]}
+                  onPress={handleSignIn}
+                  disabled={!!isLoading}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={['#000000', '#333333']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                      {isLoading === 'signin' ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                {/* Back to options */}
+                <TouchableOpacity 
+                  style={styles.backToOptions}
+                  onPress={toggleEmailForm}
+                  disabled={!!isLoading}
+                >
+                  <Text style={styles.backToOptionsText}>Back to other options</Text>
+                </TouchableOpacity>
+              </RNAnimated.View>
+            ) : (
+              <View style={styles.socialLoginContainer}>
+                <Text style={[styles.socialLoginTitle, { color: colors.muted }]}>
+                  Continue with
+                </Text>
+                
+                <RNAnimated.View style={socialButtonsAnimatedStyle}>
+                  <SocialLoginButton
+                    icon={<FontAwesome name="linkedin" size={20} color="#FFFFFF" />}
+                    text="LinkedIn"
+                    onPress={handleLinkedInSignIn}
+                    color="#0077B5"
+                    textColor="#FFFFFF"
+                    isLoading={isLoading === 'linkedin' ? 'linkedin' : null}
+                    muted={colors.muted}
+                    border={colors.border}
+                  />
+                  
+                  <SocialLoginButton
+                    icon={<MaterialCommunityIcons name="email-outline" size={20} color="#FFFFFF" />}
+                    text="Sign in with Email"
+                    onPress={toggleEmailForm}
+                    color={colors.secondary}
+                    textColor="#FFFFFF"
+                    isLoading={isLoading === 'email' ? 'email' : null}
+                    muted={colors.muted}
+                    border={colors.border}
+                  />
+                </RNAnimated.View>
+                
+                <View style={styles.orDivider}>
+                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                  <Text style={[styles.dividerText, { color: colors.muted }]}>OR</Text>
+                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                </View>
+                
+                {/* Sign up button */}
+                <TouchableOpacity 
+                  style={[styles.signUpButton, { borderColor: colors.primary }]}
+                  onPress={navigateToRegister}
+                >
+                  <Text style={[styles.signUpButtonText, { color: colors.primary }]}>Create an Account</Text>
+                </TouchableOpacity>
+                
+                {/* Demo Account */}
+                <TouchableOpacity 
+                  style={styles.demoAccountButton}
+                  onPress={handleDemoSignIn}
+                >
+                  <Text style={[styles.demoAccountText, { color: colors.muted }]}>Try Demo Account</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          
+          {/* Loading and success indicators moved outside the main content */}
+          <RNAnimated.View 
+            style={[styles.loadingContainer, loadingIndicatorStyle]}
+            pointerEvents="none"
+          >
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.text }]}>
+              Signing In...
+            </Text>
+          </RNAnimated.View>
+          
+          {/* Sign in success overlay - moved outside main card content and adjusted z-index */}
+          <RNAnimated.View 
+            style={[styles.successContainer, successCheckStyle]}
+            pointerEvents="none"
+          >
+            <View style={[styles.successCircle, { backgroundColor: colors.success }]}>
+              <FontAwesome5 name="check" size={24} color="#FFFFFF" />
             </View>
-          </ScrollView>
+            <View style={styles.successTextContainer}>
+              <Text style={[styles.successText, { color: colors.accent }]}>
+                Sign In Successful!
+              </Text>
+            </View>
+          </RNAnimated.View>
         </RNAnimated.View>
       </KeyboardAvoidingView>
     </View>
@@ -754,13 +754,10 @@ const styles = StyleSheet.create({
     elevation: 8,
     zIndex: 5, // Added zIndex to ensure card appears on top
   },
-  cardScroll: {
-    flex: 1,
-  },
   cardContent: {
     padding: 28,
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start', // Changed from space-between to flex-start
   },
   title: {
     fontSize: 24,
@@ -925,7 +922,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 5,
+    zIndex: 10, // Increased z-index to ensure it's above all other content
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Added semi-transparent background
   },
   loadingText: {
     marginTop: 12,
@@ -940,7 +938,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 6,
+    zIndex: 15, // Higher z-index than loading indicator
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Added semi-transparent background
   },
   successCircle: {
     width: 60,
