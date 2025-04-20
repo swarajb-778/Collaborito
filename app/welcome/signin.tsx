@@ -402,24 +402,6 @@ export default function SignInScreen() {
                     <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
                   </TouchableOpacity>
                   
-                  {/* Demo Account Sign In */}
-                  <TouchableOpacity 
-                    style={[styles.socialButton, styles.demoButton]}
-                    onPress={handleDemoSignIn}
-                    disabled={isLoading}
-                    activeOpacity={0.85}
-                  >
-                    <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
-                    <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
-                  </TouchableOpacity>
-                  
-                  {/* Divider */}
-                  <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
-                  
                   {/* Email Sign In */}
                   <TouchableOpacity 
                     style={[styles.socialButton, styles.emailButton]}
@@ -434,18 +416,50 @@ export default function SignInScreen() {
                       style={styles.buttonGradient}
                     >
                       <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with email"}
+                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with Email"}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   
+                  {/* Create Account Button */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.emailButton]}
+                    onPress={navigateToRegister}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#000000', '#333333']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                        Create Account
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Divider */}
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  
+                  {/* Demo Account Sign In */}
+                  <TouchableOpacity 
+                    style={[styles.socialButton, styles.demoButton]}
+                    onPress={handleDemoSignIn}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
+                    <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
+                  </TouchableOpacity>
+                  
                   {/* Error message if any */}
                   {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                  
-                  {/* Sign Up Link */}
-                  <TouchableOpacity onPress={navigateToRegister} style={styles.signUpContainer}>
-                    <Text style={styles.signUpText}>Don't have an account? <Text style={styles.signUpTextBold}>Sign up</Text></Text>
-                  </TouchableOpacity>
                 </Animated.View>
               )}
             </View>
