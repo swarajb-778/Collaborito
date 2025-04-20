@@ -125,12 +125,22 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['rgba(255,214,99,0.1)', 'rgba(244,141,59,0.05)', '#FFFFFF']} // Subtle gradient to white
-      locations={[0, 0.3, 0.6]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      
+      {/* Enhanced Background Elements */}
+      <View style={styles.backgroundShapesContainer}>
+        <LinearGradient
+          colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']} 
+          locations={[0, 0.4, 0.8]}
+          style={styles.gradientBackground}
+        />
+         {/* Subtle background shapes */}
+         <View style={[styles.backgroundShape, styles.shapeOne]} />
+         <View style={[styles.backgroundShape, styles.shapeTwo]} />
+         <View style={[styles.backgroundShape, styles.shapeThree]} />
+      </View>
+
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -290,13 +300,60 @@ export default function RegisterScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA', // Add a light base background color
+  },
+  gradientBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: height * 0.6, // Cover top 60% of the screen
+  },
+  backgroundShapesContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden', // Prevent shapes leaking out
+  },
+  backgroundShape: {
+    position: 'absolute',
+    borderRadius: (width * 0.8) / 2, // Make them circular
+    opacity: 0.15, 
+    filter: 'blur(80px)', // Simulate blur effect (React Native doesn't have native blur filter, this is conceptual)
+    // For actual blur, would need react-native-blur or similar
+  },
+  shapeOne: {
+    width: width * 0.8,
+    height: width * 0.8,
+    top: -height * 0.15,
+    left: -width * 0.25,
+    backgroundColor: '#FFD529', // Yellowish tint
+    opacity: 0.1,
+  },
+  shapeTwo: {
+    width: width * 0.6,
+    height: width * 0.6,
+    bottom: height * 0.05,
+    right: -width * 0.2,
+    backgroundColor: '#FFA07A', // Light Salmon tint
+    opacity: 0.12,
+  },
+   shapeThree: {
+    width: width * 0.5,
+    height: width * 0.5,
+    top: height * 0.3,
+    right: -width * 0.1,
+    backgroundColor: '#ADD8E6', // Light Blue tint
+    opacity: 0.08,
   },
   safeArea: {
     flex: 1,
