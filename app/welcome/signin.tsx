@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   demoAccountTextHighlight: {
-    color: '#4B5563',
+    color: '#0077B5',
     fontWeight: '700',
     textDecorationLine: 'underline',
   },

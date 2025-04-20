@@ -1,211 +1,296 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  SafeAreaView, 
+  TouchableOpacity,
+  Image,
+  Platform,
+  StatusBar,
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+  ActivityIndicator,
+  Dimensions,
+  Animated,
+  Alert
+} from 'react-native';
+import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { useAuth } from '../src/contexts/AuthContext';
+import { Ionicons, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TextInput } from '@/components/ui/TextInput';
-import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '@/src/contexts/AuthContext';
-import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
 
 export default function RegisterScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
-  const { signUp, loading } = useAuth();
-  
-  const [fullName, setFullName] = useState('');
+  const insets = useSafeAreaInsets();
+  const [username, setUsername] = useState(''); // Added username state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  
-  const [fullNameError, setFullNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
-  
-  const validateForm = () => {
-    let isValid = true;
-    
-    // Validate full name
-    if (!fullName.trim()) {
-      setFullNameError('Full name is required');
-      isValid = false;
-    } else {
-      setFullNameError('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false); // Added terms state
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Animation values
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
+
+  const { signUp } = useAuth();
+
+  useEffect(() => {
+    // Animate logo and content on screen load
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 800, // Slower fade-in for form
+        delay: 300, // Delay after initial elements
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleSignUp = async () => {
+    setError(''); // Clear previous errors
+
+    // Basic Validation
+    if (!username || !email || !password) {
+      setError('Please fill in all required fields.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email address.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    if (!termsAccepted) {
+      setError('You must accept the terms and privacy policy to continue.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
     }
     
-    // Validate email
-    if (!email) {
-      setEmailError('Email is required');
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Please enter a valid email address');
-      isValid = false;
-    } else {
-      setEmailError('');
-    }
-    
-    // Validate password
-    if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      isValid = false;
-    } else {
-      setPasswordError('');
-    }
-    
-    // Validate password confirmation
-    if (!confirmPassword) {
-      setConfirmPasswordError('Please confirm your password');
-      isValid = false;
-    } else if (confirmPassword !== password) {
-      setConfirmPasswordError('Passwords do not match');
-      isValid = false;
-    } else {
-      setConfirmPasswordError('');
-    }
-    
-    return isValid;
-  };
-  
-  const handleRegister = async () => {
-    if (!validateForm()) return;
-    
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
-      await signUp(email, password, fullName);
-      router.push('/(tabs)');
-    } catch (error) {
-      console.error('Registration error:', error);
+      // Split username into first/last - simple split for now
+      const nameParts = username.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      await signUp(email, password, firstName, lastName); 
+      // Assuming successful sign-up automatically navigates or sets user state
+      // If not, add navigation logic here:
+      // router.replace('/(tabs)'); 
+      // Show success message before potential redirect by AuthProvider
+       Alert.alert('Account Created!', 'Welcome to Collaborito.', [{ text: 'OK' }]);
+
+    } catch (error: any) {
+      setError(error.message || 'Sign up failed. Please try again.');
+      console.error('Sign up error:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
+  const navigateToLogin = () => {
+     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+     if (router.canGoBack()) {
+        router.back();
+     } else {
+        router.replace('/welcome/signin'); // Fallback if no back history
+     }
+  };
+
   return (
-    <KeyboardAvoidingView
+    <LinearGradient
+      colors={['rgba(255,214,99,0.1)', 'rgba(244,141,59,0.05)', '#FFFFFF']} // Subtle gradient to white
+      locations={[0, 0.3, 0.6]}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <LinearGradient
-        colors={[colors.primary, colorScheme === 'dark' ? colors.background : colors.secondary]}
-        style={styles.headerGradient}
-      >
-        <Animated.View 
-          style={styles.logoContainer}
-          entering={FadeIn.delay(200).duration(800)}
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoiding}
         >
-          <Image 
-            source={require('@/assets/images/icon.png')} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
-          <Text style={styles.appName}>Collaborito</Text>
-          <Text style={styles.tagline}>Collaborate. Create. Succeed.</Text>
-        </Animated.View>
-      </LinearGradient>
-      
-      <ScrollView 
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View entering={FadeInDown.delay(300).duration(800)}>
-          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
-            Sign up to start collaborating on projects
-          </Text>
-          
-          <View style={styles.form}>
-            <TextInput
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={fullName}
-              onChangeText={setFullName}
-              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} />}
-              error={fullNameError}
-            />
-            
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} />}
-              error={emailError}
-            />
-            
-            <TextInput
-              label="Password"
-              placeholder="Create a password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
-              error={passwordError}
-            />
-            
-            <TextInput
-              label="Confirm Password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} />}
-              error={confirmPasswordError}
-            />
-            
-            <Button
-              style={styles.registerButton}
-              onPress={handleRegister}
-              variant="primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Create Account'
-              )}
-            </Button>
-          </View>
-        </Animated.View>
-        
-        <Animated.View 
-          style={styles.footer}
-          entering={FadeInUp.delay(500).duration(800)}
-        >
-          <Text style={[styles.footerText, { color: colors.muted }]}>
-            Already have an account?
-          </Text>
-          <TouchableOpacity onPress={() => router.push('/login')}>
-            <Text style={[styles.loginLink, { color: colors.primary }]}>
-              Sign In
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-        
-        <Animated.View 
-          style={styles.termsContainer}
-          entering={FadeInUp.delay(600).duration(800)}
-        >
-          <Text style={[styles.termsText, { color: colors.muted }]}>
-            By signing up, you agree to our{' '}
-            <Text style={[styles.termsLink, { color: colors.primary }]}>
-              Terms of Service
-            </Text>
-            {' '}and{' '}
-            <Text style={[styles.termsLink, { color: colors.primary }]}>
-              Privacy Policy
-            </Text>
-          </Text>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled" // Allow taps outside inputs to dismiss keyboard
+          >
+            {/* Back Button */}
+             <TouchableOpacity style={styles.backButton} onPress={navigateToLogin}>
+               <Ionicons name="chevron-back" size={28} color="#242428" />
+             </TouchableOpacity>
+
+            {/* Logo */}
+            <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+              <Image 
+                source={require('../assets/images/welcome/collaborito-dark-logo.png')} 
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <Image 
+                source={require('../assets/images/welcome/collaborito-text-logo.png')} 
+                style={styles.textLogo}
+                resizeMode="contain"
+              />
+            </Animated.View>
+
+            {/* Form */}
+            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
+              <Text style={styles.title}>Create account</Text>
+              
+              {/* Username Input */}
+              <View style={styles.inputWrapper}>
+                 <Text style={styles.inputLabel}>Username</Text>
+                 <View style={styles.inputContainer}>
+                   <Ionicons name="person-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                   <TextInput
+                     style={styles.input}
+                     placeholder="Your full name"
+                     placeholderTextColor="#B0B0B0"
+                     value={username}
+                     onChangeText={setUsername}
+                     editable={!isLoading}
+                     autoCapitalize="words"
+                     returnKeyType="next" // Suggests next field
+                   />
+                 </View>
+               </View>
+
+              {/* Email Input */}
+               <View style={styles.inputWrapper}>
+                 <Text style={styles.inputLabel}>Email</Text>
+                 <View style={styles.inputContainer}>
+                   <MaterialCommunityIcons name="email-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                   <TextInput
+                     style={styles.input}
+                     placeholder="Your email address"
+                     placeholderTextColor="#B0B0B0"
+                     keyboardType="email-address"
+                     autoCapitalize="none"
+                     value={email}
+                     onChangeText={setEmail}
+                     editable={!isLoading}
+                     returnKeyType="next"
+                   />
+                 </View>
+               </View>
+
+              {/* Password Input */}
+               <View style={styles.inputWrapper}>
+                 <Text style={styles.inputLabel}>Password</Text>
+                 <View style={styles.inputContainer}>
+                   <MaterialCommunityIcons name="lock-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
+                   <TextInput
+                     style={styles.input}
+                     placeholder="Create a password (min. 6 characters)"
+                     placeholderTextColor="#B0B0B0"
+                     secureTextEntry={!showPassword}
+                     value={password}
+                     onChangeText={setPassword}
+                     editable={!isLoading}
+                     returnKeyType="done" // Suggests form completion
+                   />
+                   <TouchableOpacity 
+                     style={styles.visibilityIcon} 
+                     onPress={() => setShowPassword(!showPassword)}
+                   >
+                     <Ionicons 
+                       name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                       size={22} 
+                       color="#8C8C8C" 
+                     />
+                   </TouchableOpacity>
+                 </View>
+              </View>
+
+              {/* Terms Checkbox */}
+              <TouchableOpacity 
+                style={styles.checkboxContainer} 
+                onPress={() => setTermsAccepted(!termsAccepted)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                  {termsAccepted && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                </View>
+                <Text style={styles.checkboxLabel}>
+                  I accept the <Text style={styles.linkText}>Terms</Text> and <Text style={styles.linkText}>Privacy Policy</Text>
+                </Text>
+              </TouchableOpacity>
+
+              {/* Error Message */}
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+              {/* Create Account Button */}
+              <TouchableOpacity 
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleSignUp}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']} // Match Figma primary button
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFF" size="small" /> 
+                  ) : (
+                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Create account</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* "Create with Mobile" Button (Secondary - Optional) */}
+              {/* 
+              <TouchableOpacity 
+                style={[styles.button, styles.secondaryButton]}
+                // onPress={handleMobileSignUp} // Add handler if needed
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                  <Text style={[styles.buttonText, styles.secondaryButtonText]}>Create account with mobile</Text>
+              </TouchableOpacity> 
+              */}
+
+              {/* Login Link */}
+              <TouchableOpacity onPress={navigateToLogin} style={styles.loginLinkContainer}>
+                <Text style={styles.loginLinkText}>
+                  Already have an account? <Text style={styles.loginLinkTextBold}>Log in</Text>
+                </Text>
+              </TouchableOpacity>
+
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -213,79 +298,203 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 30,
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center', // Center content vertically
     alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingBottom: 40, // Extra padding at bottom
+  },
+   backButton: {
+    position: 'absolute',
+    top: 10, // Adjust based on safe area
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   logoContainer: {
     alignItems: 'center',
+    marginTop: height * 0.05, // Relative margin top
+    marginBottom: height * 0.04, // Relative margin bottom
   },
   logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 16,
+    width: width * 0.18, // Responsive width
+    height: width * 0.18, // Responsive height
+    maxWidth: 80, // Max size
+    maxHeight: 80,
   },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+  textLogo: {
+    width: width * 0.4, // Responsive width
+    height: (width * 0.4) / 6, // Maintain aspect ratio (assuming 180x30)
+    maxWidth: 180,
+    maxHeight: 30,
+    marginTop: 10,
   },
-  tagline: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  scrollView: {
-    flex: 1,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -20,
-  },
-  scrollContent: {
-    padding: 24,
-    paddingBottom: 40,
+  formContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Slightly transparent white card
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 26, // Slightly larger
+    fontWeight: '700',
+    color: '#1A202C', // Darker text
     textAlign: 'center',
+    marginBottom: 25, // More space below title
+    fontFamily: 'Nunito', // Match Figma
   },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  form: {
-    marginBottom: 24,
-  },
-  registerButton: {
+   inputWrapper: {
+     marginBottom: 18, // Space between input sections
+   },
+   inputLabel: {
+     fontSize: 14,
+     fontWeight: '600', // Semibold
+     color: '#4A5568', // Grayish blue
+     marginBottom: 8,
+     fontFamily: 'Nunito', // Match Figma
+   },
+  inputContainer: {
+    width: '100%',
     height: 56,
-    marginTop: 8,
-  },
-  footer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  footerText: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  loginLink: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  termsContainer: {
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D8DADC', // Figma border color
+    borderRadius: 10, // Figma border radius
+    backgroundColor: '#FFFFFF', // Figma input background
     paddingHorizontal: 16,
+    // Subtle shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  termsText: {
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: '#2D3748', // Darker input text
+    fontFamily: 'Nunito', // Match Figma
+  },
+  visibilityIcon: {
+    padding: 8, // Easier to tap
+    marginLeft: 8,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20, // More vertical space
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5, // Slightly rounded square
+    borderWidth: 1.5,
+    borderColor: '#718096', // Grayish blue border
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    backgroundColor: '#FFF'
+  },
+  checkboxChecked: {
+    backgroundColor: '#000000', // Figma checked color (black)
+    borderColor: '#000000',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#4A5568',
+    fontFamily: 'Nunito', // Match Figma
+    flex: 1, // Allow text to wrap
+  },
+  linkText: {
+    color: '#0077B5', // Use a standard link blue
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  errorText: {
+    color: '#E53935', // Standard error red
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 15, // Space before button
+    fontFamily: 'Nunito',
   },
-  termsLink: {
-    fontWeight: 'bold',
+  button: {
+    width: '100%',
+    height: 56, // Match Figma button height
+    borderRadius: 10, // Match Figma border radius
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10, // Space above button
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  primaryButton: {
+     overflow: 'hidden', // Needed for LinearGradient border radius
+  },
+  secondaryButton: {
+     borderWidth: 1,
+     borderColor: '#000000', // Figma secondary border
+     backgroundColor: '#FFFFFF', // White background
+  },
+  buttonGradient: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Nunito', // Match Figma
+  },
+  primaryButtonText: {
+    color: '#FFFFFF', // Figma primary text
+  },
+  secondaryButtonText: {
+     color: '#000000', // Figma secondary text
+  },
+  loginLinkContainer: {
+    marginTop: 25, // More space above link
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    fontSize: 15,
+    color: '#575757', // Match signin screen
+    fontFamily: 'Nunito',
+  },
+  loginLinkTextBold: {
+    fontWeight: '700',
+    color: '#242428', // Match signin screen
+    textDecorationLine: 'underline',
   },
 }); 
