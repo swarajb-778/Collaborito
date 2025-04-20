@@ -155,6 +155,23 @@ export default function SignInScreen() {
   }, []);
   
   const toggleEmailForm = () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Animate card when toggling form
+    Animated.sequence([
+      Animated.timing(contentOpacity, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+    
     setShowEmailForm(!showEmailForm);
     if (!showEmailForm) {
       // Animate form appearance
@@ -211,6 +228,20 @@ export default function SignInScreen() {
     setError('');
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Visual feedback for button press
+    Animated.sequence([
+      Animated.timing(buttonScale, { 
+        toValue: 0.96, 
+        duration: 100,
+        useNativeDriver: true 
+      }),
+      Animated.timing(buttonScale, { 
+        toValue: 1, 
+        duration: 200,
+        useNativeDriver: true 
+      })
+    ]).start();
     
     try {
       await signInWithLinkedIn();
@@ -363,19 +394,24 @@ export default function SignInScreen() {
                     style={[styles.socialButton, styles.emailButton]}
                     onPress={handleSignIn}
                     disabled={isLoading}
-                    activeOpacity={0.85}
+                    activeOpacity={0.7}
                   >
                     <LinearGradient
-                      colors={['#000000', '#333333']}
+                      colors={['#2D3748', '#1A202C']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.buttonGradient}
                     >
-                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
-                      </Text>
+                      <View style={styles.buttonContentRow}>
+                        <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                          {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign In"}
+                        </Text>
+                      </View>
                     </LinearGradient>
                   </TouchableOpacity>
+                  
+                  {/* Error message if any */}
+                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
                   
                   {/* Back to options */}
                   <TouchableOpacity 
@@ -391,53 +427,61 @@ export default function SignInScreen() {
                   styles.buttonsContainer, 
                   { transform: [{ scale: buttonScale }] }
                 ]}>
-                  {/* LinkedIn Sign In */}
+                  {/* LinkedIn Sign In - Primary Social */}
                   <TouchableOpacity 
-                    style={styles.socialButton}
+                    style={[styles.socialButton, styles.linkedinButton]}
                     onPress={handleLinkedInSignIn}
                     disabled={isLoading}
-                    activeOpacity={0.85}
+                    activeOpacity={0.7}
                   >
-                    <AntDesign name="linkedin-square" size={20} color="#0077B5" style={styles.socialIcon} />
-                    <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
+                    <LinearGradient
+                      colors={['#0077B5', '#00669E']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <View style={styles.buttonContentRow}>
+                        <AntDesign name="linkedin-square" size={22} color="#FFFFFF" style={styles.socialIcon} />
+                        <Text style={[styles.socialButtonText, styles.whiteButtonText]}>Sign in with LinkedIn</Text>
+                      </View>
+                    </LinearGradient>
                   </TouchableOpacity>
                   
-                  {/* Email Sign In */}
+                  {/* Email Sign In - Secondary */}
                   <TouchableOpacity 
                     style={[styles.socialButton, styles.emailButton]}
                     onPress={toggleEmailForm}
                     disabled={isLoading}
-                    activeOpacity={0.85}
+                    activeOpacity={0.7}
                   >
                     <LinearGradient
-                      colors={['#000000', '#333333']}
+                      colors={['#2D3748', '#1A202C']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.buttonGradient}
                     >
-                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
-                        {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with Email"}
-                      </Text>
+                      <View style={styles.buttonContentRow}>
+                        <MaterialCommunityIcons name="email-outline" size={20} color="#FFFFFF" style={styles.socialIcon} />
+                        <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                          {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : "Sign in with Email"}
+                        </Text>
+                      </View>
                     </LinearGradient>
                   </TouchableOpacity>
                   
-                  {/* Create Account Button */}
+                  {/* Create Account Button - Call to Action */}
                   <TouchableOpacity 
-                    style={[styles.socialButton, styles.emailButton]}
+                    style={[styles.socialButton, styles.createAccountButton]}
                     onPress={navigateToRegister}
                     disabled={isLoading}
-                    activeOpacity={0.85}
+                    activeOpacity={0.7}
                   >
-                    <LinearGradient
-                      colors={['#000000', '#333333']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.buttonGradient}
-                    >
-                      <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                    <View style={styles.buttonContentRow}>
+                      <Ionicons name="person-add-outline" size={20} color="#2D3748" style={styles.socialIcon} />
+                      <Text style={[styles.socialButtonText, styles.createAccountText]}>
                         Create Account
                       </Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
                   
                   {/* Divider */}
@@ -447,15 +491,17 @@ export default function SignInScreen() {
                     <View style={styles.dividerLine} />
                   </View>
                   
-                  {/* Demo Account Sign In */}
+                  {/* Demo Account Sign In - Muted Option */}
                   <TouchableOpacity 
                     style={[styles.socialButton, styles.demoButton]}
                     onPress={handleDemoSignIn}
                     disabled={isLoading}
-                    activeOpacity={0.85}
+                    activeOpacity={0.7}
                   >
-                    <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
-                    <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
+                    <View style={styles.buttonContentRow}>
+                      <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
+                      <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
+                    </View>
                   </TouchableOpacity>
                   
                   {/* Error message if any */}
@@ -554,6 +600,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(228,228,228,0.5)',
+    borderBottomWidth: 0,
   },
   cardScroll: {
     flex: 1,
@@ -564,13 +613,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: '#242428',
     textAlign: 'center',
     marginBottom: 12,
     fontFamily: 'Nunito',
-    lineHeight: 32,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 16,
@@ -602,6 +651,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     paddingHorizontal: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputIcon: {
     marginRight: 12,
@@ -631,6 +685,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    marginBottom: 2, // Add spacing between buttons
+  },
+  buttonContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   socialIcon: {
     marginRight: 12,
@@ -641,9 +701,19 @@ const styles = StyleSheet.create({
     color: '#242428',
     fontFamily: 'Nunito',
   },
+  whiteButtonText: {
+    color: '#FFF',
+    fontWeight: '700',
+  },
+  linkedinButton: {
+    borderWidth: 0,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
   demoButton: {
     backgroundColor: '#4B5563',
     borderColor: '#4B5563',
+    marginTop: 4,
   },
   demoButtonText: {
     color: '#FFF',
@@ -656,9 +726,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
+    marginBottom: 16,
   },
   emailButtonText: {
     color: '#FFF',
+  },
+  createAccountButton: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createAccountText: {
+    color: '#2D3748',
+    fontWeight: '700',
   },
   buttonGradient: {
     flex: 1,
@@ -705,12 +790,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
   },
   backToOptions: {
-    marginTop: 20,
+    marginTop: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 119, 181, 0.08)', 
   },
   backToOptionsText: {
     fontSize: 14,
     color: '#0077B5',
     fontFamily: 'Nunito',
     fontWeight: '600',
+    textAlign: 'center',
   }
 }); 
