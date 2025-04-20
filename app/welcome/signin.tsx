@@ -469,6 +469,13 @@ export default function SignInScreen() {
                     </LinearGradient>
                   </TouchableOpacity>
                   
+                  {/* Divider */}
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  
                   {/* Create Account Button - Call to Action */}
                   <TouchableOpacity 
                     style={[styles.socialButton, styles.createAccountButton]}
@@ -484,24 +491,16 @@ export default function SignInScreen() {
                     </View>
                   </TouchableOpacity>
                   
-                  {/* Divider */}
-                  <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
-                  
-                  {/* Demo Account Sign In - Muted Option */}
+                  {/* Demo Account Sign In - Text Link */}
                   <TouchableOpacity 
-                    style={[styles.socialButton, styles.demoButton]}
                     onPress={handleDemoSignIn}
                     disabled={isLoading}
                     activeOpacity={0.7}
+                    style={styles.demoAccountLink}
                   >
-                    <View style={styles.buttonContentRow}>
-                      <FontAwesome name="user-circle" size={20} color="#fff" style={styles.socialIcon} />
-                      <Text style={[styles.socialButtonText, styles.demoButtonText]}>Sign in with Demo Account</Text>
-                    </View>
+                    <Text style={styles.demoAccountText}>
+                      Sign in with <Text style={styles.demoAccountTextHighlight}>Demo Account</Text>
+                    </Text>
                   </TouchableOpacity>
                   
                   {/* Error message if any */}
@@ -802,5 +801,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontWeight: '600',
     textAlign: 'center',
-  }
+  },
+  demoAccountLink: {
+    marginTop: 20,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  demoAccountText: {
+    fontSize: 15,
+    color: '#575757',
+    fontFamily: 'Nunito',
+    textAlign: 'center',
+  },
+  demoAccountTextHighlight: {
+    color: '#4B5563',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
 }); 
