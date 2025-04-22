@@ -68,9 +68,11 @@ export default function SignupScreen() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      await signUp(email, password, firstName, lastName);
-      console.log('Sign up successful, navigating to onboarding');
-      router.navigate("/onboarding");
+      const success = await signUp(email, password, firstName, lastName);
+      if (success) {
+        console.log('Sign up successful, navigating to onboarding');
+        router.push("/onboarding");
+      }
     } catch (error: any) {
       console.error('SignUp error:', error);
       Alert.alert('Sign Up Failed', error?.message || 'An unexpected error occurred. Please try again.');
