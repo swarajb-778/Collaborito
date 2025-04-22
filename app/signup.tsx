@@ -68,12 +68,16 @@ export default function SignupScreen() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      await signUp(email, password, firstName, lastName);
-      console.log('Sign up successful, navigating to tabs');
-      router.replace('/(tabs)');
+      const success = await signUp(email, password, firstName, lastName);
+
+      if (success) {
+        console.log('Sign up successful, navigating to onboarding');
+        router.replace('/onboarding');
+      } else {
+        console.log('Sign up function returned false, navigation skipped.');
+      }
     } catch (error: any) {
-      console.error('SignUp error:', error);
-      Alert.alert('Sign Up Failed', error?.message || 'An unexpected error occurred. Please try again.');
+      console.error('SignUp error caught in component:', error);
     }
   };
 
@@ -172,15 +176,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: screenHeight * 0.05, // Responsive padding
+    paddingVertical: screenHeight * 0.05, 
   },
   logoContainer: {
-    marginBottom: screenHeight * 0.03, // Responsive margin
+    marginBottom: screenHeight * 0.03, 
     alignItems: 'center',
   },
   card: {
     width: '100%',
-    maxWidth: 400, // Max width for larger screens
+    maxWidth: 400, 
     padding: 25,
   },
   title: {
