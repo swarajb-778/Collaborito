@@ -5,6 +5,9 @@ import { makeRedirectUri, useAuthRequest, ResponseType } from 'expo-auth-session
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
+// Import supabase client
+import { supabase } from '../services/supabase';
+
 // For the development mock server
 import { startServer } from '../utils/mockAuthServer';
 import { constants } from '../constants';
@@ -22,8 +25,11 @@ export type User = {
     refreshToken: string | null;
     expiresAt: number;
   };
-  // Keeping these for backward compatibility
+  // Keeping these for backward compatibility and adding new fields
   user_metadata?: {
+    username?: string;
+    location?: string;
+    job_title?: string;
     full_name?: string;
     avatar_url?: string;
   };
@@ -96,6 +102,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithLinkedIn: () => Promise<void>;
   signInWithDemo: () => Promise<boolean>;
+  updateUserProfile: (profileData: Partial<User['user_metadata']>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -609,6 +616,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add function to update user profile in Supabase
+  const updateUserProfile = async (profileData: Partial<User['user_metadata']>) => {
+    if (!user) throw new Error("User not authenticated");
+    
+    setLoading(true);
+    try {
+      // Construct the update object safely
+      const updatePayload: { [key: string]: any } = {
+        updated_at: new Date().toISOString(),
+      };
+      if (profileData?.username !== undefined) {
+        updatePayload.username = profileData.username;
+      }
+      if (profileData?.location !== undefined) {
+        updatePayload.location = profileData.location;
+      }
+      if (profileData?.job_title !== undefined) {
+        updatePayload.job_title = profileData.job_title;
+      }
+
+      console.log('Updating user profile with payload:', updatePayload);
+
+      const { data, error } = await supabase
+        .from('profiles') // Assuming your table is named 'profiles'
+        .update(updatePayload) // Use the safely constructed payload
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase profile update error:', error);
+        throw error;
+      }
+
+      if (data) {
+          console.log('Profile updated successfully in DB:', data);
+          // Update local user state
+          const updatedUser = { 
+              ...user, 
+              user_metadata: { 
+                  ...user.user_metadata,
+                  username: data.username, 
+                  location: data.location,
+                  job_title: data.job_title
+              } 
+          };
+          setUser(updatedUser);
+          await storeUserData(updatedUser); // Update stored user data as well
+      }
+
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      // Re-throw the error so the calling component can handle it (e.g., show an alert)
+      throw error; 
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -616,7 +682,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     signInWithLinkedIn,
-    signInWithDemo
+    signInWithDemo,
+    updateUserProfile,
   };
 
   return (
