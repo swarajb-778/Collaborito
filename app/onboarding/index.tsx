@@ -114,12 +114,12 @@ export default function OnboardingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       // Simulate profile update
-      await new Promise(resolve => setTimeout(resolve, 1000)); 
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('Profile updated with:', { firstName, lastName, location, jobTitle });
       
-      // Navigate to the main app tabs
-      router.replace('/(tabs)'); 
+      // Navigate to the interests screen instead of tabs
+      router.replace('/onboarding/interests' as any);
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'There was a problem updating your profile. Please try again.');
@@ -127,11 +127,11 @@ export default function OnboardingScreen() {
       setSavingProfile(false);
     }
   };
-  
+
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log('Skipping onboarding, navigating to tabs');
-    router.replace('/(tabs)');
+    console.log('Skipping onboarding, navigating to interests screen');
+    router.replace('/onboarding/interests' as any);
   };
 
   // Adapt return statement to match register.tsx structure
@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
       
       {/* Background elements from register.tsx */}
       <View style={styles.backgroundShapesContainer}>
-        <LinearGradient
+    <LinearGradient
           colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']} 
           locations={[0, 0.4, 0.8]}
           style={styles.gradientBackground}
@@ -153,10 +153,10 @@ export default function OnboardingScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoiding}
-        >
+      >
           <ScrollView 
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
@@ -175,7 +175,7 @@ export default function OnboardingScreen() {
                 style={styles.textLogo}
                 resizeMode="contain"
               />
-            </Animated.View>
+          </Animated.View>
 
             {/* Form container from register.tsx */}
             <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
               <Text style={styles.subtitle}>
                 Tell us a bit more about yourself to get started.
               </Text>
-              
+
               {/* Use Input Wrapper style from register.tsx */}
               <View style={styles.inputWrapper}>
                  <Text style={styles.inputLabel}>First Name</Text>
@@ -191,10 +191,10 @@ export default function OnboardingScreen() {
                    <FontAwesome5 name="user" size={18} color="#8C8C8C" style={styles.inputIcon} />
                    <RNTextInput
                      style={styles.input}
-                     placeholder="Enter your first name"
+                  placeholder="Enter your first name"
                      placeholderTextColor="#B0B0B0"
-                     value={firstName}
-                     onChangeText={setFirstName}
+                  value={firstName}
+                  onChangeText={setFirstName}
                      editable={!savingProfile}
                      autoCapitalize="words"
                      returnKeyType="next"
@@ -209,10 +209,10 @@ export default function OnboardingScreen() {
                     <FontAwesome5 name="user" size={18} color="#8C8C8C" style={styles.inputIcon} />
                    <RNTextInput
                      style={styles.input}
-                     placeholder="Enter your last name"
+                  placeholder="Enter your last name"
                      placeholderTextColor="#B0B0B0"
-                     value={lastName}
-                     onChangeText={setLastName}
+                  value={lastName}
+                  onChangeText={setLastName}
                      editable={!savingProfile}
                      autoCapitalize="words"
                      returnKeyType="next"
@@ -220,17 +220,17 @@ export default function OnboardingScreen() {
                  </View>
                   {lastNameError ? <Text style={styles.inlineErrorText}>{lastNameError}</Text> : null}
                </View>
-               
+                
                <View style={styles.inputWrapper}>
                  <Text style={styles.inputLabel}>Where are you based?</Text>
                  <View style={styles.inputContainer}>
                     <FontAwesome5 name="map-marker-alt" size={18} color="#8C8C8C" style={styles.inputIcon} />
                    <RNTextInput
                      style={styles.input}
-                     placeholder="City, Country"
+                  placeholder="City, Country"
                      placeholderTextColor="#B0B0B0"
-                     value={location}
-                     onChangeText={setLocation}
+                  value={location}
+                  onChangeText={setLocation}
                      editable={!savingProfile}
                      autoCapitalize="words"
                      returnKeyType="next"
@@ -245,10 +245,10 @@ export default function OnboardingScreen() {
                    <FontAwesome5 name="briefcase" size={18} color="#8C8C8C" style={styles.inputIcon} />
                    <RNTextInput
                      style={styles.input}
-                     placeholder="What do you do?"
+                  placeholder="What do you do?"
                      placeholderTextColor="#B0B0B0"
-                     value={jobTitle}
-                     onChangeText={setJobTitle}
+                  value={jobTitle}
+                  onChangeText={setJobTitle}
                      editable={!savingProfile}
                      autoCapitalize="sentences"
                      returnKeyType="done"
@@ -263,8 +263,8 @@ export default function OnboardingScreen() {
               {/* Use Primary Button style from register.tsx */}
               <TouchableOpacity 
                 style={[styles.button, styles.primaryButton]}
-                onPress={handleComplete}
-                disabled={savingProfile}
+                  onPress={handleComplete}
+                  disabled={savingProfile}
                 activeOpacity={0.8}
               >
                 <LinearGradient
@@ -284,13 +284,13 @@ export default function OnboardingScreen() {
               {/* Skip Link - Styled like login link in register.tsx */}
               <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={savingProfile}>
                 <Text style={styles.skipLinkText}>
-                  I'll complete this later
-                </Text>
-              </TouchableOpacity>
+                    I'll complete this later
+                  </Text>
+                </TouchableOpacity>
 
-            </Animated.View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: { // from register
     flexGrow: 1,
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 28,
     paddingBottom: 40, 
