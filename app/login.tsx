@@ -202,7 +202,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                'Sign In with Email'
+                'Sign In'
               )}
             </Button>
             
@@ -214,13 +214,14 @@ export default function LoginScreen() {
             
             <Button
               style={styles.linkedInButton}
-              onPress={() => router.push('/signup')}
-              variant="secondary"
+              onPress={handleLinkedInLogin}
+              variant="primary"
               disabled={loading || demoLoading}
             >
               <View style={styles.buttonContent}>
+                <FontAwesome5 name="linkedin" size={20} color="white" />
                 <Text style={styles.buttonText}>
-                  {loading ? 'Loading...' : 'Create Account'}
+                  {loading ? 'Loading...' : 'Continue with LinkedIn'}
                 </Text>
               </View>
             </Button>
@@ -228,16 +229,16 @@ export default function LoginScreen() {
             <TouchableOpacity 
               onPress={handleDemoLogin} 
               style={[
-                styles.footerLinkContainer,
+                styles.demoButton,
                 demoLoading && { opacity: 0.7 }
               ]}
               disabled={demoLoading}
             >
               {demoLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text style={[styles.footerLinkText, { color: colors.primary }]}>
-                  Sign in with Demo account
+                <Text style={[styles.demoButtonText, { color: 'white' }]}>
+                  Use Demo Account
                 </Text>
               )}
             </TouchableOpacity>
@@ -607,14 +608,5 @@ const styles = StyleSheet.create({
     width: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  footerLinkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  footerLinkText: {
-    fontSize: 14,
-    fontWeight: '500',
-    textDecorationLine: 'underline',
   },
 }); 

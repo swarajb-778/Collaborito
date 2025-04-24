@@ -77,7 +77,7 @@ export default function SignupScreen() {
       // Force direct navigation to onboarding screen
       const navigateToOnboarding = () => {
         console.log('Executing navigation to onboarding');
-        router.push('/onboarding');
+        router.replace('/onboarding' as any);
       };
       
       // Execute with a slight delay to ensure all state updates are processed
