@@ -48,6 +48,16 @@ function RootLayoutNav() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   
+  // Effect to redirect from the root to welcome screen
+  useEffect(() => {
+    const redirectToWelcome = () => {
+      if (router.canGoBack() === false) {
+        router.replace('/welcome');
+      }
+    };
+    redirectToWelcome();
+  }, [router]);
+  
   return (
     <>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -57,19 +67,11 @@ function RootLayoutNav() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="signup" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-        <Stack.Screen 
-          name="onboarding" 
-          options={{ 
-            headerShown: false, 
-            gestureEnabled: false,
-            animation: 'fade',
-          }} 
-        />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>
     </>
   );
