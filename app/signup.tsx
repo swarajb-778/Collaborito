@@ -69,10 +69,13 @@ export default function SignupScreen() {
       const lastName = nameParts.slice(1).join(' ') || '';
 
       const success = await signUp(email, password, firstName, lastName);
-      if (success) {
-        console.log('Sign up successful, navigating to onboarding');
-        router.push("/onboarding");
-      }
+      console.log('Sign up successful, navigating to onboarding', success);
+      
+      // Use setTimeout to ensure navigation happens after state updates
+      setTimeout(() => {
+        console.log('Navigating to onboarding now');
+        router.replace('/onboarding');
+      }, 300);
     } catch (error: any) {
       console.error('SignUp error:', error);
       Alert.alert('Sign Up Failed', error?.message || 'An unexpected error occurred. Please try again.');

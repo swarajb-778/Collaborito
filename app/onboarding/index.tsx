@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from '../../components/ui/TextInput';
@@ -15,14 +15,22 @@ import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../../components/ui/CollaboritoLogo';
 
 export default function OnboardingScreen() {
+  console.log('Rendering OnboardingScreen');
+  
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { user, loading } = useAuth();
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  // Log user data for debugging
+  useEffect(() => {
+    console.log('Onboarding screen received user:', user);
+  }, [user]);
+
+  // Initialize form fields with user data if available
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
   const [location, setLocation] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   
