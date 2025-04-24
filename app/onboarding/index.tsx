@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe 
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
-  console.log('Rendering OnboardingScreen with register.tsx style');
+  // Move logging inside useEffect or remove it entirely
   
   const router = useRouter();
   const { user } = useAuth(); // Only need user from auth context here
@@ -40,6 +40,9 @@ export default function OnboardingScreen() {
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Log only once when component mounts
+    console.log('Rendering OnboardingScreen with register.tsx style');
+    
     // Animate logo and form on screen load
     Animated.parallel([
       Animated.timing(logoScale, {

@@ -75,6 +75,9 @@ export default function OnboardingInterestsScreen() {
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Log only once when component mounts
+    console.log('Rendering OnboardingInterestsScreen');
+    
     // Animate logo and form on screen load
     Animated.parallel([
       Animated.timing(logoScale, {
