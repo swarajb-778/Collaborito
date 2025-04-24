@@ -26,6 +26,7 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     let isValid = true;
@@ -62,6 +63,7 @@ export default function SignupScreen() {
   const handleSignUp = async () => {
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const nameParts = fullName.trim().split(' ');
@@ -72,12 +74,12 @@ export default function SignupScreen() {
       await signUp(email, password, firstName, lastName);
       
       // Add a small delay for any state updates to complete
-      console.log('Signup completed, preparing to navigate');
+      console.log('Signup completed, preparing to navigate to onboarding');
       
       // Force direct navigation to onboarding screen
       const navigateToOnboarding = () => {
         console.log('Executing navigation to onboarding');
-        router.replace('/onboarding' as any);
+        router.replace('/onboarding');
       };
       
       // Execute with a slight delay to ensure all state updates are processed
@@ -86,6 +88,8 @@ export default function SignupScreen() {
     } catch (error: any) {
       console.error('SignUp error:', error);
       Alert.alert('Sign Up Failed', error?.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,9 +148,9 @@ export default function SignupScreen() {
                   style={styles.submitButton}
                   onPress={handleSignUp}
                   variant="primary"
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 >
-                  {loading ? (
+                  {loading || isSubmitting ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     'Create Account'

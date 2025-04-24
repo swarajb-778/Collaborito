@@ -92,8 +92,16 @@ export default function LoginScreen() {
         const lastName = nameParts.slice(1).join(' ') || '';
         
         await signUp(email, password, firstName, lastName);
-        console.log('Sign up successful, navigating to tabs');
-        router.replace('/(tabs)');
+        console.log('Sign up successful, navigating to onboarding');
+        
+        // Navigate to onboarding after signup
+        const navigateToOnboarding = () => {
+          console.log('Executing navigation to onboarding');
+          router.replace('/onboarding');
+        };
+        
+        // Execute with a slight delay to ensure all state updates are processed
+        setTimeout(navigateToOnboarding, 500);
       } else if (mode === 'reset') {
         Alert.alert('Reset Password', `An email will be sent to ${email} with instructions to reset your password.`);
         console.log('Password reset initiated, switching to signin mode');

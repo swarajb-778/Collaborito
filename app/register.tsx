@@ -100,11 +100,23 @@ export default function RegisterScreen() {
       const lastName = nameParts.slice(1).join(' ') || '';
 
       await signUp(email, password, firstName, lastName); 
-      // Assuming successful sign-up automatically navigates or sets user state
-      // If not, add navigation logic here:
-      // router.replace('/(tabs)'); 
-      // Show success message before potential redirect by AuthProvider
-       Alert.alert('Account Created!', 'Welcome to Collaborito.', [{ text: 'OK' }]);
+      
+      // Navigate to onboarding screen after successful sign-up
+      console.log('Sign up successful, navigating to onboarding');
+      
+      // Navigate to onboarding with a slight delay
+      const navigateToOnboarding = () => {
+        console.log('Executing navigation to onboarding');
+        router.replace('/onboarding');
+      };
+      
+      // Show brief success message then navigate
+      Alert.alert('Account Created!', 'Welcome to Collaborito. Let\'s complete your profile.', [
+        { 
+          text: 'Continue', 
+          onPress: () => setTimeout(navigateToOnboarding, 300) 
+        }
+      ]);
 
     } catch (error: any) {
       setError(error.message || 'Sign up failed. Please try again.');
