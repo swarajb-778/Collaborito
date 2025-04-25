@@ -1,40 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Dimensions, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  Dimensions, 
+  ScrollView,
+  Platform,
+  SafeAreaView,
+  ActivityIndicator
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp, FadeOut } from 'react-native-reanimated';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing 
+} from 'react-native-reanimated';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-// Define the goals options
+// Define the goals options (keeping icons)
 const GOALS = [
   {
     id: 1,
-    name: 'Find a co-founder to join my idea',
+    name: 'Find a co-founder',
     icon: 'people-outline',
     iconType: 'Ionicons',
+    description: 'Seek a partner to build your vision together.'
   },
   {
     id: 2,
-    name: 'Find people to help with my project',
+    name: 'Find collaborators',
     icon: 'account-group-outline',
     iconType: 'MaterialCommunityIcons',
+    description: 'Get help with your project or idea.'
   },
   {
     id: 3,
-    name: 'Contribute my skills to an existing project',
+    name: 'Contribute skills',
     icon: 'hammer-outline',
     iconType: 'Ionicons',
+    description: 'Offer your expertise to existing projects.'
   },
   {
     id: 4,
-    name: 'Explore new ideas',
+    name: 'Explore ideas',
     icon: 'lightbulb-outline',
     iconType: 'MaterialCommunityIcons',
+    description: 'Discover new ventures and opportunities.'
   },
 ];
 
@@ -42,10 +65,42 @@ export default function OnboardingGoalsScreen() {
   const [selectedGoal, setSelectedGoal] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  
+  // Reanimated shared values for animations
+  const headerOpacity = useSharedValue(0);
+  const listOpacity = useSharedValue(0);
+  const buttonsOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Staggered fade-in animations using Reanimated
+    headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+    listOpacity.value = withDelay(250, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+    buttonsOpacity.value = withDelay(400, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+  }, []);
+
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: headerOpacity.value,
+    };
+  });
+
+  const listAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: listOpacity.value,
+    };
+  });
+
+  const buttonsAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: buttonsOpacity.value,
+    };
+  });
 
   const handleSelectGoal = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedGoal(id);
+    setSelectedGoal(id === selectedGoal ? null : id); // Allow deselecting
   };
 
   const handleContinue = async () => {
@@ -59,13 +114,10 @@ export default function OnboardingGoalsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // In a real app, this would save the selected goal to the user's profile
       console.log('Selected goal:', GOALS.find(item => item.id === selectedGoal)?.name);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
-      // Navigate to main app
       router.replace('/(tabs)');
       
     } catch (error) {
@@ -82,45 +134,28 @@ export default function OnboardingGoalsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+    <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style="dark" />
       
-      <StatusBar style="light" />
-      
-      {/* Background gradient */}
+      {/* Subtle background gradient */}
       <LinearGradient
-        colors={['#4e54c8', '#8f94fb']}
+        colors={['rgba(100, 116, 139, 0.05)', 'rgba(100, 116, 139, 0.01)']} // Adjusted to subtle gray
         style={styles.gradient}
       />
       
-      {/* Animated shapes in background */}
-      <Animated.View 
-        entering={FadeInUp.delay(100).duration(1000)} 
-        style={[styles.backgroundShape, { top: height * 0.1, left: -width * 0.2 }]} 
-      />
-      <Animated.View 
-        entering={FadeInUp.delay(200).duration(1000)} 
-        style={[styles.backgroundShape, { top: height * 0.5, right: -width * 0.3 }]} 
-      />
-      <Animated.View 
-        entering={FadeInUp.delay(300).duration(1000)} 
-        style={[styles.backgroundShape, { bottom: -height * 0.1, left: width * 0.3 }]} 
-      />
+      <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
+        <Text style={styles.title}>What brings you here?</Text>
+        <Text style={styles.subtitle}>Choose your primary goal for joining Collaborito.</Text>
+      </Animated.View>
       
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Header */}
-        <Animated.View entering={FadeInDown.duration(800)} style={styles.header}>
-          <Text style={styles.title}>What's your goal?</Text>
-          <Text style={styles.subtitle}>Select one option that best describes why you're here</Text>
-        </Animated.View>
-        
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Goals List */}
-        <Animated.View entering={FadeInDown.delay(300).duration(800)} style={styles.goalsContainer}>
-          {GOALS.map((goal, index) => (
+        <Animated.View style={[styles.goalsListContainer, listAnimatedStyle]}>
+          {GOALS.map((goal) => (
             <TouchableOpacity
               key={goal.id}
               style={[
@@ -130,57 +165,73 @@ export default function OnboardingGoalsScreen() {
               onPress={() => handleSelectGoal(goal.id)}
               activeOpacity={0.7}
             >
-              <BlurView intensity={90} style={styles.blurView} tint="light">
-                <View style={styles.goalContent}>
-                  <View style={[styles.iconContainer, selectedGoal === goal.id && styles.selectedIconContainer]}>
-                    {goal.iconType === 'Ionicons' ? (
-                      <Ionicons 
-                        name={goal.icon as any} 
-                        size={24} 
-                        color={selectedGoal === goal.id ? '#ffffff' : '#4e54c8'} 
-                      />
-                    ) : (
-                      <MaterialCommunityIcons 
-                        name={goal.icon as any} 
-                        size={24} 
-                        color={selectedGoal === goal.id ? '#ffffff' : '#4e54c8'} 
-                      />
-                    )}
-                  </View>
-                  
-                  <Text style={[styles.goalText, selectedGoal === goal.id && styles.selectedGoalText]}>
-                    {goal.name}
-                  </Text>
-                  
-                  {selectedGoal === goal.id && (
-                    <View style={styles.checkmark}>
-                      <Ionicons name="checkmark-circle" size={24} color="#4e54c8" />
-                    </View>
-                  )}
-                </View>
-              </BlurView>
+              <View style={styles.goalIconContainer}>
+                {goal.iconType === 'Ionicons' ? (
+                  <Ionicons 
+                    name={goal.icon as any} 
+                    size={28} 
+                    color={selectedGoal === goal.id ? '#FFFFFF' : '#333333'} 
+                  />
+                ) : (
+                  <MaterialCommunityIcons 
+                    name={goal.icon as any} 
+                    size={28} 
+                    color={selectedGoal === goal.id ? '#FFFFFF' : '#333333'} 
+                  />
+                )}
+              </View>
+              <View style={styles.goalTextContainer}>
+                <Text style={[styles.goalName, selectedGoal === goal.id && styles.selectedGoalText]}>
+                  {goal.name}
+                </Text>
+                <Text style={[styles.goalDescription, selectedGoal === goal.id && styles.selectedGoalText]}>
+                  {goal.description}
+                </Text>
+              </View>
+              {selectedGoal === goal.id && (
+                // Use reanimated FadeIn for the checkmark for smoother appearance
+                <Animated.View entering={FadeInDown.duration(200)} style={styles.checkmarkContainer}>
+                  <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                </Animated.View>
+              )}
             </TouchableOpacity>
           ))}
         </Animated.View>
       </ScrollView>
       
-      {/* Bottom Actions */}
+      {/* Bottom Actions Container */}
       <Animated.View 
-        entering={FadeInUp.delay(500).duration(800)}
-        style={styles.bottomContainer}
+        style={[
+          styles.bottomContainer, 
+          { paddingBottom: Math.max(insets.bottom, 16) }, 
+          buttonsAnimatedStyle
+        ]}
       >
         <TouchableOpacity 
           style={[
+            styles.button,
             styles.continueButton,
             (selectedGoal === null || isSubmitting) && styles.disabledButton
           ]}
           onPress={handleContinue}
           disabled={selectedGoal === null || isSubmitting}
+          activeOpacity={0.8}
         >
-          <Text style={styles.continueButtonText}>
-            {isSubmitting ? 'Processing...' : 'Continue'}
-          </Text>
-          {!isSubmitting && <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />}
+          <LinearGradient
+            colors={['#000000', '#333333']} 
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.buttonGradient}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFF" size="small" /> 
+            ) : (
+              <>
+                <Text style={styles.buttonText}>Continue</Text>
+                <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -188,17 +239,17 @@ export default function OnboardingGoalsScreen() {
           onPress={handleSkip}
           disabled={isSubmitting}
         >
-          <Text style={styles.skipButtonText}>Skip</Text>
+          <Text style={styles.skipButtonText}>Skip for now</Text>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#FFFFFF', // White background like welcome screen
   },
   gradient: {
     position: 'absolute',
@@ -207,115 +258,137 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-  backgroundShape: {
-    position: 'absolute',
-    width: width * 0.6,
-    height: width * 0.6,
-    borderRadius: width * 0.3,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  contentContainer: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 60,
-  },
-  header: {
-    marginBottom: 30,
+  headerContainer: {
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 20 : 10, // Adjusted padding
+    paddingBottom: 10,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 10,
+    fontSize: 26, // Slightly smaller title
+    fontWeight: '700',
+    color: '#1A202C', // Dark text
+    textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'System', // Use system font or specify 'Nunito' if added
   },
   subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 20,
+    fontSize: 15,
+    color: '#4A5568', // Medium gray text
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    fontFamily: 'System', // Use system font or specify 'Nunito' if added
   },
-  goalsContainer: {
-    marginBottom: 30,
+  scrollContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10, // Space below header
+    paddingBottom: 20,
+  },
+  goalsListContainer: {
+     // Removed marginBottom
   },
   goalItem: {
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  blurView: {
-    overflow: 'hidden',
-    borderRadius: 12,
-  },
-  goalContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(243, 244, 246, 0.8)', // Light gray background
+    borderRadius: 16,
     padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(229, 231, 235, 0.8)', // Light border
+    overflow: 'hidden',
+    shadowColor: '#000', // Subtle shadow like welcome card
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedGoalItem: {
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  selectedIconContainer: {
-    backgroundColor: '#4e54c8',
-  },
-  goalText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  selectedGoalText: {
-    color: '#4e54c8',
-    fontWeight: 'bold',
-  },
-  checkmark: {
-    marginLeft: 10,
-  },
-  bottomContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  continueButton: {
-    flexDirection: 'row',
-    backgroundColor: '#4e54c8',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: '#1A202C', // Dark background when selected
+    borderColor: '#1A202C',
+    shadowColor: '#000', 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 5,
   },
-  continueButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
+  goalIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    marginRight: 16,
+  },
+  goalTextContainer: {
+    flex: 1,
+  },
+  goalName: {
+    fontSize: 17,
     fontWeight: '600',
+    color: '#1A202C',
+    marginBottom: 4,
+    fontFamily: 'System',
+  },
+  goalDescription: {
+    fontSize: 13,
+    color: '#4A5568',
+    fontFamily: 'System',
+  },
+  selectedGoalText: {
+    color: '#FFFFFF', // White text when selected
+  },
+  checkmarkContainer: {
+    marginLeft: 12,
+    padding: 4,
+  },
+  bottomContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10, // Space above buttons
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB', // Light separator line
+    backgroundColor: '#FFFFFF', // Ensure solid background
+  },
+  button: {
+    width: '100%',
+    height: 56, 
+    borderRadius: 12, // Rounded corners like welcome button
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden', // Needed for gradient border radius
+  },
+  continueButton: {
+    marginBottom: 12,
+  },
+  buttonGradient: {
+    flexDirection: 'row', // Align text and icon horizontally
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: 'System',
   },
   buttonIcon: {
     marginLeft: 8,
   },
   disabledButton: {
-    backgroundColor: 'rgba(78, 84, 200, 0.6)',
+    opacity: 0.6, // Dim the button when disabled
   },
   skipButton: {
     alignItems: 'center',
-    padding: 12,
+    paddingVertical: 12,
   },
   skipButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#4A5568', // Medium gray for skip text
+    fontSize: 15,
     fontWeight: '500',
+    fontFamily: 'System',
   },
 }); 
