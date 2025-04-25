@@ -123,8 +123,8 @@ export default function OnboardingInterestsScreen() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to main app or next onboarding step
-      router.replace('/(tabs)');
+      // Navigate to the goals screen instead of tabs
+      router.replace('/onboarding/goals' as any);
       
     } catch (error) {
       console.error('Error saving interests:', error);
@@ -136,7 +136,7 @@ export default function OnboardingInterestsScreen() {
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(tabs)');
+    router.replace('/onboarding/goals' as any);
   };
 
   // Render interest item

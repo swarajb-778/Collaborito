@@ -153,7 +153,7 @@ export default function WelcomeScreen() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.push('/welcome/signin');
+    router.push('/welcome/signin');
     });
   };
   
@@ -175,15 +175,15 @@ export default function WelcomeScreen() {
         {/* Logo at the top */}
         <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
           <Image 
-            source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+          source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
             style={styles.logo}
-            resizeMode="contain"
-          />
+          resizeMode="contain"
+        />
           <Image 
-            source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+          source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
             style={styles.textLogo}
-            resizeMode="contain"
-          />
+          resizeMode="contain"
+        />
         </Animated.View>
         
         {/* Gallery below the logo */}
@@ -204,22 +204,22 @@ export default function WelcomeScreen() {
         ]}
       >
         <View style={styles.cardContent}>
-          <Text style={styles.title}>
-            Discover like-minded individuals to collaborate on projects together
-          </Text>
-          <Text style={styles.subtitle}>
-            Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
-          </Text>
-          
+        <Text style={styles.title}>
+          Discover like-minded individuals to collaborate on projects together
+        </Text>
+        <Text style={styles.subtitle}>
+          Let our AI-powered community platform introduce you to your next co-founder, advisor, or collaborator.
+        </Text>
+        
           <Animated.View style={[
             styles.buttonContainer, 
             { transform: [{ scale: buttonScale }] }
           ]}>
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={handleGetStarted}
-              style={styles.getStartedButton}
-            >
+            onPress={handleGetStarted}
+            style={styles.getStartedButton}
+          >
               <LinearGradient
                 colors={['#000000', '#333333']}
                 start={{ x: 0, y: 0 }}
