@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/ui/Card';
@@ -30,6 +30,7 @@ const USER = {
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { user, signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState('Bio');
   
   // Determine theme-based styles
   const themeStyles = {
@@ -86,8 +87,97 @@ export default function ProfileScreen() {
     }
   };
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'Bio':
+        return (
+          <Card style={styles.bioCard}>
+            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Bio</Text>
+            <Text style={[styles.bioText, { color: themeStyles.textColor }]}>
+              {user?.oauthProvider === 'linkedin'
+                ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
+                : USER.bio}
+            </Text>
+          </Card>
+        );
+      case 'Skills':
+        return (
+          <Card style={styles.skillsCard}>
+            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {user?.oauthProvider === 'linkedin' ? (
+                // LinkedIn-specific skills
+                ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
+                  <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
+                    <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                  </View>
+                ))
+              ) : (
+                // Default skills
+                USER.skills.map((skill, index) => (
+                  <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
+                    <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                  </View>
+                ))
+              )}
+            </View>
+          </Card>
+        );
+      case 'Account':
+        return (
+          <Card style={styles.authInfoCard}>
+            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Account Information</Text>
+            <View style={styles.authInfoItem}>
+              <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Signed in with:</Text>
+              <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{getAuthProviderName()}</Text>
+            </View>
+            <View style={styles.authInfoItem}>
+              <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Email:</Text>
+              <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user?.email || USER.email}</Text>
+            </View>
+            {user?.id && (
+              <View style={styles.authInfoItem}>
+                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>User ID:</Text>
+                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user.id}</Text>
+              </View>
+            )}
+          </Card>
+        );
+      case 'Actions':
+        return (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}
+              onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
+            >
+              <FontAwesome5 name="user-edit" size={20} color={themeStyles.textColor} />
+              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Edit Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}
+              onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
+            >
+              <FontAwesome5 name="bell" size={20} color={themeStyles.textColor} />
+              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Notifications</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, { borderBottomWidth: 0 }]}
+              onPress={signOut}
+            >
+              <FontAwesome5 name="sign-out-alt" size={20} color={themeStyles.textColor} />
+              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
       {/* Header */}
       <LinearGradient
         colors={['#4361EE', '#3A0CA3']}
@@ -116,8 +206,8 @@ export default function ProfileScreen() {
             </Animated.View>
           </TouchableOpacity>
           
-          <Text style={styles.name}>{getDisplayName()}</Text>
-          <Text style={styles.email}>{user?.email || USER.email}</Text>
+          <Text style={[styles.name, { color: themeStyles.textColor }]}>{getDisplayName()}</Text>
+          <Text style={[styles.email, { color: themeStyles.mutedTextColor }]}>{user?.email || USER.email}</Text>
           {user?.oauthProvider === 'linkedin' && (
             <View style={styles.linkedInBadge}>
               <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
@@ -127,97 +217,46 @@ export default function ProfileScreen() {
         </View>
         
         {/* Stats */}
-        <View style={styles.statsContainer}>
+        <View style={[styles.statsContainer, { borderColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{USER.projects}</Text>
-            <Text style={styles.statLabel}>Projects</Text>
+            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.projects}</Text>
+            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Projects</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{USER.tasks}</Text>
-            <Text style={styles.statLabel}>Tasks</Text>
+            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.tasks}</Text>
+            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Tasks</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{USER.connections}</Text>
-            <Text style={styles.statLabel}>Connections</Text>
+            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.connections}</Text>
+            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Connections</Text>
           </View>
         </View>
         
-        {/* Bio */}
-        <Card style={styles.bioCard}>
-          <Text style={styles.sectionTitle}>Bio</Text>
-          <Text style={styles.bioText}>
-            {user?.oauthProvider === 'linkedin' 
-              ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.` 
-              : USER.bio}
-          </Text>
-        </Card>
+        {/* Tab Bar */}
+        <View style={styles.tabBarContainer}>
+          {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tabItem,
+                activeTab === tab && styles.activeTabItem,
+                { borderBottomColor: activeTab === tab ? (colorScheme === 'dark' ? '#4361EE' : '#4361EE') : 'transparent' }
+              ]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text style={[
+                styles.tabText,
+                { color: activeTab === tab ? (colorScheme === 'dark' ? '#4361EE' : '#4361EE') : themeStyles.mutedTextColor }
+              ]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         
-        {/* Skills */}
-        <Card style={styles.skillsCard}>
-          <Text style={styles.sectionTitle}>Skills</Text>
-          <View style={styles.skillsContainer}>
-            {user?.oauthProvider === 'linkedin' ? (
-              // LinkedIn-specific skills
-              ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
-                <View key={index} style={styles.skillBadge}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                </View>
-              ))
-            ) : (
-              // Default skills
-              USER.skills.map((skill, index) => (
-                <View key={index} style={styles.skillBadge}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                </View>
-              ))
-            )}
-          </View>
-        </Card>
-        
-        {/* Authentication Info */}
-        <Card style={styles.authInfoCard}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
-          <View style={styles.authInfoItem}>
-            <Text style={styles.authInfoLabel}>Signed in with:</Text>
-            <Text style={styles.authInfoValue}>{getAuthProviderName()}</Text>
-          </View>
-          <View style={styles.authInfoItem}>
-            <Text style={styles.authInfoLabel}>Email:</Text>
-            <Text style={styles.authInfoValue}>{user?.email || USER.email}</Text>
-          </View>
-          {user?.id && (
-            <View style={styles.authInfoItem}>
-              <Text style={styles.authInfoLabel}>User ID:</Text>
-              <Text style={styles.authInfoValue}>{user.id}</Text>
-            </View>
-          )}
-        </Card>
-        
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
-          >
-            <FontAwesome5 name="user-edit" size={20} color="#000" />
-            <Text style={styles.actionText}>Edit Profile</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
-          >
-            <FontAwesome5 name="bell" size={20} color="#000" />
-            <Text style={styles.actionText}>Notifications</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={signOut}
-          >
-            <FontAwesome5 name="sign-out-alt" size={20} color="#000" />
-            <Text style={styles.actionText}>Sign Out</Text>
-          </TouchableOpacity>
+        {/* Tab Content */}
+        <View style={styles.tabContentContainer}>
+          {renderTabContent()}
         </View>
       </ScrollView>
     </View>
@@ -227,7 +266,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -326,20 +364,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  tabBarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  tabItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderColor: 'transparent',
+  },
+  activeTabItem: {
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tabContentContainer: {
+  },
   bioCard: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
     padding: 15,
+    marginBottom: 20,
   },
   skillsCard: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
     padding: 15,
+    marginBottom: 20,
   },
   authInfoCard: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
     padding: 15,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -349,7 +408,6 @@ const styles = StyleSheet.create({
   bioText: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#444',
   },
   skillsContainer: {
     flexDirection: 'row',
@@ -369,8 +427,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   actionsContainer: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
     marginBottom: 40,
   },
   actionButton: {
@@ -378,7 +435,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   actionText: {
     fontSize: 16,
@@ -390,7 +446,6 @@ const styles = StyleSheet.create({
   },
   authInfoLabel: {
     fontSize: 14,
-    color: '#666',
     width: 120,
   },
   authInfoValue: {
