@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
+  TextInput, 
   TouchableOpacity, 
   StyleSheet, 
+  Alert, 
   Dimensions, 
+  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-  ActivityIndicator,
-  TextInput,
-  KeyboardAvoidingView
+  ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
+  FadeInDown, 
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -27,49 +29,64 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-export default function OnboardingCoFounderDescribeProjectScreen() {
+export default function CofounderProjectScreen() {
   const [projectDescription, setProjectDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [descriptionError, setDescriptionError] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   
-  // Character limit for project description
-  const MAX_CHARS = 200;
-  
-  // Reanimated shared values for animations
-  const headerOpacity = useSharedValue(0);
-  const inputOpacity = useSharedValue(0);
-  const buttonsOpacity = useSharedValue(0);
+  // Animated values
+  const logoOpacity = useSharedValue(0);
+  const formOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Staggered fade-in animations using Reanimated
-    headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-    inputOpacity.value = withDelay(250, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-    buttonsOpacity.value = withDelay(400, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+    console.log('CofounderProjectScreen mounted');
+    
+    // Animate logo and form on screen load
+    logoOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+    formOpacity.value = withDelay(300, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
   }, []);
 
   // Animated styles
-  const headerAnimatedStyle = useAnimatedStyle(() => {
+  const logoAnimatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: headerOpacity.value,
+      opacity: logoOpacity.value,
     };
   });
 
-  const inputAnimatedStyle = useAnimatedStyle(() => {
+  const formAnimatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: inputOpacity.value,
+      opacity: formOpacity.value,
+      transform: [
+        { translateY: withTiming(formOpacity.value * 1, { duration: 600 }) }
+      ]
     };
   });
 
-  const buttonsAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: buttonsOpacity.value,
-    };
-  });
+  const validateForm = () => {
+    // Reset error state
+    setDescriptionError('');
+    
+    // Validate project description
+    if (!projectDescription.trim()) {
+      setDescriptionError('Please provide a brief description of your project or idea');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
+    }
+    
+    // Check if description is too short (less than 10 characters)
+    if (projectDescription.trim().length < 10) {
+      setDescriptionError('Please provide a more detailed description');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
+    }
+    
+    return true;
+  };
 
   const handleContinue = async () => {
-    if (projectDescription.trim().length === 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    if (!validateForm()) {
       return;
     }
 
@@ -77,23 +94,26 @@ export default function OnboardingCoFounderDescribeProjectScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
+      // Log the project description
       console.log('Project description:', projectDescription);
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to next screen or tab based on your app flow
-      // For now, going to main tabs
+      // Navigate to tabs route
       router.replace('/(tabs)');
       
     } catch (error) {
       console.error('Error saving project description:', error);
+      Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleBack = () => {
+  const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
+    router.replace('/(tabs)');
   };
 
   return (
@@ -112,57 +132,51 @@ export default function OnboardingCoFounderDescribeProjectScreen() {
         <View style={[styles.backgroundShape, styles.shapeTwo]} />
         <View style={[styles.backgroundShape, styles.shapeThree]} />
       </View>
-
+      
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingContainer}
       >
-        {/* Back button */}
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={handleBack}
-          disabled={isSubmitting}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1A202C" />
-        </TouchableOpacity>
-        
-        <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
+        <Animated.View style={[styles.headerContainer, logoAnimatedStyle]}>
           <Text style={styles.title}>Describe Your Project</Text>
-          <Text style={styles.subtitle}>Please share a brief description of your project or idea in 1-2 sentences.</Text>
+          <Text style={styles.subtitle}>Tell potential co-founders about your project or idea in 1-2 sentences.</Text>
         </Animated.View>
         
-        <Animated.View style={[styles.inputContainer, inputAnimatedStyle]}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="I'm building..."
-            placeholderTextColor="#A0AEC0"
-            value={projectDescription}
-            onChangeText={setProjectDescription}
-            multiline
-            maxLength={MAX_CHARS}
-            autoFocus={false}
-          />
-          <Text style={styles.characterCount}>
-            {projectDescription.length}/{MAX_CHARS}
-          </Text>
-        </Animated.View>
-        
-        {/* Bottom Actions Container */}
-        <Animated.View 
-          style={[
-            styles.bottomContainer, 
-            { paddingBottom: Math.max(insets.bottom, 16) }, 
-            buttonsAnimatedStyle
-          ]}
+        <Animated.View
+          style={[styles.formContainer, formAnimatedStyle]}
+          entering={FadeInDown.duration(600).delay(300)}
         >
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="E.g., A mobile app that helps people find local events based on their interests"
+              placeholderTextColor="#A0AEC0"
+              value={projectDescription}
+              onChangeText={(text) => {
+                setProjectDescription(text);
+                if (descriptionError) setDescriptionError('');
+              }}
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+              textAlignVertical="top"
+            />
+            {descriptionError ? (
+              <Text style={styles.errorText}>{descriptionError}</Text>
+            ) : null}
+            <Text style={styles.characterCount}>
+              {projectDescription.length}/500
+            </Text>
+          </View>
+          
           <TouchableOpacity 
             style={[
               styles.button,
               styles.continueButton,
-              (projectDescription.trim().length === 0 || isSubmitting) && styles.disabledButton
+              (isSubmitting) && styles.disabledButton
             ]}
             onPress={handleContinue}
-            disabled={projectDescription.trim().length === 0 || isSubmitting}
+            disabled={isSubmitting}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -180,6 +194,14 @@ export default function OnboardingCoFounderDescribeProjectScreen() {
                 </>
               )}
             </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.skipButton} 
+            onPress={handleSkip}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.skipButtonText}>Skip for now</Text>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -239,17 +261,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ADD8E6', 
     opacity: 0.08,
   },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 10 : 20,
-    left: 20,
-    zIndex: 10,
-    padding: 8,
-  },
   headerContainer: {
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 70 : 50,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+    paddingBottom: 10,
     alignItems: 'center',
     zIndex: 1,
   },
@@ -268,40 +283,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontFamily: 'System',
   },
-  inputContainer: {
+  formContainer: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    justifyContent: 'space-between',
+    paddingBottom: 20,
     zIndex: 1,
-    marginTop: 10,
   },
-  textInput: {
+  inputContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(229, 231, 235, 0.9)',
-    padding: 16,
-    fontSize: 16,
-    color: '#1A202C',
-    minHeight: 120,
-    textAlignVertical: 'top',
+    padding: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 2,
+    marginBottom: 20,
+  },
+  input: {
+    height: 150,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#1A202C',
+    fontFamily: 'System',
   },
   characterCount: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
     fontSize: 12,
     color: '#718096',
+    textAlign: 'right',
+    paddingRight: 16,
+    paddingBottom: 8,
   },
-  bottomContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    backgroundColor: 'transparent',
-    zIndex: 1,
-    marginTop: 'auto',
+  errorText: {
+    color: '#E53E3E',
+    fontSize: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   button: {
     width: '100%',
@@ -310,9 +330,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    marginBottom: 12,
   },
   continueButton: {
-    marginBottom: 12,
+    marginTop: 'auto',
   },
   buttonGradient: {
     flexDirection: 'row',
@@ -332,5 +353,15 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  skipButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  skipButtonText: {
+    color: '#4A5568',
+    fontSize: 15,
+    fontWeight: '500',
+    fontFamily: 'System',
   },
 }); 
