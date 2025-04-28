@@ -118,7 +118,14 @@ export default function OnboardingGoalsScreen() {
       
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
-      router.replace('/(tabs)');
+      // Navigate based on selected goal
+      if (selectedGoal === 1) {
+        // Find a co-founder - navigate to describe project screen
+        router.push('/(onboarding)/co-founder-describe-project');
+      } else {
+        // For other goals, go to main tabs for now
+        router.replace('/(tabs)');
+      }
       
     } catch (error) {
       console.error('Error saving goal:', error);
