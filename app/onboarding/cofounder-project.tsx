@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  TextInput, 
+  TextInput,
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
   Dimensions, 
-  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
   ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
-  FadeInDown, 
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  Easing 
+  FadeInUp,
+  FadeInDown
 } from 'react-native-reanimated';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -29,186 +27,139 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-export default function CofounderProjectScreen() {
+export default function OnboardCoFounderProjectScreen() {
   const [projectDescription, setProjectDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [descriptionError, setDescriptionError] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
-  // Animated values
-  const logoOpacity = useSharedValue(0);
-  const formOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    console.log('CofounderProjectScreen mounted');
-    
-    // Animate logo and form on screen load
-    logoOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-    formOpacity.value = withDelay(300, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-  }, []);
-
-  // Animated styles
-  const logoAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: logoOpacity.value,
-    };
-  });
-
-  const formAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: formOpacity.value,
-      transform: [
-        { translateY: withTiming(formOpacity.value * 1, { duration: 600 }) }
-      ]
-    };
-  });
-
-  const validateForm = () => {
-    // Reset error state
-    setDescriptionError('');
-    
-    // Validate project description
-    if (!projectDescription.trim()) {
-      setDescriptionError('Please provide a brief description of your project or idea');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return false;
-    }
-    
-    // Check if description is too short (less than 10 characters)
-    if (projectDescription.trim().length < 10) {
-      setDescriptionError('Please provide a more detailed description');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return false;
-    }
-    
-    return true;
-  };
 
   const handleContinue = async () => {
-    if (!validateForm()) {
+    if (projectDescription.trim().length === 0) {
+      Alert.alert('Project Description Required', 'Please describe your project/idea.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
+    
+    // Basic validation for sentence count (approximate)
+    const sentenceCount = (projectDescription.match(/[.!?]+/g) || []).length + 1; 
+    if (sentenceCount > 2 && projectDescription.trim().length > 50) { // Allow short descriptions even if > 2 sentences
+        Alert.alert('Keep it Concise', 'Please describe your project in 1-2 sentences.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return;
+    }
+
 
     try {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // Log the project description
-      console.log('Project description:', projectDescription);
+      console.log('Project Description:', projectDescription);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call to save the description
+      await new Promise(resolve => setTimeout(resolve, 800)); 
       
-      // Navigate to tabs route
-      router.replace('/(tabs)');
+      // Navigate to the next step (e.g., main app or another onboarding step)
+      router.push('/(tabs)'); // TODO: Update this to navigate to the next relevant screen, maybe skills?
       
     } catch (error) {
       console.error('Error saving project description:', error);
-      Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+      Alert.alert('Error', 'There was a problem saving your description. Please try again.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(tabs)');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
-      
-      {/* Background elements */}
-      <View style={styles.backgroundShapesContainer}>
-        <LinearGradient
-          colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']} 
-          locations={[0, 0.4, 0.8]}
-          style={styles.gradientBackground}
-        />
-        <View style={[styles.backgroundShape, styles.shapeOne]} />
-        <View style={[styles.backgroundShape, styles.shapeTwo]} />
-        <View style={[styles.backgroundShape, styles.shapeThree]} />
-      </View>
-      
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingContainer}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -100} // Adjust offset if needed
       >
-        <Animated.View style={[styles.headerContainer, logoAnimatedStyle]}>
-          <Text style={styles.title}>Describe Your Project</Text>
-          <Text style={styles.subtitle}>Tell potential co-founders about your project or idea in 1-2 sentences.</Text>
-        </Animated.View>
-        
-        <Animated.View
-          style={[styles.formContainer, formAnimatedStyle]}
-          entering={FadeInDown.duration(600).delay(300)}
-        >
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., A mobile app that helps people find local events based on their interests"
-              placeholderTextColor="#A0AEC0"
-              value={projectDescription}
-              onChangeText={(text) => {
-                setProjectDescription(text);
-                if (descriptionError) setDescriptionError('');
-              }}
-              multiline
-              numberOfLines={4}
-              maxLength={500}
-              textAlignVertical="top"
-            />
-            {descriptionError ? (
-              <Text style={styles.errorText}>{descriptionError}</Text>
-            ) : null}
-            <Text style={styles.characterCount}>
-              {projectDescription.length}/500
-            </Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={[
-              styles.button,
-              styles.continueButton,
-              (isSubmitting) && styles.disabledButton
-            ]}
-            onPress={handleContinue}
-            disabled={isSubmitting}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#000000', '#333333']} 
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.buttonGradient}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.innerContainer}>
+            
+            {/* Background shapes (copied from goals screen) */}
+            <View style={styles.backgroundShapesContainer}>
+              <LinearGradient
+                colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']}
+                locations={[0, 0.4, 0.8]}
+                style={styles.gradientBackground}
+              />
+              <View style={[styles.backgroundShape, styles.shapeOne]} />
+              <View style={[styles.backgroundShape, styles.shapeTwo]} />
+              <View style={[styles.backgroundShape, styles.shapeThree]} />
+            </View>
+            
+            <Animated.View entering={FadeInUp.duration(600).delay(200)} style={styles.contentContainer}>
+              <Text style={styles.title}>Describe Your Vision</Text>
+              <Text style={styles.subtitle}>
+                What project or idea are you looking for a co-founder for? 
+                Please describe it briefly (1-2 sentences).
+              </Text>
+              
+              <TextInput
+                style={styles.textInput}
+                multiline
+                placeholder="e.g., Building a platform to connect local artists..."
+                placeholderTextColor="#A0AEC0"
+                value={projectDescription}
+                onChangeText={setProjectDescription}
+                maxLength={200} // Limit length
+                returnKeyType="done" // Change return key
+                blurOnSubmit={true} // Dismiss keyboard on submit
+              />
+              <Text style={styles.charCount}>{projectDescription.length}/200</Text>
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.duration(600).delay(300)} 
+              style={[
+                styles.bottomContainer, 
+                { paddingBottom: Math.max(insets.bottom, 16) }
+              ]}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFF" size="small" /> 
-              ) : (
-                <>
-                  <Text style={styles.buttonText}>Continue</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.skipButton} 
-            onPress={handleSkip}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.skipButtonText}>Skip for now</Text>
-          </TouchableOpacity>
-        </Animated.View>
+              <TouchableOpacity 
+                style={[
+                  styles.button, 
+                  (projectDescription.trim().length === 0 || isSubmitting) && styles.disabledButton
+                ]}
+                onPress={handleContinue}
+                disabled={projectDescription.trim().length === 0 || isSubmitting}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" size="small" />
+                  ) : (
+                    <>
+                      <Text style={styles.buttonText}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+              {/* Optional: Add a skip or back button if needed */}
+              {/* <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                  <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity> */}
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+// Reuse styles from goals screen and adapt
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -216,6 +167,10 @@ const styles = StyleSheet.create({
   },
   keyboardAvoidingContainer: {
     flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'space-between', // Push content up and button down
   },
   gradientBackground: {
     position: 'absolute',
@@ -261,67 +216,65 @@ const styles = StyleSheet.create({
     backgroundColor: '#ADD8E6', 
     opacity: 0.08,
   },
-  headerContainer: {
+  contentContainer: {
+    flex: 1, // Take available space
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 40 : 20,
-    paddingBottom: 10,
+    paddingTop: Platform.OS === 'android' ? height * 0.1 : height * 0.12, // Adjust top padding
     alignItems: 'center',
     zIndex: 1,
+    justifyContent: 'flex-start', // Align content to the top part
   },
   title: {
     fontSize: 26, 
     fontWeight: '700',
     color: '#1A202C',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
     fontFamily: 'System', 
   },
   subtitle: {
     fontSize: 15,
     color: '#4A5568',
     textAlign: 'center',
+    marginBottom: 30, // Space before the input
     paddingHorizontal: 10,
     fontFamily: 'System',
+    lineHeight: 22, // Improve readability
   },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    justifyContent: 'space-between',
-    paddingBottom: 20,
-    zIndex: 1,
-  },
-  inputContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
-    padding: 5,
+  textInput: {
+    width: '100%',
+    minHeight: 100, // Make text input larger
+    maxHeight: 150,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Slightly transparent white
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16, // Add padding top for multiline
+    paddingBottom: 16,
+    fontSize: 16,
+    color: '#1A202C',
+    textAlignVertical: 'top', // Align text to top for multiline
+    borderWidth: 1,
+    borderColor: 'rgba(229, 231, 235, 0.9)',
+    marginBottom: 10, // Space before char count
+    fontFamily: 'System',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 4,
     elevation: 2,
-    marginBottom: 20,
   },
-  input: {
-    height: 150,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1A202C',
-    fontFamily: 'System',
-  },
-  characterCount: {
+   charCount: {
+    alignSelf: 'flex-end',
     fontSize: 12,
     color: '#718096',
-    textAlign: 'right',
-    paddingRight: 16,
-    paddingBottom: 8,
+    marginRight: 5, // Position it slightly inset from the right edge
   },
-  errorText: {
-    color: '#E53E3E',
-    fontSize: 14,
-    marginHorizontal: 16,
-    marginBottom: 8,
+  bottomContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    backgroundColor: 'transparent',
+    zIndex: 1,
+    borderTopWidth: 0, // Remove border if previously existed
   },
   button: {
     width: '100%',
@@ -330,10 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    marginBottom: 12,
-  },
-  continueButton: {
-    marginTop: 'auto',
+    marginBottom: 12, // Add margin if needed for skip/back button
   },
   buttonGradient: {
     flexDirection: 'row',
@@ -354,14 +304,15 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.6,
   },
-  skipButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  skipButtonText: {
-    color: '#4A5568',
-    fontSize: 15,
-    fontWeight: '500',
-    fontFamily: 'System',
-  },
+  // Optional Back button styles
+  // backButton: {
+  //   alignItems: 'center',
+  //   paddingVertical: 12,
+  // },
+  // backButtonText: {
+  //   color: '#4A5568',
+  //   fontSize: 15,
+  //   fontWeight: '500',
+  //   fontFamily: 'System',
+  // },
 }); 
