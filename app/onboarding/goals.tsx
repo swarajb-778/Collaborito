@@ -59,13 +59,6 @@ const GOALS = [
     iconType: 'MaterialCommunityIcons',
     description: 'Discover new ventures and opportunities.'
   },
-  {
-    id: 5,
-    name: 'Start a new social venture',
-    icon: 'earth-outline',
-    iconType: 'Ionicons',
-    description: 'Create a project focused on social or environmental impact.'
-  },
 ];
 
 export default function OnboardingGoalsScreen() {
@@ -122,20 +115,6 @@ export default function OnboardingGoalsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       console.log('Selected goal:', GOALS.find(item => item.id === selectedGoal)?.name);
-      
-      // If "Find a co-founder" is selected (id: 1), navigate to the cofounder-project screen
-      if (selectedGoal === 1) {
-        router.push('/cofounder-project' as any);
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // If "Start a new social venture" is selected (id: 5), navigate to the social-venture screen
-      if (selectedGoal === 5) {
-        router.push('/social-venture' as any);
-        setIsSubmitting(false);
-        return;
-      }
       
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
