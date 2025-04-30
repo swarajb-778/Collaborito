@@ -114,11 +114,19 @@ export default function OnboardingGoalsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Selected goal:', GOALS.find(item => item.id === selectedGoal)?.name);
+      const selectedGoalName = GOALS.find(item => item.id === selectedGoal)?.name;
+      console.log('Selected goal:', selectedGoalName);
       
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
-      router.replace('/(tabs)');
+      // Redirect based on selected goal
+      if (selectedGoal === 1) { // Find a co-founder
+        // Create the cofounder-project.tsx file if it doesn't exist yet
+        router.replace('/onboarding/cofounder-project' as any);
+      } else {
+        // For other goals, go directly to the main app
+        router.replace('/(tabs)');
+      }
       
     } catch (error) {
       console.error('Error saving goal:', error);
