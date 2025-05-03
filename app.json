@@ -54,6 +54,7 @@
       }
     },
     "owner": "swaraj77",
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "sdkVersion": "53.0.0"
   }
 }

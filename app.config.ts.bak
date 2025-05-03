@@ -32,10 +32,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: 'metro'
   },
   plugins: [
-    'expo-router',
     'expo-font',
     'expo-secure-store',
-    'expo-web-browser',
     [
       'expo-image-picker',
       {
@@ -44,9 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       }
     ]
   ],
-  experiments: {
-    typedRoutes: true
-  },
+  sdkVersion: '46.0.0',
   extra: {
     // Use environment variables in development, placeholder values for building
     SUPABASE_URL: process.env.SUPABASE_URL || 'development-placeholder',
