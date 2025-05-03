@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18  # Use Node 18 for better compatibility
+          node-version: 20  # Use Node 20 for better compatibility with React 19
           cache: 'npm'
         timeout-minutes: 5
       
@@ -41,7 +41,7 @@ jobs:
       
       # Install Babel dependencies explicitly for Jest
       - name: Install Babel dependencies for testing
-        run: npm install --save-dev metro-react-native-babel-preset babel-preset-expo babel-jest
+        run: npm install --save-dev --legacy-peer-deps metro-react-native-babel-preset babel-preset-expo babel-jest
         timeout-minutes: 2
       
       - name: Create .env file
@@ -151,11 +151,27 @@ jobs:
         run: npm install -g expo-cli@latest
         timeout-minutes: 3
         
-      # Use correct export command for Expo
+      # Use correct export command for Expo with metro config fix
       - name: Build web preview
         run: |
+          # Create metro.config.js if it doesn't exist to fix potential stream module issues
+          if [ ! -f metro.config.js ]; then
+            echo "Creating metro.config.js with package exports workaround"
+            cat > metro.config.js << 'EOF'
+          const { getDefaultConfig } = require('expo/metro-config');
+
+          /** @type {import('expo/metro-config').MetroConfig} */
+          const config = getDefaultConfig(__dirname);
+
+          // Disable package exports to fix issues with stream module
+          config.resolver.unstable_enablePackageExports = false;
+
+          module.exports = config;
+          EOF
+          fi
+          
           echo "Building web preview using correct Expo export command"
-          CI=1 npx expo export || echo "Build failed but workflow continued"
+          CI=1 npx expo export --platform web || echo "Build failed but workflow continued"
         timeout-minutes: 15
         env:
           NODE_OPTIONS: "--max_old_space_size=4096" 
