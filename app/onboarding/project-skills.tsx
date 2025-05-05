@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -10,17 +10,13 @@ import {
   Platform,
   SafeAreaView,
   ActivityIndicator,
-  FlatList
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Animated
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Animated, { 
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  Easing 
-} from 'react-native-reanimated';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
@@ -62,38 +58,29 @@ export default function ProjectSkillsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   
-  // Reanimated shared values for animations
-  const headerOpacity = useSharedValue(0);
-  const skillsOpacity = useSharedValue(0);
-  const buttonsOpacity = useSharedValue(0);
+  // Animation values
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Log only once when component mounts
     console.log('Rendering ProjectSkillsScreen');
     
-    // Staggered fade-in animations using Reanimated
-    headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-    skillsOpacity.value = withDelay(250, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
-    buttonsOpacity.value = withDelay(400, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
+    // Animate logo and form on screen load
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  // Animated styles
-  const headerAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: headerOpacity.value,
-    };
-  });
-
-  const skillsAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: skillsOpacity.value,
-    };
-  });
-
-  const buttonsAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: buttonsOpacity.value,
-    };
-  });
 
   const toggleSkill = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -165,7 +152,7 @@ export default function ProjectSkillsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
       
@@ -180,73 +167,84 @@ export default function ProjectSkillsScreen() {
         <View style={[styles.backgroundShape, styles.shapeTwo]} />
         <View style={[styles.backgroundShape, styles.shapeThree]} />
       </View>
-      
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
-          <Text style={styles.title}>What skills are you looking for?</Text>
-          <Text style={styles.subtitle}>Select the skills you'd like your co-founder to have.</Text>
-        </Animated.View>
-        
-        {/* Skills Grid */}
-        <Animated.View style={[styles.skillsContainer, skillsAnimatedStyle]}>
-          <FlatList
-            data={PROJECT_SKILLS}
-            renderItem={renderSkillItem}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            scrollEnabled={false} // The parent ScrollView handles scrolling
-            contentContainerStyle={styles.skillsList}
-          />
-        </Animated.View>
-      </ScrollView>
-      
-      {/* Bottom Actions Container */}
-      <Animated.View 
-        style={[
-          styles.bottomContainer, 
-          { paddingBottom: Math.max(insets.bottom, 16) }, 
-          buttonsAnimatedStyle
-        ]}
-      >
-        <TouchableOpacity 
-          style={[
-            styles.button,
-            styles.continueButton,
-            (!selectedSkills.length || isSubmitting) && styles.disabledButton
-          ]}
-          onPress={handleContinue}
-          disabled={!selectedSkills.length || isSubmitting}
-          activeOpacity={0.8}
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoiding}
         >
-          <LinearGradient
-            colors={['#000000', '#333333']} 
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFF" size="small" /> 
-            ) : (
-              <>
-                <Text style={styles.buttonText}>Continue</Text>
-                <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />
-              </>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.skipButton} 
-          onPress={handleSkip}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.skipButtonText}>Skip for now</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </SafeAreaView>
+            {/* Logo container */}
+            <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+              <Image 
+                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <Image 
+                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+                style={styles.textLogo}
+                resizeMode="contain"
+              />
+            </Animated.View>
+
+            {/* Content container */}
+            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
+              <Text style={styles.title}>What skills are you looking for?</Text>
+              <Text style={styles.subtitle}>
+                Select the skills you'd like your co-founder to have.
+              </Text>
+              
+              {/* Skills grid */}
+              <View style={styles.skillsContainer}>
+                <FlatList
+                  data={PROJECT_SKILLS}
+                  renderItem={renderSkillItem}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={2}
+                  scrollEnabled={false} // The parent ScrollView handles scrolling
+                  contentContainerStyle={styles.skillsList}
+                />
+              </View>
+
+              {/* Continue Button */}
+              <TouchableOpacity 
+                style={[styles.button, styles.primaryButton, (!selectedSkills.length || isSubmitting) && styles.disabledButton]}
+                onPress={handleContinue}
+                disabled={!selectedSkills.length || isSubmitting}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']} 
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" size="small" /> 
+                  ) : (
+                    <>
+                      <Text style={styles.buttonText}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#ffffff" style={styles.buttonIcon} />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Skip Link */}
+              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
+                <Text style={styles.skipLinkText}>
+                  I'll select skills later
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -254,6 +252,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardAvoiding: {
+    flex: 1,
   },
   backgroundShapesContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -290,26 +294,42 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 120, // Space for the bottom buttons
+    paddingHorizontal: 24,
+    paddingBottom: 30,
   },
-  headerContainer: {
-    marginBottom: 20,
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    marginBottom: 10,
+  },
+  textLogo: {
+    width: 180,
+    height: 25,
+    marginTop: 5,
+  },
+  formContainer: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
     color: '#666666',
     lineHeight: 22,
+    marginBottom: 24,
   },
   skillsContainer: {
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 30,
   },
   skillsList: {
     width: '100%',
@@ -343,36 +363,24 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
   },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.05)',
-    alignItems: 'center',
-  },
   button: {
-    width: '100%',
-    height: 54,
     borderRadius: 12,
-    marginBottom: 12,
     overflow: 'hidden',
+    marginBottom: 14,
+  },
+  primaryButton: {
+    backgroundColor: '#000000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonGradient: {
-    flex: 1,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  continueButton: {
-    backgroundColor: '#000000',
-  },
-  disabledButton: {
-    opacity: 0.5,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -382,11 +390,16 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginLeft: 8,
   },
-  skipButton: {
+  disabledButton: {
+    opacity: 0.6,
+  },
+  skipLinkContainer: {
+    alignItems: 'center',
     padding: 12,
   },
-  skipButtonText: {
+  skipLinkText: {
     color: '#666666',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
   },
 }); 
