@@ -121,8 +121,9 @@ export default function OnboardingGoalsScreen() {
       
       // Redirect based on selected goal
       if (selectedGoal === 1) { // Find a co-founder
-        // Create the cofounder-project.tsx file if it doesn't exist yet
-        router.replace('/onboarding/cofounder-project' as any);
+        router.replace('/onboarding/project-detail' as any);
+      } else if (selectedGoal === 2) { // Find people to help with my project
+        router.replace('/onboarding/project-detail' as any);
       } else {
         // For other goals, go directly to the main app
         router.replace('/(tabs)');

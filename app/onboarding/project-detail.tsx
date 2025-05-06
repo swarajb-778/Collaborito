@@ -29,7 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-export default function OnboardingCofounderProjectScreen() {
+export default function OnboardingProjectDetailScreen() {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +42,7 @@ export default function OnboardingCofounderProjectScreen() {
   const buttonsOpacity = useSharedValue(0);
 
   useEffect(() => {
-    console.log('Rendering OnboardingCofounderProjectScreen');
+    console.log('Rendering OnboardingProjectDetailScreen');
     
     // Staggered fade-in animations using Reanimated
     headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
@@ -136,7 +136,7 @@ export default function OnboardingCofounderProjectScreen() {
         >
           <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
             <Text style={styles.title}>Tell us about your project</Text>
-            <Text style={styles.subtitle}>Share details about the project you're seeking a co-founder for.</Text>
+            <Text style={styles.subtitle}>Share details about the project you're looking for collaborators on.</Text>
           </Animated.View>
           
           {/* Form Fields */}
@@ -157,7 +157,7 @@ export default function OnboardingCofounderProjectScreen() {
               <Text style={styles.inputLabel}>Project Description</Text>
               <TextInput
                 style={[styles.textInput, styles.textAreaInput]}
-                placeholder="Describe your project, goals, and what kind of co-founder you're looking for"
+                placeholder="Describe your project, goals, and what kind of help you're looking for"
                 placeholderTextColor="#999"
                 value={projectDescription}
                 onChangeText={setProjectDescription}

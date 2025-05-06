@@ -197,7 +197,7 @@ export default function ProjectSkillsScreen() {
           <RNAnimated.View style={[styles.formContainer, { opacity: formOpacity }]}>
             <Text style={styles.title}>What skills are you looking for?</Text>
             <Text style={styles.subtitle}>
-              Select the skills you'd like your co-founder to bring to your project.
+              Select the skills you'd like collaborators to bring to your project.
             </Text>
             
             {/* Skills grid */}
