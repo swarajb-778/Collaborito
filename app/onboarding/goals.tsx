@@ -120,12 +120,12 @@ export default function OnboardingGoalsScreen() {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
       // Redirect based on selected goal
-      if (selectedGoal === 1) { // Find a co-founder
+      if (selectedGoal === 1 || selectedGoal === 2) { // Find a co-founder or Find collaborators
         router.replace('/onboarding/project-detail' as any);
-      } else if (selectedGoal === 2) { // Find people to help with my project
-        router.replace('/onboarding/project-detail' as any);
+      } else if (selectedGoal === 3 || selectedGoal === 4) { // Contribute skills or Explore ideas
+        router.replace('/onboarding/project-skills' as any);
       } else {
-        // For other goals, go directly to the main app
+        // Fallback - go directly to the main app
         router.replace('/(tabs)');
       }
       
