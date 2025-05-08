@@ -24,7 +24,7 @@ import Animated, {
   withDelay,
   Easing 
 } from 'react-native-reanimated';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,14 +63,49 @@ export default function ProjectSkillsScreen() {
   const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  
+  // Get the goalId from URL params and convert to number
+  const goalId = params.goalId ? Number(params.goalId) : 2; // Default to 2 if not provided
   
   // Animation values
   const logoScale = useRef(new RNAnimated.Value(0.8)).current;
   const formOpacity = useRef(new RNAnimated.Value(0)).current;
 
+  // Get subtitle text based on the goalId
+  const getSubtitleText = () => {
+    switch (goalId) {
+      case 1:
+        return "Select the skills you'd like your co-founder to bring to your project.";
+      case 2:
+        return "Select the skills you'd like collaborators to bring to your project.";
+      case 3:
+        return "Select the skills you can offer to projects.";
+      case 4:
+        return "Select the skills you're interested in exploring.";
+      default:
+        return "Select the skills you'd like collaborators to bring to your project.";
+    }
+  };
+
+  // Get title text based on the goalId
+  const getTitleText = () => {
+    switch (goalId) {
+      case 1:
+      case 2:
+        return "What skills are you looking for?";
+      case 3:
+        return "What skills can you offer?";
+      case 4:
+        return "What skills interest you?";
+      default:
+        return "What skills are you looking for?";
+    }
+  };
+
   useEffect(() => {
-    console.log('Rendering ProjectSkillsScreen');
+    console.log('Rendering ProjectSkillsScreen with goalId:', goalId);
     
     // Animate logo and form on screen load
     RNAnimated.parallel([
@@ -195,9 +230,9 @@ export default function ProjectSkillsScreen() {
 
           {/* Content container */}
           <RNAnimated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-            <Text style={styles.title}>What skills are you looking for?</Text>
+            <Text style={styles.title}>{getTitleText()}</Text>
             <Text style={styles.subtitle}>
-              Select the skills you'd like collaborators to bring to your project.
+              {getSubtitleText()}
             </Text>
             
             {/* Skills grid */}

@@ -123,7 +123,10 @@ export default function OnboardingGoalsScreen() {
       if (selectedGoal === 1 || selectedGoal === 2) { // Find a co-founder or Find collaborators
         router.replace('/onboarding/project-detail' as any);
       } else if (selectedGoal === 3 || selectedGoal === 4) { // Contribute skills or Explore ideas
-        router.replace('/onboarding/project-skills' as any);
+        router.replace({
+          pathname: '/onboarding/project-skills',
+          params: { goalId: selectedGoal }
+        } as any);
       } else {
         // Fallback - go directly to the main app
         router.replace('/(tabs)');

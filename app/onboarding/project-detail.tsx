@@ -91,8 +91,11 @@ export default function OnboardingProjectDetailScreen() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to project skills screen
-      router.replace('/onboarding/project-skills' as any);
+      // Navigate to project skills screen with goal ID
+      router.replace({
+        pathname: '/onboarding/project-skills',
+        params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
+      } as any);
       
     } catch (error) {
       console.error('Error saving project details:', error);
@@ -104,7 +107,10 @@ export default function OnboardingProjectDetailScreen() {
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/onboarding/project-skills' as any);
+    router.replace({
+      pathname: '/onboarding/project-skills',
+      params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
+    } as any);
   };
 
   return (
