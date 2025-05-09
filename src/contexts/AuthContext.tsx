@@ -96,6 +96,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithLinkedIn: () => Promise<void>;
   signInWithDemo: () => Promise<boolean>;
+  updateUser: (userData: Partial<User>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -411,10 +412,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const storeUserData = async (userData: User) => {
     try {
       await SecureStore.setItemAsync('user', JSON.stringify(userData));
-      if (userData.oauthTokens?.accessToken) {
-        await SecureStore.setItemAsync('userSession', userData.oauthTokens.accessToken);
-      }
-      console.log('User data stored successfully');
+      await SecureStore.setItemAsync('userSession', 'active');
+      setUser(userData);
+      setLoggedIn(true);
       return true;
     } catch (error) {
       console.error('Error storing user data:', error);
@@ -609,6 +609,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add updateUser function
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      if (!user) {
+        console.error('Cannot update user: No user is currently logged in');
+        return false;
+      }
+      
+      // Combine existing user data with the new data
+      const updatedUser = { ...user, ...userData };
+      
+      // Store the updated user data
+      await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      console.log('User profile updated:', updatedUser);
+      return true;
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -616,7 +639,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     signInWithLinkedIn,
-    signInWithDemo
+    signInWithDemo,
+    updateUser
   };
 
   return (

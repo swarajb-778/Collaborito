@@ -31,7 +31,7 @@ export default function OnboardingScreen() {
   // Move logging inside useEffect or remove it entirely
   
   const router = useRouter();
-  const { user } = useAuth(); // Only need user from auth context here
+  const { user, updateUser } = useAuth(); // Get updateUser from context
   const [savingProfile, setSavingProfile] = useState(false);
   const insets = useSafeAreaInsets(); // Get safe area insets
 
@@ -116,12 +116,25 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // Simulate profile update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update user profile with entered data
+      const userProfileUpdate = {
+        firstName,
+        lastName,
+        // You could add these to the User type and save them too
+        // location,
+        // jobTitle,
+      };
+      
+      // Save user profile data
+      const updateSuccess = await updateUser(userProfileUpdate);
+      
+      if (!updateSuccess) {
+        throw new Error('Failed to update user profile');
+      }
       
       console.log('Profile updated with:', { firstName, lastName, location, jobTitle });
       
-      // Navigate to the interests screen instead of tabs
+      // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
     } catch (error) {
       console.error('Error updating profile:', error);

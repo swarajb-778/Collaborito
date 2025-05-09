@@ -68,6 +68,13 @@ export default function RegisterScreen() {
   const handleSignUp = async () => {
     setError(''); // Clear previous errors
 
+    // Validate username
+    if (!validateUsername(username)) {
+      setError('Username must be 3-20 characters long and can only contain letters, numbers, and underscores.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
     // Basic Validation
     if (!username || !email || !password) {
       setError('Please fill in all required fields.');
@@ -136,6 +143,13 @@ export default function RegisterScreen() {
      }
   };
 
+  // Helper function to validate username
+  const validateUsername = (username: string): boolean => {
+    // Username must be 3-20 characters and only contain letters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    return usernameRegex.test(username);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -193,7 +207,7 @@ export default function RegisterScreen() {
                    <Ionicons name="person-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
                    <TextInput
                      style={styles.input}
-                     placeholder="Create a unique username"
+                     placeholder="Choose a unique username (e.g. john_doe123)"
                      placeholderTextColor="#B0B0B0"
                      value={username}
                      onChangeText={setUsername}
@@ -202,6 +216,7 @@ export default function RegisterScreen() {
                      returnKeyType="next" // Suggests next field
                    />
                  </View>
+                 <Text style={styles.inputHint}>3-20 characters, letters, numbers, and underscores only</Text>
                </View>
 
               {/* Email Input */}
@@ -565,5 +580,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#242428', // Match signin screen
     textDecorationLine: 'underline',
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 4,
+    marginLeft: 2,
+    fontFamily: 'Nunito',
   },
 }); 
