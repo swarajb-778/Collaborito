@@ -28,7 +28,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
-  const [username, setUsername] = useState(''); // Added username state
+  const [fullName, setFullName] = useState(''); // Changed from username to fullName
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +69,7 @@ export default function RegisterScreen() {
     setError(''); // Clear previous errors
 
     // Basic Validation
-    if (!username || !email || !password) {
+    if (!fullName || !email || !password) {
       setError('Please fill in all required fields.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -94,8 +94,8 @@ export default function RegisterScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // Split username into first/last - simple split for now
-      const nameParts = username.trim().split(' ');
+      // Split fullName into first/last - simple split for now
+      const nameParts = fullName.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -186,17 +186,17 @@ export default function RegisterScreen() {
             <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
               <Text style={styles.title}>Create account</Text>
               
-              {/* Username Input */}
+              {/* Full Name Input */}
               <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>Username</Text>
+                 <Text style={styles.inputLabel}>Full Name</Text>
                  <View style={styles.inputContainer}>
                    <Ionicons name="person-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
                    <TextInput
                      style={styles.input}
                      placeholder="Your full name"
                      placeholderTextColor="#B0B0B0"
-                     value={username}
-                     onChangeText={setUsername}
+                     value={fullName}
+                     onChangeText={setFullName}
                      editable={!isLoading}
                      autoCapitalize="words"
                      returnKeyType="next" // Suggests next field
