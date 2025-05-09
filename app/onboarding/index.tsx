@@ -65,9 +65,9 @@ export default function OnboardingScreen() {
     console.log('Onboarding screen received user:', user);
   }, [user]);
 
-  // Initialize form fields with user data if available
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
+  // Initialize form fields with empty strings since registration no longer provides first/last name
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [location, setLocation] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   

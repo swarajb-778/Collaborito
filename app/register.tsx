@@ -28,7 +28,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
-  const [fullName, setFullName] = useState(''); // Changed from username to fullName
+  const [username, setUsername] = useState(''); // Added username state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +69,7 @@ export default function RegisterScreen() {
     setError(''); // Clear previous errors
 
     // Basic Validation
-    if (!fullName || !email || !password) {
+    if (!username || !email || !password) {
       setError('Please fill in all required fields.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -94,10 +94,10 @@ export default function RegisterScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // Split fullName into first/last - simple split for now
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      // No longer split username into first/last name
+      // We'll let the user enter first and last name in the onboarding screen
+      const firstName = '';
+      const lastName = '';
 
       await signUp(email, password, firstName, lastName); 
       
@@ -186,19 +186,19 @@ export default function RegisterScreen() {
             <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
               <Text style={styles.title}>Create account</Text>
               
-              {/* Full Name Input */}
+              {/* Username Input */}
               <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>Full Name</Text>
+                 <Text style={styles.inputLabel}>Username</Text>
                  <View style={styles.inputContainer}>
                    <Ionicons name="person-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
                    <TextInput
                      style={styles.input}
-                     placeholder="Your full name"
+                     placeholder="Create a unique username"
                      placeholderTextColor="#B0B0B0"
-                     value={fullName}
-                     onChangeText={setFullName}
+                     value={username}
+                     onChangeText={setUsername}
                      editable={!isLoading}
-                     autoCapitalize="words"
+                     autoCapitalize="none"
                      returnKeyType="next" // Suggests next field
                    />
                  </View>
