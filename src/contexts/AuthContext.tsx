@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Alert, Platform } from 'react-native';
 import { makeRedirectUri, useAuthRequest, ResponseType } from 'expo-auth-session';
@@ -31,6 +31,12 @@ export type User = {
     roles?: string[];
     provider?: string;
   };
+};
+
+// Cache for auth state
+const AUTH_CACHE = {
+  isChecked: false,
+  cachedUser: null as User | null,
 };
 
 // LinkedIn API response types
@@ -102,12 +108,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(AUTH_CACHE.cachedUser);
+  const [loading, setLoading] = useState(!AUTH_CACHE.isChecked);
+  const [loggedIn, setLoggedIn] = useState(!!AUTH_CACHE.cachedUser);
   const [mockServer, setMockServer] = useState<{ stop: () => void } | null>(null);
 
+  // Load the user data only once when the component mounts
   useEffect(() => {
+    if (AUTH_CACHE.isChecked) {
+      return; // Skip if already checked
+    }
+    
     void loadUser();
     
     // Set up deep link listener for handling OAuth callbacks
@@ -130,17 +141,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUser = async () => {
     try {
+      // If already checked, use cached data
+      if (AUTH_CACHE.isChecked) {
+        setLoading(false);
+        return !!AUTH_CACHE.cachedUser;
+      }
+
       setLoading(true);
-      const userJson = await SecureStore.getItemAsync('user');
-      const session = await SecureStore.getItemAsync('userSession');
+      
+      // Use Promise.all to fetch both items concurrently
+      const [userJson, session] = await Promise.all([
+        SecureStore.getItemAsync('user'),
+        SecureStore.getItemAsync('userSession')
+      ]);
       
       if (userJson && session) {
         const userData = JSON.parse(userJson) as User;
+        
+        // Set user in state
         setUser(userData);
         setLoggedIn(true);
+        
+        // Update cache
+        AUTH_CACHE.cachedUser = userData;
+        
         console.log('User loaded from storage');
         return true;
       }
+      
+      // Update cache to indicate we've checked
+      AUTH_CACHE.isChecked = true;
       return false;
     } catch (error) {
       console.error('Error loading user:', error);
@@ -151,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Deep link handler 
-  const handleDeepLink = async (event: { url: string }) => {
+  const handleDeepLink = useCallback(async (event: { url: string }) => {
     console.log('Deep link received:', event.url);
     
     // Check if this is our LinkedIn auth callback
@@ -230,15 +260,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         Alert.alert('Authentication Error', 'Failed to process authentication response');
       }
     }
-  };
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       console.log('Signing in with email:', email);
       
-      // Simulate API call for email/password authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call for email/password authentication - reduced delay from 1000ms to 300ms
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // In a real app, this would be a call to your auth API
       if (email !== 'user@example.com' || password !== 'password') {
@@ -276,8 +306,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Signing up with email:', email);
       
-      // Simulate API call for registration
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate API call for registration - reduced delay from 1500ms to 400ms
+      await new Promise(resolve => setTimeout(resolve, 400));
       
       // In a real app, this would be a call to your registration API
       if (email === 'user@example.com') {
@@ -312,9 +342,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await SecureStore.deleteItemAsync('user');
-      await SecureStore.deleteItemAsync('userSession');
+      // Use Promise.all for concurrent operations
+      await Promise.all([
+        SecureStore.deleteItemAsync('user'),
+        SecureStore.deleteItemAsync('userSession')
+      ]);
+      
+      // Update cache
+      AUTH_CACHE.cachedUser = null;
+      
+      // Update state
       setUser(null);
+      setLoggedIn(false);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Sign out error:', errorMessage);
@@ -397,12 +436,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Mock LinkedIn user created successfully');
       
-      // Display user information in an alert
-      Alert.alert(
-        'LinkedIn Profile',
-        `Name: ${mockUser.firstName} ${mockUser.lastName}\nEmail: ${mockUser.email}`,
-        [{ text: 'OK' }]
-      );
+      // Skip alert to speed up process
     } catch (error) {
       console.error('Error creating mock user:', error);
     }
@@ -411,8 +445,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Store user data securely
   const storeUserData = async (userData: User) => {
     try {
-      await SecureStore.setItemAsync('user', JSON.stringify(userData));
-      await SecureStore.setItemAsync('userSession', 'active');
+      // Store both items at once using Promise.all
+      await Promise.all([
+        SecureStore.setItemAsync('user', JSON.stringify(userData)),
+        SecureStore.setItemAsync('userSession', 'active')
+      ]);
+      
+      // Update cached user
+      AUTH_CACHE.cachedUser = userData;
+      AUTH_CACHE.isChecked = true;
+      
       setUser(userData);
       setLoggedIn(true);
       return true;
@@ -422,7 +464,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleLinkedInAuthCallback = async (event: { url: string }) => {
+  // Optimized implementation with useCallback
+  const handleLinkedInAuthCallback = useCallback(async (event: { url: string }) => {
     console.log('Handling LinkedIn auth callback', event);
     try {
       setLoading(true);
@@ -468,6 +511,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('LinkedIn code obtained', code);
+      
+      // In development mode, create a mock user immediately to save time
+      if (__DEV__) {
+        createMockLinkedInUser();
+        return;
+      }
       
       try {
         // Exchange the code for tokens directly (only for development testing)
@@ -542,13 +591,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userData);
         setLoggedIn(true);
         
-        // Display the LinkedIn profile data in an alert
-        Alert.alert(
-          'LinkedIn Profile',
-          `Name: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}`,
-          [{ text: 'OK' }]
-        );
-        
         console.log('LinkedIn auth completed successfully with real data');
         return;
         
@@ -575,10 +617,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Function to sign in with a demo account
-  const signInWithDemo = async () => {
+  // Function to sign in with a demo account - optimized implementation
+  const signInWithDemo = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -595,9 +637,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Store the user data
       await storeUserData(demoUser);
       
-      // Set the user in state
-      setUser(demoUser);
-      setLoggedIn(true);
+      // Update cache
+      AUTH_CACHE.cachedUser = demoUser;
+      AUTH_CACHE.isChecked = true;
       
       console.log('Demo login successful');
       return true;
@@ -607,10 +649,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Add updateUser function
-  const updateUser = async (userData: Partial<User>) => {
+  // Add updateUser function with useCallback
+  const updateUser = useCallback(async (userData: Partial<User>) => {
     try {
       if (!user) {
         console.error('Cannot update user: No user is currently logged in');
@@ -622,6 +664,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Store the updated user data
       await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      
+      // Update cache
+      AUTH_CACHE.cachedUser = updatedUser;
+      
+      // Update state
       setUser(updatedUser);
       
       console.log('User profile updated:', updatedUser);
@@ -630,7 +677,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error updating user data:', error);
       return false;
     }
-  };
+  }, [user]);
 
   const value: AuthContextType = {
     user,

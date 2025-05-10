@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from '../components/ui/TextInput';
@@ -9,10 +9,27 @@ import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useRouter, router as globalRouter } from 'expo-router';
-import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
+import { getOptimizedAnimationDuration } from '../src/utils/performance';
+
+// Memoized components for better performance
+const MemoizedCard = memo(Card);
+const MemoizedButton = memo(Button);
+const MemoizedTextInput = memo(TextInput);
+
+// Optimized animation durations
+const ANIMATIONS = {
+  CARD_SPRING: { 
+    damping: 15, 
+    stiffness: 150,
+    mass: 0.8 // Lower mass for faster animations
+  },
+  FADE_IN_DURATION: getOptimizedAnimationDuration(800),
+  DELAY_FACTOR: 0.6 // Reduce delays to speed up screen appearance
+};
 
 export default function LoginScreen() {
   console.log('Rendering LoginScreen');
@@ -37,8 +54,9 @@ export default function LoginScreen() {
   const [demoLoading, setDemoLoading] = useState(false);
   
   useEffect(() => {
-    cardScale.value = withSpring(1);
-    opacity.value = withSpring(1);
+    // Start animations immediately 
+    cardScale.value = withSpring(1, ANIMATIONS.CARD_SPRING);
+    opacity.value = withSpring(1, ANIMATIONS.CARD_SPRING);
   }, []);
   
   const cardAnimatedStyle = useAnimatedStyle(() => {
@@ -48,7 +66,7 @@ export default function LoginScreen() {
     };
   });
   
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     let isValid = true;
     
     // Email validation
@@ -74,7 +92,7 @@ export default function LoginScreen() {
     }
     
     return isValid;
-  };
+  }, [email, password]);
   
   const handleAuth = async () => {
     if (!validateForm()) return;
@@ -93,15 +111,7 @@ export default function LoginScreen() {
         
         await signUp(email, password, firstName, lastName);
         console.log('Sign up successful, navigating to onboarding');
-        
-        // Navigate to onboarding after signup
-        const navigateToOnboarding = () => {
-          console.log('Executing navigation to onboarding');
-          router.replace('/onboarding');
-        };
-        
-        // Execute with a slight delay to ensure all state updates are processed
-        setTimeout(navigateToOnboarding, 500);
+        router.replace('/onboarding');
       } else if (mode === 'reset') {
         Alert.alert('Reset Password', `An email will be sent to ${email} with instructions to reset your password.`);
         console.log('Password reset initiated, switching to signin mode');
@@ -146,14 +156,7 @@ export default function LoginScreen() {
       if (success) {
         console.log('Demo login successful, navigating to tabs');
         // Use a timeout to ensure everything is updated before navigation
-        setTimeout(() => {
-          try {
-            globalRouter.replace('/(tabs)');
-          } catch (navError) {
-            console.error('Navigation error:', navError);
-            router.replace('/(tabs)');
-          }
-        }, 300);
+        router.replace('/(tabs)');
       } else {
         console.error('Demo login failed');
         Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');
@@ -168,185 +171,192 @@ export default function LoginScreen() {
   
   const toggleMode = (newMode: 'signin' | 'signup' | 'reset') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Add spring animation when switching modes
-    cardScale.value = withSpring(0.97, {}, () => {
-      cardScale.value = withSpring(1);
+    // Faster spring animation when switching modes
+    cardScale.value = withSpring(0.97, ANIMATIONS.CARD_SPRING, () => {
+      cardScale.value = withSpring(1, ANIMATIONS.CARD_SPRING);
     });
     setMode(newMode);
   };
   
+  // Memoized form renders
+  const renderSignInForm = useCallback(() => (
+    <Animated.View entering={FadeIn.duration(ANIMATIONS.FADE_IN_DURATION)} style={styles.formContainer}>
+      <MemoizedTextInput
+        label="Email"
+        placeholder="Enter your email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+        error={emailError}
+      />
+      
+      <MemoizedTextInput
+        label="Password"
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
+        error={passwordError}
+      />
+      
+      <MemoizedButton
+        style={styles.submitButton}
+        onPress={handleAuth}
+        variant="primary"
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          'Sign In'
+        )}
+      </MemoizedButton>
+      
+      <View style={styles.dividerContainer}>
+        <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+        <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
+        <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+      </View>
+      
+      <MemoizedButton
+        style={styles.linkedInButton}
+        onPress={handleLinkedInLogin}
+        variant="primary"
+        disabled={loading || demoLoading}
+      >
+        <View style={styles.buttonContent}>
+          <FontAwesome5 name="linkedin" size={20} color="white" />
+          <Text style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Continue with LinkedIn'}
+          </Text>
+        </View>
+      </MemoizedButton>
+      
+      <TouchableOpacity 
+        onPress={handleDemoLogin} 
+        style={[
+          styles.demoButton,
+          demoLoading && { opacity: 0.7 }
+        ]}
+        disabled={demoLoading}
+      >
+        {demoLoading ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <Text style={[styles.demoButtonText, { color: 'white' }]}>
+            Use Demo Account
+          </Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  ), [email, password, emailError, passwordError, loading, demoLoading, colors, colorScheme]);
+  
+  const renderSignUpForm = useCallback(() => (
+    <Animated.View entering={FadeIn.duration(ANIMATIONS.FADE_IN_DURATION)} style={styles.formContainer}>
+      <MemoizedTextInput
+        label="Full Name"
+        placeholder="Enter your full name"
+        value={fullName}
+        onChangeText={setFullName}
+        autoCapitalize="words"
+        leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
+      />
+      
+      <MemoizedTextInput
+        label="Email"
+        placeholder="Enter your email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+        error={emailError}
+      />
+      
+      <MemoizedTextInput
+        label="Password"
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
+        error={passwordError}
+      />
+      
+      <MemoizedButton
+        style={styles.submitButton}
+        onPress={handleAuth}
+        variant="primary"
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          'Create Account'
+        )}
+      </MemoizedButton>
+      
+      <View style={styles.dividerContainer}>
+        <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+        <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
+        <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
+      </View>
+      
+      <MemoizedButton
+        style={styles.linkedInButton}
+        onPress={handleLinkedInLogin}
+        variant="primary"
+        disabled={loading || demoLoading}
+      >
+        <View style={styles.buttonContent}>
+          <FontAwesome5 name="linkedin" size={20} color="white" />
+          <Text style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Continue with LinkedIn'}
+          </Text>
+        </View>
+      </MemoizedButton>
+    </Animated.View>
+  ), [fullName, email, password, emailError, passwordError, loading, demoLoading, colors, colorScheme]);
+  
+  const renderResetForm = useCallback(() => (
+    <Animated.View entering={FadeIn.duration(ANIMATIONS.FADE_IN_DURATION)} style={styles.formContainer}>
+      <MemoizedTextInput
+        label="Email"
+        placeholder="Enter your email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
+        error={emailError}
+      />
+      
+      <MemoizedButton
+        style={styles.submitButton}
+        onPress={handleAuth}
+        variant="primary"
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          'Reset Password'
+        )}
+      </MemoizedButton>
+    </Animated.View>
+  ), [email, emailError, loading, colors]);
+  
   const renderForm = () => {
     switch (mode) {
       case 'signin':
-        return (
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.formContainer}>
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
-              error={emailError}
-            />
-            
-            <TextInput
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
-              error={passwordError}
-            />
-            
-            <Button
-              style={styles.submitButton}
-              onPress={handleAuth}
-              variant="primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-            
-            <View style={styles.dividerContainer}>
-              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
-              <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
-              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
-            </View>
-            
-            <Button
-              style={styles.linkedInButton}
-              onPress={handleLinkedInLogin}
-              variant="primary"
-              disabled={loading || demoLoading}
-            >
-              <View style={styles.buttonContent}>
-                <FontAwesome5 name="linkedin" size={20} color="white" />
-                <Text style={styles.buttonText}>
-                  {loading ? 'Loading...' : 'Continue with LinkedIn'}
-                </Text>
-              </View>
-            </Button>
-            
-            <TouchableOpacity 
-              onPress={handleDemoLogin} 
-              style={[
-                styles.demoButton,
-                demoLoading && { opacity: 0.7 }
-              ]}
-              disabled={demoLoading}
-            >
-              {demoLoading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={[styles.demoButtonText, { color: 'white' }]}>
-                  Use Demo Account
-                </Text>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        );
+        return renderSignInForm();
       case 'signup':
-        return (
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.formContainer}>
-            <TextInput
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
-            />
-            
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
-              error={emailError}
-            />
-            
-            <TextInput
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
-              error={passwordError}
-            />
-            
-            <Button
-              style={styles.submitButton}
-              onPress={handleAuth}
-              variant="primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Create Account'
-              )}
-            </Button>
-            
-            <View style={styles.dividerContainer}>
-              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
-              <Text style={[styles.dividerText, { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>or</Text>
-              <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
-            </View>
-            
-            <Button
-              style={styles.linkedInButton}
-              onPress={handleLinkedInLogin}
-              variant="primary"
-              disabled={loading || demoLoading}
-            >
-              <View style={styles.buttonContent}>
-                <FontAwesome5 name="linkedin" size={20} color="white" />
-                <Text style={styles.buttonText}>
-                  {loading ? 'Loading...' : 'Continue with LinkedIn'}
-                </Text>
-              </View>
-            </Button>
-          </Animated.View>
-        );
+        return renderSignUpForm();
       case 'reset':
-        return (
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.formContainer}>
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
-              error={emailError}
-            />
-            
-            <Button
-              style={styles.submitButton}
-              onPress={handleAuth}
-              variant="primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                'Reset Password'
-              )}
-            </Button>
-          </Animated.View>
-        );
+        return renderResetForm();
     }
   };
   
@@ -392,8 +402,9 @@ export default function LoginScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
         >
-          <Animated.View style={styles.logoContainer} entering={FadeInDown.duration(800)}>
+          <Animated.View style={styles.logoContainer} entering={FadeInDown.duration(ANIMATIONS.FADE_IN_DURATION)}>
             <CollaboritoLogo size={100} color="white" style={styles.logo} />
             <Text style={[styles.appTitle, { color: 'white' }]}>
               Collaborito
@@ -404,7 +415,7 @@ export default function LoginScreen() {
           </Animated.View>
           
           <Animated.View style={[styles.cardContainer, cardAnimatedStyle]}>
-            <Card 
+            <MemoizedCard 
               variant="elevated" 
               style={[
                 styles.card, 
@@ -420,11 +431,11 @@ export default function LoginScreen() {
               </Text>
               
               {renderForm()}
-            </Card>
+            </MemoizedCard>
             
             <Animated.View
               style={styles.footer}
-              entering={FadeInUp.delay(500).duration(800)}
+              entering={FadeInUp.duration(ANIMATIONS.FADE_IN_DURATION).delay(ANIMATIONS.FADE_IN_DURATION * ANIMATIONS.DELAY_FACTOR)}
             >
               {mode === 'signin' && (
                 <>
