@@ -29,7 +29,6 @@ const { width, height } = Dimensions.get('window');
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState(''); // Added username state
-  const [usernameError, setUsernameError] = useState(''); // Add username-specific error state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -66,57 +65,12 @@ export default function RegisterScreen() {
     ]).start();
   }, []);
 
-  // Helper function to validate username
-  const validateUsername = (username: string): boolean => {
-    // Username must be 3-20 characters and only contain letters, numbers, and underscores
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    return usernameRegex.test(username);
-  };
-
-  // Handle username change with live validation
-  const handleUsernameChange = (text: string) => {
-    setUsername(text);
-    
-    if (text.trim() === '') {
-      // Don't show error when field is empty (user just started typing)
-      setUsernameError('');
-      return;
-    }
-    
-    // Check if username contains any invalid characters
-    if (/[^a-zA-Z0-9_]/.test(text)) {
-      setUsernameError('Username can only contain letters, numbers, and underscores');
-      Haptics.selectionAsync(); // Light feedback for invalid character
-      return;
-    }
-    
-    // Check length constraints
-    if (text.length < 3) {
-      setUsernameError('Username must be at least 3 characters');
-      return;
-    }
-    
-    if (text.length > 20) {
-      setUsernameError('Username must be no more than 20 characters');
-      return;
-    }
-    
-    // Valid username
-    setUsernameError('');
-  };
-
   const handleSignUp = async () => {
     setError(''); // Clear previous errors
 
-    // Validate username only if we don't already have a username error
-    if (!validateUsername(username) && !usernameError) {
-      setUsernameError('Username must be 3-20 characters long and can only contain letters, numbers, and underscores.');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-    
-    // If there's a username error, don't proceed
-    if (usernameError) {
+    // Validate username
+    if (!validateUsername(username)) {
+      setError('Username must be 3-20 characters long and can only contain letters, numbers, and underscores.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -189,6 +143,13 @@ export default function RegisterScreen() {
      }
   };
 
+  // Helper function to validate username
+  const validateUsername = (username: string): boolean => {
+    // Username must be 3-20 characters and only contain letters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    return usernameRegex.test(username);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -242,27 +203,20 @@ export default function RegisterScreen() {
               {/* Username Input */}
               <View style={styles.inputWrapper}>
                  <Text style={styles.inputLabel}>Username</Text>
-                 <View style={[
-                   styles.inputContainer,
-                   usernameError ? styles.inputContainerError : null
-                 ]}>
+                 <View style={styles.inputContainer}>
                    <Ionicons name="person-outline" size={20} color="#8C8C8C" style={styles.inputIcon} />
                    <TextInput
                      style={styles.input}
                      placeholder="Choose a unique username (e.g. john_doe123)"
                      placeholderTextColor="#B0B0B0"
                      value={username}
-                     onChangeText={handleUsernameChange}
+                     onChangeText={setUsername}
                      editable={!isLoading}
                      autoCapitalize="none"
                      returnKeyType="next" // Suggests next field
                    />
                  </View>
-                 {usernameError ? (
-                   <Text style={styles.inputError}>{usernameError}</Text>
-                 ) : (
-                   <Text style={styles.inputHint}>3-20 characters, letters, numbers, and underscores only</Text>
-                 )}
+                 <Text style={styles.inputHint}>3-20 characters, letters, numbers, and underscores only</Text>
                </View>
 
               {/* Email Input */}
@@ -630,17 +584,6 @@ const styles = StyleSheet.create({
   inputHint: {
     fontSize: 12,
     color: '#718096',
-    marginTop: 4,
-    marginLeft: 2,
-    fontFamily: 'Nunito',
-  },
-  inputContainerError: {
-    borderColor: '#E53935', // Red border for error state
-    borderWidth: 1.5,
-  },
-  inputError: {
-    fontSize: 12,
-    color: '#E53935', // Error red
     marginTop: 4,
     marginLeft: 2,
     fontFamily: 'Nunito',
