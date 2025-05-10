@@ -6,14 +6,17 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
 export default function LoginScreen() {
-  const { signIn, devSignIn, isDevelopmentMode } = useAuth();
+  const { signIn, signInWithLinkedIn, signInWithDemo } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Development mode check
+  const isDevelopmentMode = __DEV__;
 
   const handleSignIn = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
-      await signIn('linkedin');
+      await signInWithLinkedIn();
     } catch (error) {
       console.error('Login error:', error);
     } finally {
@@ -25,7 +28,7 @@ export default function LoginScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
-      await devSignIn();
+      await signInWithDemo();
     } catch (error) {
       console.error('Dev login error:', error);
     } finally {

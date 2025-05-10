@@ -22,6 +22,7 @@ export const Colors = {
     muted: '#9CA3AF',
     highlight: '#F9FAFB',
     lightGray: '#F3F4F6',
+    icon: '#27272A',
   },
   dark: {
     text: '#F9FAFB',
@@ -41,5 +42,6 @@ export const Colors = {
     muted: '#9CA3AF',
     highlight: '#1F2937',
     lightGray: '#272C36',
+    icon: '#F9FAFB',
   },
 };
