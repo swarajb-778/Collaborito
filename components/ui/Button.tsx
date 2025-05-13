@@ -94,15 +94,25 @@ export const Button = ({
       lg: { paddingVertical: 16, paddingHorizontal: 20 },
     };
     
-    // Variant styles
+    // Variant styles with added shadows
     const variantStyles: Record<ButtonVariant, ViewStyle> = {
       primary: { 
         backgroundColor: colors.primary,
         borderWidth: 0,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 3,
       },
       secondary: { 
         backgroundColor: colors.secondary,
         borderWidth: 0,
+        shadowColor: colors.secondary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 2,
       },
       outline: { 
         backgroundColor: 'transparent',
@@ -116,6 +126,11 @@ export const Button = ({
       danger: { 
         backgroundColor: colors.error,
         borderWidth: 0,
+        shadowColor: colors.error,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 3,
       },
     };
     
