@@ -9,7 +9,8 @@ import Animated, {
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
-  withSequence 
+  withSequence,
+  FadeInDown
 } from 'react-native-reanimated';
 
 // Fallback user data
@@ -34,10 +35,11 @@ export default function ProfileScreen() {
   
   // Determine theme-based styles
   const themeStyles = {
-    backgroundColor: colorScheme === 'dark' ? '#121212' : '#fff',
+    backgroundColor: colorScheme === 'dark' ? '#121212' : '#f8f9fa',
     textColor: colorScheme === 'dark' ? '#fff' : '#000',
     cardBackground: colorScheme === 'dark' ? '#1E1E1E' : '#fff',
     mutedTextColor: colorScheme === 'dark' ? '#BBBBBB' : '#666666',
+    borderColor: colorScheme === 'dark' ? '#333' : '#eee',
   };
   
   useEffect(() => {
@@ -91,85 +93,102 @@ export default function ProfileScreen() {
     switch (activeTab) {
       case 'Bio':
         return (
-          <Card style={styles.bioCard}>
-            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Bio</Text>
-            <Text style={[styles.bioText, { color: themeStyles.textColor }]}>
-              {user?.oauthProvider === 'linkedin'
-                ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
-                : USER.bio}
-            </Text>
-          </Card>
+          <Animated.View entering={FadeInDown.duration(300).springify()}>
+            <Card style={styles.bioCard} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Bio</Text>
+              <Text style={[styles.bioText, { color: themeStyles.textColor }]}>
+                {user?.oauthProvider === 'linkedin'
+                  ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
+                  : USER.bio}
+              </Text>
+            </Card>
+          </Animated.View>
         );
       case 'Skills':
         return (
-          <Card style={styles.skillsCard}>
-            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Skills</Text>
-            <View style={styles.skillsContainer}>
-              {user?.oauthProvider === 'linkedin' ? (
-                // LinkedIn-specific skills
-                ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
-                  <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
-                    <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
-                  </View>
-                ))
-              ) : (
-                // Default skills
-                USER.skills.map((skill, index) => (
-                  <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
-                    <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
-                  </View>
-                ))
-              )}
-            </View>
-          </Card>
+          <Animated.View entering={FadeInDown.duration(300).springify()}>
+            <Card style={styles.skillsCard} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Skills</Text>
+              <View style={styles.skillsContainer}>
+                {user?.oauthProvider === 'linkedin' ? (
+                  // LinkedIn-specific skills
+                  ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
+                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
+                      <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                    </View>
+                  ))
+                ) : (
+                  // Default skills
+                  USER.skills.map((skill, index) => (
+                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
+                      <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            </Card>
+          </Animated.View>
         );
       case 'Account':
         return (
-          <Card style={styles.authInfoCard}>
-            <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Account Information</Text>
-            <View style={styles.authInfoItem}>
-              <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Signed in with:</Text>
-              <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{getAuthProviderName()}</Text>
-            </View>
-            <View style={styles.authInfoItem}>
-              <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Email:</Text>
-              <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user?.email || USER.email}</Text>
-            </View>
-            {user?.id && (
+          <Animated.View entering={FadeInDown.duration(300).springify()}>
+            <Card style={styles.authInfoCard} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Account Information</Text>
               <View style={styles.authInfoItem}>
-                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>User ID:</Text>
-                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user.id}</Text>
+                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Signed in with:</Text>
+                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{getAuthProviderName()}</Text>
               </View>
-            )}
-          </Card>
+              <View style={styles.authInfoItem}>
+                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Email:</Text>
+                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user?.email || USER.email}</Text>
+              </View>
+              {user?.id && (
+                <View style={styles.authInfoItem}>
+                  <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>User ID:</Text>
+                  <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user.id}</Text>
+                </View>
+              )}
+            </Card>
+          </Animated.View>
         );
       case 'Actions':
         return (
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}
-              onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
-            >
-              <FontAwesome5 name="user-edit" size={20} color={themeStyles.textColor} />
-              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Edit Profile</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}
-              onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
-            >
-              <FontAwesome5 name="bell" size={20} color={themeStyles.textColor} />
-              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Notifications</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, { borderBottomWidth: 0 }]}
-              onPress={signOut}
-            >
-              <FontAwesome5 name="sign-out-alt" size={20} color={themeStyles.textColor} />
-              <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
+          <Animated.View entering={FadeInDown.duration(300).springify()}>
+            <Card style={styles.actionsCard} variant="elevated">
+              <TouchableOpacity
+                style={[styles.actionButton, { borderBottomColor: themeStyles.borderColor }]}
+                onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
+              >
+                <View style={styles.actionIconContainer}>
+                  <FontAwesome5 name="user-edit" size={18} color="#FFF" />
+                </View>
+                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Edit Profile</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.actionButton, { borderBottomColor: themeStyles.borderColor }]}
+                onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: '#4CC9F0' }]}>
+                  <FontAwesome5 name="bell" size={18} color="#FFF" />
+                </View>
+                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Notifications</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.actionButton, { borderBottomWidth: 0 }]}
+                onPress={signOut}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: '#F72585' }]}>
+                  <FontAwesome5 name="sign-out-alt" size={18} color="#FFF" />
+                </View>
+                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Sign Out</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+              </TouchableOpacity>
+            </Card>
+          </Animated.View>
         );
       default:
         return null;
@@ -194,59 +213,72 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </LinearGradient>
       
-      <ScrollView style={styles.scrollView}>
-        {/* Profile */}
-        <View style={styles.profileContainer}>
-          <TouchableOpacity onPress={handleAvatarPress}>
-            <Animated.View style={[styles.avatarContainer, animatedStyles]}>
-              <Image 
-                source={{ uri: getProfileImage() }} 
-                style={styles.avatar} 
-              />
-            </Animated.View>
-          </TouchableOpacity>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Card */}
+        <Card style={styles.profileCard} variant="elevated">
+          {/* Profile */}
+          <View style={styles.profileContainer}>
+            <TouchableOpacity onPress={handleAvatarPress} style={styles.avatarWrapper}>
+              <Animated.View style={[styles.avatarContainer, animatedStyles]}>
+                <LinearGradient
+                  colors={['#4361EE', '#4CC9F0']}
+                  style={styles.avatarBorder}
+                >
+                  <Image 
+                    source={{ uri: getProfileImage() }} 
+                    style={styles.avatar} 
+                  />
+                </LinearGradient>
+              </Animated.View>
+            </TouchableOpacity>
+            
+            <Text style={[styles.name, { color: themeStyles.textColor }]}>{getDisplayName()}</Text>
+            <Text style={[styles.email, { color: themeStyles.mutedTextColor }]}>{user?.email || USER.email}</Text>
+            {user?.oauthProvider === 'linkedin' && (
+              <View style={styles.linkedInBadge}>
+                <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
+                <Text style={styles.linkedInText}>LinkedIn Member</Text>
+              </View>
+            )}
+          </View>
           
-          <Text style={[styles.name, { color: themeStyles.textColor }]}>{getDisplayName()}</Text>
-          <Text style={[styles.email, { color: themeStyles.mutedTextColor }]}>{user?.email || USER.email}</Text>
-          {user?.oauthProvider === 'linkedin' && (
-            <View style={styles.linkedInBadge}>
-              <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
-              <Text style={styles.linkedInText}>LinkedIn Member</Text>
+          {/* Stats */}
+          <View style={[styles.statsContainer, { borderColor: themeStyles.borderColor }]}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.projects}</Text>
+              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Projects</Text>
             </View>
-          )}
-        </View>
-        
-        {/* Stats */}
-        <View style={[styles.statsContainer, { borderColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.projects}</Text>
-            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Projects</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.tasks}</Text>
+              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Tasks</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.connections}</Text>
+              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Connections</Text>
+            </View>
           </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.tasks}</Text>
-            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Tasks</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.connections}</Text>
-            <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Connections</Text>
-          </View>
-        </View>
+        </Card>
         
         {/* Tab Bar */}
-        <View style={styles.tabBarContainer}>
+        <View style={[styles.tabBarContainer, { borderColor: themeStyles.borderColor }]}>
           {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[
                 styles.tabItem,
                 activeTab === tab && styles.activeTabItem,
-                { borderBottomColor: activeTab === tab ? (colorScheme === 'dark' ? '#4361EE' : '#4361EE') : 'transparent' }
+                { borderBottomColor: activeTab === tab ? '#4361EE' : 'transparent' }
               ]}
               onPress={() => setActiveTab(tab)}
             >
               <Text style={[
                 styles.tabText,
-                { color: activeTab === tab ? (colorScheme === 'dark' ? '#4361EE' : '#4361EE') : themeStyles.mutedTextColor }
+                { color: activeTab === tab ? '#4361EE' : themeStyles.mutedTextColor }
               ]}>
                 {tab}
               </Text>
@@ -290,37 +322,47 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    paddingTop: 20,
+  },
+  profileCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    padding: 0,
   },
   profileContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
+    paddingVertical: 24,
+  },
+  avatarWrapper: {
+    padding: 5,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-    backgroundColor: '#f0f0f0', // Fallback background
+  },
+  avatarBorder: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 102,
+    height: 102,
+    borderRadius: 51,
+    borderWidth: 3,
+    borderColor: 'white',
   },
   name: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
   },
   email: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 5,
   },
   linkedInBadge: {
@@ -338,22 +380,22 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: '500',
   },
-  role: {
-    fontSize: 14,
-    color: '#888',
-  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 20,
+    paddingVertical: 16,
     borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginHorizontal: 0,
   },
   statItem: {
     alignItems: 'center',
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    height: '80%',
+    backgroundColor: '#eee',
+    alignSelf: 'center',
   },
   statValue: {
     fontSize: 20,
@@ -362,68 +404,77 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: '#666',
   },
   tabBarContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderBottomWidth: 1,
-    borderColor: '#eee',
     marginHorizontal: 20,
     marginBottom: 20,
   },
   tabItem: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 2,
     borderColor: 'transparent',
+    width: '25%',
+    alignItems: 'center',
   },
   activeTabItem: {
+    // Active styling handled inline
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   tabContentContainer: {
+    paddingBottom: 40,
   },
   bioCard: {
     marginHorizontal: 20,
-    padding: 15,
+    padding: 20,
     marginBottom: 20,
+    borderRadius: 16,
   },
   skillsCard: {
     marginHorizontal: 20,
-    padding: 15,
+    padding: 20,
     marginBottom: 20,
+    borderRadius: 16,
   },
   authInfoCard: {
     marginHorizontal: 20,
-    padding: 15,
+    padding: 20,
     marginBottom: 20,
+    borderRadius: 16,
+  },
+  actionsCard: {
+    marginHorizontal: 20,
+    padding: 8,
+    marginBottom: 20,
+    borderRadius: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   bioText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 24,
   },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   skillBadge: {
-    backgroundColor: '#E0E7FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
+    marginRight: 10,
+    marginBottom: 10,
   },
   skillText: {
-    color: '#4361EE',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   actionsContainer: {
@@ -434,22 +485,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
+  },
+  actionIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#4361EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
   },
   actionText: {
     fontSize: 16,
-    marginLeft: 15,
+    flex: 1,
+  },
+  actionArrow: {
+    marginLeft: 10,
   },
   authInfoItem: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   authInfoLabel: {
-    fontSize: 14,
-    width: 120,
+    fontSize: 15,
+    width: 130,
   },
   authInfoValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     flex: 1,
   },
