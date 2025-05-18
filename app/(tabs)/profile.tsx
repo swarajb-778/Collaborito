@@ -1,9 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  Image, 
+  TouchableOpacity, 
+  ScrollView, 
+  Alert, 
+  Dimensions,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Animated as RNAnimated
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/ui/Card';
 import { useColorScheme } from '../../hooks/useColorScheme';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import Animated, { 
   useSharedValue, 
@@ -12,6 +25,12 @@ import Animated, {
   withSequence,
   FadeInDown
 } from 'react-native-reanimated';
+import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
 
 // Fallback user data
 const USER = {
@@ -32,6 +51,7 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('Bio');
+  const insets = useSafeAreaInsets();
   
   // Determine theme-based styles
   const themeStyles = {
@@ -42,13 +62,32 @@ export default function ProfileScreen() {
     borderColor: colorScheme === 'dark' ? '#333' : '#eee',
   };
   
+  // Animation values
+  const logoScale = useRef(new RNAnimated.Value(0.8)).current;
+  const formOpacity = useRef(new RNAnimated.Value(0)).current;
+  const scale = useSharedValue(1);
+  
   useEffect(() => {
     // Log the user info to verify what data we have
     console.log('Current user data:', user);
+    
+    // Animate elements on screen load
+    RNAnimated.parallel([
+      RNAnimated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      RNAnimated.timing(formOpacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [user]);
   
   // Avatar animation
-  const scale = useSharedValue(1);
   const animatedStyles = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
@@ -56,6 +95,7 @@ export default function ProfileScreen() {
   });
 
   const handleAvatarPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     scale.value = withSequence(
       withTiming(1.1, { duration: 100 }),
       withTiming(1, { duration: 100 })
@@ -196,101 +236,125 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#4361EE', '#3A0CA3']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => Alert.alert('Settings', 'Settings page coming soon!')}
-        >
-          <FontAwesome5 name="cog" size={22} color="#FFF" />
-        </TouchableOpacity>
-      </LinearGradient>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Profile Card */}
-        <Card style={styles.profileCard} variant="elevated">
-          {/* Profile */}
-          <View style={styles.profileContainer}>
-            <TouchableOpacity onPress={handleAvatarPress} style={styles.avatarWrapper}>
-              <Animated.View style={[styles.avatarContainer, animatedStyles]}>
-                <LinearGradient
-                  colors={['#4361EE', '#4CC9F0']}
-                  style={styles.avatarBorder}
-                >
-                  <Image 
-                    source={{ uri: getProfileImage() }} 
-                    style={styles.avatar} 
-                  />
-                </LinearGradient>
-              </Animated.View>
-            </TouchableOpacity>
+      {/* Background shapes like in onboarding screen */}
+      <View style={styles.backgroundShapesContainer}>
+        <LinearGradient
+          colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']} 
+          locations={[0, 0.4, 0.8]}
+          style={styles.gradientBackground}
+        />
+        <View style={[styles.backgroundShape, styles.shapeOne]} />
+        <View style={[styles.backgroundShape, styles.shapeTwo]} />
+        <View style={[styles.backgroundShape, styles.shapeThree]} />
+      </View>
+
+      <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Alert.alert('Settings', 'Settings page coming soon!');
+            }}
+          >
+            <FontAwesome5 name="cog" size={22} color="#333" />
+          </TouchableOpacity>
+        </View>
+        
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoiding}
+        >
+          <ScrollView 
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+          >
+            {/* Profile Card */}
+            <RNAnimated.View style={[styles.avatarWrapper, { transform: [{ scale: logoScale }] }]}>
+              <TouchableOpacity onPress={handleAvatarPress}>
+                <Animated.View style={[styles.avatarContainer, animatedStyles]}>
+                  <LinearGradient
+                    colors={['#4361EE', '#4CC9F0']}
+                    style={styles.avatarBorder}
+                  >
+                    <Image 
+                      source={{ uri: getProfileImage() }} 
+                      style={styles.avatar} 
+                    />
+                  </LinearGradient>
+                </Animated.View>
+              </TouchableOpacity>
+              
+              <Text style={styles.name}>{getDisplayName()}</Text>
+              <Text style={styles.email}>{user?.email || USER.email}</Text>
+              
+              {user?.oauthProvider === 'linkedin' && (
+                <View style={styles.linkedInBadge}>
+                  <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
+                  <Text style={styles.linkedInText}>LinkedIn Member</Text>
+                </View>
+              )}
+            </RNAnimated.View>
             
-            <Text style={[styles.name, { color: themeStyles.textColor }]}>{getDisplayName()}</Text>
-            <Text style={[styles.email, { color: themeStyles.mutedTextColor }]}>{user?.email || USER.email}</Text>
-            {user?.oauthProvider === 'linkedin' && (
-              <View style={styles.linkedInBadge}>
-                <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
-                <Text style={styles.linkedInText}>LinkedIn Member</Text>
-              </View>
-            )}
-          </View>
-          
-          {/* Stats */}
-          <View style={[styles.statsContainer, { borderColor: themeStyles.borderColor }]}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.projects}</Text>
-              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Projects</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.tasks}</Text>
-              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Tasks</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: themeStyles.textColor }]}>{USER.connections}</Text>
-              <Text style={[styles.statLabel, { color: themeStyles.mutedTextColor }]}>Connections</Text>
-            </View>
-          </View>
-        </Card>
-        
-        {/* Tab Bar */}
-        <View style={[styles.tabBarContainer, { borderColor: themeStyles.borderColor }]}>
-          {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.tabItem,
-                activeTab === tab && styles.activeTabItem,
-                { borderBottomColor: activeTab === tab ? '#4361EE' : 'transparent' }
-              ]}
-              onPress={() => setActiveTab(tab)}
+            <RNAnimated.View 
+              style={[styles.formContainer, { opacity: formOpacity }]}
             >
-              <Text style={[
-                styles.tabText,
-                { color: activeTab === tab ? '#4361EE' : themeStyles.mutedTextColor }
-              ]}>
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        
-        {/* Tab Content */}
-        <View style={styles.tabContentContainer}>
-          {renderTabContent()}
-        </View>
-      </ScrollView>
+              {/* Stats */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{USER.projects}</Text>
+                  <Text style={styles.statLabel}>Projects</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{USER.tasks}</Text>
+                  <Text style={styles.statLabel}>Tasks</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{USER.connections}</Text>
+                  <Text style={styles.statLabel}>Connections</Text>
+                </View>
+              </View>
+              
+              {/* Tab Bar */}
+              <View style={styles.tabBarContainer}>
+                {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[
+                      styles.tabItem,
+                      activeTab === tab && styles.activeTabItem
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setActiveTab(tab);
+                    }}
+                  >
+                    <Text style={[
+                      styles.tabText,
+                      { color: activeTab === tab ? '#4361EE' : '#666666' }
+                    ]}>
+                      {tab}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              
+              {/* Tab Content */}
+              <View style={styles.tabContentContainer}>
+                {renderTabContent()}
+              </View>
+            </RNAnimated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
@@ -298,61 +362,100 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  backgroundShapesContainer: {
+    position: 'absolute',
+    width: width,
+    height: height,
+    zIndex: -1,
+  },
+  gradientBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: height,
+  },
+  backgroundShape: {
+    position: 'absolute',
+    backgroundColor: 'rgba(67, 97, 238, 0.15)',
+    borderRadius: 120,
+  },
+  shapeOne: {
+    width: 220,
+    height: 220,
+    top: -50,
+    right: -80,
+    transform: [{ rotate: '30deg' }],
+  },
+  shapeTwo: {
+    width: 280,
+    height: 280,
+    bottom: height * 0.25,
+    left: -120,
+    transform: [{ rotate: '45deg' }],
+  },
+  shapeThree: {
+    width: 180,
+    height: 180,
+    bottom: -50,
+    right: 20,
+    transform: [{ rotate: '-15deg' }],
+    backgroundColor: 'rgba(250, 160, 80, 0.15)',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingBottom: 15,
+    paddingTop: 10,
+    paddingBottom: 10,
     paddingHorizontal: 20,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: '#333',
   },
   settingsButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
-    paddingTop: 20,
   },
-  profileCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    padding: 0,
-  },
-  profileContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
+  scrollContainer: {
+    paddingBottom: 40,
   },
   avatarWrapper: {
-    padding: 5,
+    alignItems: 'center',
+    paddingVertical: 24,
   },
   avatarContainer: {
     marginBottom: 15,
   },
   avatarBorder: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
   },
   avatar: {
-    width: 102,
-    height: 102,
-    borderRadius: 51,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     borderWidth: 3,
     borderColor: 'white',
   },
@@ -360,10 +463,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#333',
   },
   email: {
     fontSize: 16,
     marginBottom: 5,
+    color: '#666',
   },
   linkedInBadge: {
     flexDirection: 'row',
@@ -380,12 +485,22 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: '500',
   },
+  formContainer: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 16,
-    borderTopWidth: 1,
-    marginHorizontal: 0,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statItem: {
     alignItems: 'center',
@@ -401,15 +516,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#333',
   },
   statLabel: {
     fontSize: 14,
+    color: '#666',
   },
   tabBarContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderBottomWidth: 1,
-    marginHorizontal: 20,
+    borderBottomColor: '#eee',
     marginBottom: 20,
   },
   tabItem: {
@@ -420,47 +537,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTabItem: {
-    // Active styling handled inline
+    borderBottomColor: '#4361EE',
   },
   tabText: {
     fontSize: 15,
     fontWeight: '600',
   },
   tabContentContainer: {
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   bioCard: {
-    marginHorizontal: 20,
     padding: 20,
     marginBottom: 20,
     borderRadius: 16,
+    backgroundColor: 'white',
   },
   skillsCard: {
-    marginHorizontal: 20,
     padding: 20,
     marginBottom: 20,
     borderRadius: 16,
+    backgroundColor: 'white',
   },
   authInfoCard: {
-    marginHorizontal: 20,
     padding: 20,
     marginBottom: 20,
     borderRadius: 16,
+    backgroundColor: 'white',
   },
   actionsCard: {
-    marginHorizontal: 20,
     padding: 8,
     marginBottom: 20,
     borderRadius: 16,
+    backgroundColor: 'white',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+    color: '#333',
   },
   bioText: {
     fontSize: 15,
     lineHeight: 24,
+    color: '#333',
   },
   skillsContainer: {
     flexDirection: 'row',
@@ -472,14 +591,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
     marginBottom: 10,
+    backgroundColor: '#E0E7FF',
   },
   skillText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  actionsContainer: {
-    marginHorizontal: 20,
-    marginBottom: 40,
+    color: '#4361EE',
   },
   actionButton: {
     flexDirection: 'row',
@@ -487,6 +604,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   actionIconContainer: {
     width: 36,
@@ -500,6 +618,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 16,
     flex: 1,
+    color: '#333',
   },
   actionArrow: {
     marginLeft: 10,
@@ -511,10 +630,12 @@ const styles = StyleSheet.create({
   authInfoLabel: {
     fontSize: 15,
     width: 130,
+    color: '#666',
   },
   authInfoValue: {
     fontSize: 15,
     fontWeight: '500',
     flex: 1,
+    color: '#333',
   },
 }); 
