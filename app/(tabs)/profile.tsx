@@ -28,9 +28,40 @@ import Animated, {
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
+
+// Design system colors
+const COLORS = {
+  primary: '#4361EE',
+  primaryLight: '#3F8EFC',
+  secondary: '#4CC9F0',
+  accent: '#F72585',
+  success: '#06D6A0',
+  warning: '#FFBE0B',
+  dark: {
+    background: '#121212',
+    card: '#1E1E1E',
+    text: '#FFFFFF',
+    textMuted: '#BBBBBB',
+    border: '#333333',
+    shape: 'rgba(67, 97, 238, 0.12)',
+    shapeTertiary: 'rgba(76, 201, 240, 0.12)',
+    overlay: 'rgba(0, 0, 0, 0.6)',
+  },
+  light: {
+    background: '#F8F9FA',
+    card: '#FFFFFF',
+    text: '#242424',
+    textMuted: '#666666',
+    border: '#EEEEEE',
+    shape: 'rgba(67, 97, 238, 0.08)',
+    shapeTertiary: 'rgba(250, 160, 80, 0.1)',
+    overlay: 'rgba(255, 255, 255, 0.6)',
+  }
+};
 
 // Fallback user data
 const USER = {
@@ -54,13 +85,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   
   // Determine theme-based styles
-  const themeStyles = {
-    backgroundColor: colorScheme === 'dark' ? '#121212' : '#f8f9fa',
-    textColor: colorScheme === 'dark' ? '#fff' : '#000',
-    cardBackground: colorScheme === 'dark' ? '#1E1E1E' : '#fff',
-    mutedTextColor: colorScheme === 'dark' ? '#BBBBBB' : '#666666',
-    borderColor: colorScheme === 'dark' ? '#333' : '#eee',
-  };
+  const theme = colorScheme === 'dark' ? COLORS.dark : COLORS.light;
   
   // Animation values
   const logoScale = useRef(new RNAnimated.Value(0.8)).current;
@@ -134,9 +159,9 @@ export default function ProfileScreen() {
       case 'Bio':
         return (
           <Animated.View entering={FadeInDown.duration(300).springify()}>
-            <Card style={styles.bioCard} variant="elevated">
-              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Bio</Text>
-              <Text style={[styles.bioText, { color: themeStyles.textColor }]}>
+            <Card style={[styles.bioCard, { backgroundColor: theme.card }]} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Bio</Text>
+              <Text style={[styles.bioText, { color: theme.text }]}>
                 {user?.oauthProvider === 'linkedin'
                   ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
                   : USER.bio}
@@ -147,21 +172,21 @@ export default function ProfileScreen() {
       case 'Skills':
         return (
           <Animated.View entering={FadeInDown.duration(300).springify()}>
-            <Card style={styles.skillsCard} variant="elevated">
-              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Skills</Text>
+            <Card style={[styles.skillsCard, { backgroundColor: theme.card }]} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Skills</Text>
               <View style={styles.skillsContainer}>
                 {user?.oauthProvider === 'linkedin' ? (
                   // LinkedIn-specific skills
                   ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
-                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
-                      <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
+                      <Text style={[styles.skillText, { color: COLORS.primary }]}>{skill}</Text>
                     </View>
                   ))
                 ) : (
                   // Default skills
                   USER.skills.map((skill, index) => (
-                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#E0E7FF' }]}>
-                      <Text style={[styles.skillText, { color: colorScheme === 'dark' ? '#94A3B8' : '#4361EE' }]}>{skill}</Text>
+                    <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
+                      <Text style={[styles.skillText, { color: COLORS.primary }]}>{skill}</Text>
                     </View>
                   ))
                 )}
@@ -172,20 +197,20 @@ export default function ProfileScreen() {
       case 'Account':
         return (
           <Animated.View entering={FadeInDown.duration(300).springify()}>
-            <Card style={styles.authInfoCard} variant="elevated">
-              <Text style={[styles.sectionTitle, { color: themeStyles.textColor }]}>Account Information</Text>
+            <Card style={[styles.authInfoCard, { backgroundColor: theme.card }]} variant="elevated">
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Information</Text>
               <View style={styles.authInfoItem}>
-                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Signed in with:</Text>
-                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{getAuthProviderName()}</Text>
+                <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>Signed in with:</Text>
+                <Text style={[styles.authInfoValue, { color: theme.text }]}>{getAuthProviderName()}</Text>
               </View>
               <View style={styles.authInfoItem}>
-                <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>Email:</Text>
-                <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user?.email || USER.email}</Text>
+                <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>Email:</Text>
+                <Text style={[styles.authInfoValue, { color: theme.text }]}>{user?.email || USER.email}</Text>
               </View>
               {user?.id && (
                 <View style={styles.authInfoItem}>
-                  <Text style={[styles.authInfoLabel, { color: themeStyles.mutedTextColor }]}>User ID:</Text>
-                  <Text style={[styles.authInfoValue, { color: themeStyles.textColor }]}>{user.id}</Text>
+                  <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>User ID:</Text>
+                  <Text style={[styles.authInfoValue, { color: theme.text }]}>{user.id}</Text>
                 </View>
               )}
             </Card>
@@ -194,38 +219,38 @@ export default function ProfileScreen() {
       case 'Actions':
         return (
           <Animated.View entering={FadeInDown.duration(300).springify()}>
-            <Card style={styles.actionsCard} variant="elevated">
+            <Card style={[styles.actionsCard, { backgroundColor: theme.card }]} variant="elevated">
               <TouchableOpacity
-                style={[styles.actionButton, { borderBottomColor: themeStyles.borderColor }]}
+                style={[styles.actionButton, { borderBottomColor: theme.border }]}
                 onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
               >
-                <View style={styles.actionIconContainer}>
+                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primary }]}>
                   <FontAwesome5 name="user-edit" size={18} color="#FFF" />
                 </View>
-                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Edit Profile</Text>
-                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+                <Text style={[styles.actionText, { color: theme.text }]}>Edit Profile</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.actionButton, { borderBottomColor: themeStyles.borderColor }]}
+                style={[styles.actionButton, { borderBottomColor: theme.border }]}
                 onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: '#4CC9F0' }]}>
+                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.secondary }]}>
                   <FontAwesome5 name="bell" size={18} color="#FFF" />
                 </View>
-                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Notifications</Text>
-                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+                <Text style={[styles.actionText, { color: theme.text }]}>Notifications</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
               </TouchableOpacity>
               
               <TouchableOpacity
                 style={[styles.actionButton, { borderBottomWidth: 0 }]}
                 onPress={signOut}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: '#F72585' }]}>
+                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.accent }]}>
                   <FontAwesome5 name="sign-out-alt" size={18} color="#FFF" />
                 </View>
-                <Text style={[styles.actionText, { color: themeStyles.textColor }]}>Sign Out</Text>
-                <FontAwesome5 name="chevron-right" size={16} color={themeStyles.mutedTextColor} style={styles.actionArrow} />
+                <Text style={[styles.actionText, { color: theme.text }]}>Sign Out</Text>
+                <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
               </TouchableOpacity>
             </Card>
           </Animated.View>
@@ -236,35 +261,39 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       
-      {/* Background shapes like in onboarding screen */}
+      {/* Enhanced background with better gradients and shapes */}
       <View style={styles.backgroundShapesContainer}>
         <LinearGradient
-          colors={['rgba(255, 220, 100, 0.3)', 'rgba(250, 160, 80, 0.15)', 'rgba(255, 255, 255, 0.7)']} 
-          locations={[0, 0.4, 0.8]}
+          colors={colorScheme === 'dark' 
+            ? ['rgba(67, 97, 238, 0.15)', 'rgba(76, 201, 240, 0.1)', 'rgba(0, 0, 0, 0)'] 
+            : ['rgba(255, 220, 100, 0.2)', 'rgba(67, 97, 238, 0.1)', 'rgba(255, 255, 255, 0)']} 
+          locations={[0, 0.4, 0.9]}
           style={styles.gradientBackground}
         />
-        <View style={[styles.backgroundShape, styles.shapeOne]} />
-        <View style={[styles.backgroundShape, styles.shapeTwo]} />
-        <View style={[styles.backgroundShape, styles.shapeThree]} />
+        <View style={[styles.backgroundShape, styles.shapeOne, { backgroundColor: theme.shape }]} />
+        <View style={[styles.backgroundShape, styles.shapeTwo, { backgroundColor: theme.shape }]} />
+        <View style={[styles.backgroundShape, styles.shapeThree, { backgroundColor: theme.shapeTertiary }]} />
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity 
-            style={styles.settingsButton}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert('Settings', 'Settings page coming soon!');
-            }}
-          >
-            <FontAwesome5 name="cog" size={22} color="#333" />
-          </TouchableOpacity>
-        </View>
+        {/* Enhanced header with blur effect */}
+        <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.headerBlurContainer}>
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>My Profile</Text>
+            <TouchableOpacity 
+              style={[styles.settingsButton, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Alert.alert('Settings', 'Settings page coming soon!');
+              }}
+            >
+              <FontAwesome5 name="cog" size={22} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+        </BlurView>
         
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -275,24 +304,28 @@ export default function ProfileScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContainer}
           >
-            {/* Profile Card */}
+            {/* Enhanced Profile Card */}
             <RNAnimated.View style={[styles.avatarWrapper, { transform: [{ scale: logoScale }] }]}>
               <TouchableOpacity onPress={handleAvatarPress}>
                 <Animated.View style={[styles.avatarContainer, animatedStyles]}>
                   <LinearGradient
-                    colors={['#4361EE', '#4CC9F0']}
+                    colors={[COLORS.primary, COLORS.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={styles.avatarBorder}
                   >
-                    <Image 
-                      source={{ uri: getProfileImage() }} 
-                      style={styles.avatar} 
-                    />
+                    <View style={styles.avatarInnerBorder}>
+                      <Image 
+                        source={{ uri: getProfileImage() }} 
+                        style={styles.avatar} 
+                      />
+                    </View>
                   </LinearGradient>
                 </Animated.View>
               </TouchableOpacity>
               
-              <Text style={styles.name}>{getDisplayName()}</Text>
-              <Text style={styles.email}>{user?.email || USER.email}</Text>
+              <Text style={[styles.name, { color: theme.text }]}>{getDisplayName()}</Text>
+              <Text style={[styles.email, { color: theme.textMuted }]}>{user?.email || USER.email}</Text>
               
               {user?.oauthProvider === 'linkedin' && (
                 <View style={styles.linkedInBadge}>
@@ -305,26 +338,26 @@ export default function ProfileScreen() {
             <RNAnimated.View 
               style={[styles.formContainer, { opacity: formOpacity }]}
             >
-              {/* Stats */}
-              <View style={styles.statsContainer}>
+              {/* Enhanced Stats Container */}
+              <Card style={[styles.statsContainer, { backgroundColor: theme.card }]} variant="elevated">
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{USER.projects}</Text>
-                  <Text style={styles.statLabel}>Projects</Text>
+                  <Text style={[styles.statValue, { color: theme.text }]}>{USER.projects}</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>Projects</Text>
                 </View>
-                <View style={styles.statDivider} />
+                <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{USER.tasks}</Text>
-                  <Text style={styles.statLabel}>Tasks</Text>
+                  <Text style={[styles.statValue, { color: theme.text }]}>{USER.tasks}</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>Tasks</Text>
                 </View>
-                <View style={styles.statDivider} />
+                <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{USER.connections}</Text>
-                  <Text style={styles.statLabel}>Connections</Text>
+                  <Text style={[styles.statValue, { color: theme.text }]}>{USER.connections}</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>Connections</Text>
                 </View>
-              </View>
+              </Card>
               
-              {/* Tab Bar */}
-              <View style={styles.tabBarContainer}>
+              {/* Enhanced Tab Bar */}
+              <View style={[styles.tabBarContainer, { borderBottomColor: theme.border }]}>
                 {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
                   <TouchableOpacity
                     key={tab}
@@ -339,7 +372,8 @@ export default function ProfileScreen() {
                   >
                     <Text style={[
                       styles.tabText,
-                      { color: activeTab === tab ? '#4361EE' : '#666666' }
+                      { color: activeTab === tab ? COLORS.primary : theme.textMuted },
+                      activeTab === tab && styles.activeTabText
                     ]}>
                       {tab}
                     </Text>
@@ -362,7 +396,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   safeArea: {
     flex: 1,
@@ -385,30 +418,33 @@ const styles = StyleSheet.create({
   },
   backgroundShape: {
     position: 'absolute',
-    backgroundColor: 'rgba(67, 97, 238, 0.15)',
     borderRadius: 120,
   },
   shapeOne: {
-    width: 220,
-    height: 220,
-    top: -50,
-    right: -80,
+    width: 250,
+    height: 250,
+    top: -80,
+    right: -100,
     transform: [{ rotate: '30deg' }],
   },
   shapeTwo: {
-    width: 280,
-    height: 280,
+    width: 300,
+    height: 300,
     bottom: height * 0.25,
-    left: -120,
+    left: -150,
     transform: [{ rotate: '45deg' }],
   },
   shapeThree: {
-    width: 180,
-    height: 180,
-    bottom: -50,
+    width: 200,
+    height: 200,
+    bottom: -80,
     right: 20,
     transform: [{ rotate: '-15deg' }],
-    backgroundColor: 'rgba(250, 160, 80, 0.15)',
+  },
+  headerBlurContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -420,16 +456,19 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
   },
   settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   scrollView: {
     flex: 1,
@@ -443,32 +482,38 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 5,
   },
   avatarBorder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
   },
+  avatarInnerBorder: {
+    backgroundColor: 'white',
+    borderRadius: 63,
+    padding: 3,
+  },
   avatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    borderWidth: 3,
-    borderColor: 'white',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     marginBottom: 5,
-    color: '#333',
   },
   email: {
     fontSize: 16,
     marginBottom: 5,
-    color: '#666',
   },
   linkedInBadge: {
     flexDirection: 'row',
@@ -478,29 +523,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 15,
     marginTop: 8,
+    shadowColor: '#0077B5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   linkedInText: {
     fontSize: 12,
     color: '#0077B5',
     marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   formContainer: {
-    paddingTop: 20,
+    paddingTop: 10,
     paddingHorizontal: 20,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
-    backgroundColor: 'white',
+    paddingVertical: 18,
     borderRadius: 16,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 3,
   },
   statItem: {
     alignItems: 'center',
@@ -508,26 +557,23 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: '80%',
-    backgroundColor: '#eee',
+    height: '70%',
     alignSelf: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   statLabel: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '500',
   },
   tabBarContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   tabItem: {
     paddingVertical: 12,
@@ -537,105 +583,104 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTabItem: {
-    borderBottomColor: '#4361EE',
+    borderBottomColor: COLORS.primary,
   },
   tabText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    fontWeight: '700',
   },
   tabContentContainer: {
     paddingBottom: 20,
   },
   bioCard: {
-    padding: 20,
+    padding: 24,
     marginBottom: 20,
     borderRadius: 16,
-    backgroundColor: 'white',
   },
   skillsCard: {
-    padding: 20,
+    padding: 24,
     marginBottom: 20,
     borderRadius: 16,
-    backgroundColor: 'white',
   },
   authInfoCard: {
-    padding: 20,
+    padding: 24,
     marginBottom: 20,
     borderRadius: 16,
-    backgroundColor: 'white',
   },
   actionsCard: {
     padding: 8,
     marginBottom: 20,
     borderRadius: 16,
-    backgroundColor: 'white',
+    overflow: 'hidden',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
+    fontWeight: '700',
+    marginBottom: 16,
   },
   bioText: {
     fontSize: 15,
     lineHeight: 24,
-    color: '#333',
+    fontWeight: '400',
   },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   skillBadge: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 10,
     marginBottom: 10,
-    backgroundColor: '#E0E7FF',
   },
   skillText: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#4361EE',
+    fontWeight: '600',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   actionIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#4361EE',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   actionText: {
     fontSize: 16,
+    fontWeight: '500',
     flex: 1,
-    color: '#333',
   },
   actionArrow: {
     marginLeft: 10,
   },
   authInfoItem: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   authInfoLabel: {
     fontSize: 15,
     width: 130,
-    color: '#666',
+    fontWeight: '500',
   },
   authInfoValue: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     flex: 1,
-    color: '#333',
   },
 }); 
