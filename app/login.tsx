@@ -58,6 +58,10 @@ export default function LoginScreen() {
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       setEmailError('Email is invalid');
       isValid = false;
+    } else if (containsSqlInjection(email)) {
+      setEmailError('Invalid email format detected');
+      isValid = false;
+      console.error('Potential SQL injection attempt detected in email');
     } else {
       setEmailError('');
     }
@@ -69,15 +73,56 @@ export default function LoginScreen() {
     } else if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       isValid = false;
+    } else if (containsSqlInjection(password)) {
+      setPasswordError('Invalid password format detected');
+      isValid = false;
+      console.error('Potential SQL injection attempt detected in password');
     } else {
       setPasswordError('');
+    }
+    
+    // If in signup mode, also validate full name
+    if (mode === 'signup' && fullName) {
+      if (containsSqlInjection(fullName)) {
+        Alert.alert('Error', 'Invalid characters detected in name field');
+        isValid = false;
+        console.error('Potential SQL injection attempt detected in full name');
+      }
     }
     
     return isValid;
   };
   
+  // Helper function to detect SQL injection patterns
+  const containsSqlInjection = (input: string): boolean => {
+    const sqlPatterns = [
+      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
+      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
+      /--/,
+      /;/,
+      /\/\*/,
+      /\*\//,
+      /xp_/i,
+      /'.*OR.*--/i,
+      /'.*OR.*'/i,
+      /".*OR.*--/i,
+      /".*OR.*"/i,
+      /'\s*OR\s+.+[=<>].+/i,
+      /"\s*OR\s+.+[=<>].+/i,
+      /'.*=.*/i,
+      /".*=.*/i,
+      /'.*<>.*/i,
+      /".*<>.*/i
+    ];
+    
+    return sqlPatterns.some(pattern => pattern.test(input));
+  };
+  
   const handleAuth = async () => {
-    if (!validateForm()) return;
+    // Validate form before proceeding
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -87,14 +132,16 @@ export default function LoginScreen() {
         console.log('Sign in successful, navigating to tabs');
         router.replace('/(tabs)');
       } else if (mode === 'signup') {
-        const nameParts = fullName.split(' ');
+        console.log('Creating new user account...');
+        const nameParts = fullName.trim().split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
         
+        // Sign up with validated inputs
         await signUp(email, password, firstName, lastName);
-        console.log('Sign up successful, navigating to onboarding');
         
-        // Navigate to onboarding after signup
+        // Prepare navigation to onboarding
+        console.log('Signup successful, preparing to navigate to onboarding');
         const navigateToOnboarding = () => {
           console.log('Executing navigation to onboarding');
           router.replace('/onboarding');

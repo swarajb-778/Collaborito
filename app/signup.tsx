@@ -33,6 +33,10 @@ export default function SignupScreen() {
     if (!fullName.trim()) {
       setNameError('Full Name is required');
       isValid = false;
+    } else if (containsSqlInjection(fullName)) {
+      setNameError('Invalid characters detected');
+      isValid = false;
+      console.error('Potential SQL injection attempt detected in name field');
     } else {
       setNameError('');
     }
@@ -43,6 +47,10 @@ export default function SignupScreen() {
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       setEmailError('Email is invalid');
       isValid = false;
+    } else if (containsSqlInjection(email)) {
+      setEmailError('Invalid email format detected');
+      isValid = false;
+      console.error('Potential SQL injection attempt detected in email');
     } else {
       setEmailError('');
     }
@@ -53,11 +61,40 @@ export default function SignupScreen() {
     } else if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       isValid = false;
+    } else if (containsSqlInjection(password)) {
+      setPasswordError('Invalid password format detected');
+      isValid = false;
+      console.error('Potential SQL injection attempt detected in password');
     } else {
       setPasswordError('');
     }
 
     return isValid;
+  };
+
+  // Helper function to detect SQL injection patterns
+  const containsSqlInjection = (input: string): boolean => {
+    const sqlPatterns = [
+      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
+      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
+      /--/,
+      /;/,
+      /\/\*/,
+      /\*\//,
+      /xp_/i,
+      /'.*OR.*--/i,
+      /'.*OR.*'/i,
+      /".*OR.*--/i,
+      /".*OR.*"/i,
+      /'\s*OR\s+.+[=<>].+/i,
+      /"\s*OR\s+.+[=<>].+/i,
+      /'.*=.*/i,
+      /".*=.*/i,
+      /'.*<>.*/i,
+      /".*<>.*/i
+    ];
+    
+    return sqlPatterns.some(pattern => pattern.test(input));
   };
 
   const handleSignUp = async () => {
@@ -70,7 +107,7 @@ export default function SignupScreen() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      // Try signup
+      // Try signup with sanitized inputs
       await signUp(email, password, firstName, lastName);
       
       // Add a small delay for any state updates to complete

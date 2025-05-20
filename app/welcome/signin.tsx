@@ -189,6 +189,26 @@ export default function SignInScreen() {
       return;
     }
     
+    // Validate email format
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      setError('Invalid email format');
+      return;
+    }
+    
+    // Basic password validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    // Check for SQL injection patterns
+    if (containsSqlInjection(email) || containsSqlInjection(password)) {
+      console.error('Potential SQL injection attempt detected');
+      setError('Invalid input format detected');
+      return;
+    }
+    
     setError('');
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -222,6 +242,31 @@ export default function SignInScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  // Helper function to detect SQL injection patterns
+  const containsSqlInjection = (input: string): boolean => {
+    const sqlPatterns = [
+      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
+      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
+      /--/,
+      /;/,
+      /\/\*/,
+      /\*\//,
+      /xp_/i,
+      /'.*OR.*--/i,
+      /'.*OR.*'/i,
+      /".*OR.*--/i,
+      /".*OR.*"/i,
+      /'\s*OR\s+.+[=<>].+/i,
+      /"\s*OR\s+.+[=<>].+/i,
+      /'.*=.*/i,
+      /".*=.*/i,
+      /'.*<>.*/i,
+      /".*<>.*/i
+    ];
+    
+    return sqlPatterns.some(pattern => pattern.test(input));
   };
   
   const handleLinkedInSignIn = async () => {

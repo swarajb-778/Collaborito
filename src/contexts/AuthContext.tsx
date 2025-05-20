@@ -237,6 +237,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Signing in with email:', email);
       
+      // Validate email and password to prevent SQL injection
+      if (!email || !validateEmail(email)) {
+        throw new Error('Invalid email format');
+      }
+      
+      if (!password || password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+      
+      // Check for SQL injection patterns
+      if (containsSqlInjection(email) || containsSqlInjection(password)) {
+        console.error('Potential SQL injection attempt detected');
+        throw new Error('Invalid email or password format');
+      }
+      
       // Simulate API call for email/password authentication
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -271,10 +286,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper functions to validate input and prevent SQL injection
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+  
+  const containsSqlInjection = (input: string): boolean => {
+    // Check for common SQL injection patterns
+    const sqlPatterns = [
+      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
+      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
+      /--/,
+      /;/,
+      /\/\*/,
+      /\*\//,
+      /xp_/i,
+      /'.*OR.*--/i,
+      /'.*OR.*'/i,
+      /".*OR.*--/i,
+      /".*OR.*"/i,
+      /'\s*OR\s+.+[=<>].+/i,
+      /"\s*OR\s+.+[=<>].+/i,
+      /'.*=.*/i,
+      /".*=.*/i,
+      /'.*<>.*/i,
+      /".*<>.*/i
+    ];
+    
+    return sqlPatterns.some(pattern => pattern.test(input));
+  };
+
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
       setLoading(true);
       console.log('Signing up with email:', email);
+      
+      // Validate inputs
+      if (!email || !validateEmail(email)) {
+        throw new Error('Invalid email format');
+      }
+      
+      if (!password || password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+      
+      if (!firstName || !lastName) {
+        throw new Error('First and last name are required');
+      }
+      
+      // Check for SQL injection
+      if (containsSqlInjection(email) || containsSqlInjection(password) || 
+          containsSqlInjection(firstName) || containsSqlInjection(lastName)) {
+        console.error('Potential SQL injection attempt detected');
+        throw new Error('Invalid input format');
+      }
       
       // Simulate API call for registration
       await new Promise(resolve => setTimeout(resolve, 1500));
