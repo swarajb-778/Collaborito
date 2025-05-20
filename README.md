@@ -69,7 +69,12 @@ The core functionality includes user authentication via LinkedIn OAuth, project 
 
 ## Key Features
 
-- User authentication with LinkedIn OAuth
+- User authentication with LinkedIn OAuth or email/password
+- Complete user onboarding flow with profile setup:
+  - Personal information collection
+  - Interest selection
+  - Goal setting (find co-founder, find collaborators, contribute skills, explore ideas)
+  - Project details and skills matching
 - Project creation and management
 - Real-time chat for project discussions
 - Task management and to-do lists
