@@ -14,6 +14,10 @@ The core functionality includes user authentication via LinkedIn OAuth, project 
 
 - **Frontend**: Expo React Native with TypeScript
 - **Backend**: Supabase (Authentication, Database, Storage, Serverless Functions)
+  - PostgreSQL database with structured schema for user profiles, interests, goals, and skills
+  - Storage buckets for profile images and project files
+  - Row-level security policies for data protection
+  - Serverless functions for data validation and processing
 - **AI**: Claude 3.7 API
 
 ## Getting Started

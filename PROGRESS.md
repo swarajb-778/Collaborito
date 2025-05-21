@@ -44,6 +44,28 @@
 - ✅ Added animation transitions between screens
 - ✅ Applied consistent UI styling across all onboarding screens
 
+### Task 5.1: Onboarding Backend Requirements ⏳
+- ⏳ Database schema for user profiles with fields:
+  - Basic profile (firstName, lastName, email, location, jobTitle)
+  - Profile image storage in Supabase bucket
+  - User interests as array or join table
+  - User goals with specific pathway tracking
+  - Project details for "find collaborator" pathway
+  - Skills offered/needed based on user goal
+- ⏳ Supabase functions for:
+  - Validating and saving onboarding data
+  - Updating user profile in batches per onboarding step
+  - Tracking onboarding completion status
+- ⏳ Security measures:
+  - Row-level security (RLS) policies for user data
+  - Data validation on both client and server
+  - Rate limiting for profile updates
+- ⏳ Relationships between:
+  - Users and their interests
+  - Users and their projects
+  - Projects and required skills
+  - Users and their offered skills
+
 ### Task 6: UX Design Alignment ⏳
 - ✅ Incorporated design guidelines
 - ✅ Created UI components
