@@ -45,7 +45,7 @@
 - ✅ Applied consistent UI styling across all onboarding screens
 
 ### Task 5.1: Onboarding Backend Requirements ⏳
-- ⏳ Database schema for user profiles with fields:
+- ✅ Database schema for user profiles with fields:
   - Basic profile (firstName, lastName, email, location, jobTitle)
   - Profile image storage in Supabase bucket
   - User interests as array or join table

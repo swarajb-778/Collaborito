@@ -17,11 +17,62 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   full_name: string;
+  first_name?: string;
+  last_name?: string;
+  location?: string;
+  job_title?: string;
+  profile_image_path?: string;
+  onboarding_completed?: boolean;
+  onboarding_step?: 'profile' | 'interests' | 'goals' | 'project_details' | 'skills' | 'completed';
   avatar_url?: string;
   skills?: string[];
   bio?: string;
   linkedin_profile?: string;
   email?: string;
+}
+
+export interface Interest {
+  id: string;
+  created_at: string;
+  name: string;
+  category?: string;
+}
+
+export interface UserInterest {
+  id: string;
+  created_at: string;
+  user_id: string;
+  interest_id: string;
+  interest?: Interest;
+}
+
+export interface Skill {
+  id: string;
+  created_at: string;
+  name: string;
+  category?: string;
+}
+
+export interface UserSkill {
+  id: string;
+  created_at: string;
+  user_id: string;
+  skill_id: string;
+  proficiency?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  is_offering: boolean;
+  skill?: Skill;
+}
+
+export interface UserGoal {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  goal_type: 'find_cofounder' | 'find_collaborators' | 'contribute_skills' | 'explore_ideas';
+  is_active: boolean;
+  details?: {
+    [key: string]: any;
+  };
 }
 
 export interface Project {
@@ -33,6 +84,15 @@ export interface Project {
   cover_image_url?: string;
   status: 'active' | 'completed' | 'archived';
   owner_id: string;
+}
+
+export interface ProjectSkill {
+  id: string;
+  created_at: string;
+  project_id: string;
+  skill_id: string;
+  importance?: 'nice_to_have' | 'important' | 'critical';
+  skill?: Skill;
 }
 
 export interface ProjectMember {
