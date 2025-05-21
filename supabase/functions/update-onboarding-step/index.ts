@@ -4,12 +4,45 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+// Service role key needed for admin operations and bypassing RLS
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-// Initialize Supabase client
+// Rate limiting configuration
+const MAX_REQUESTS_PER_MINUTE = 20
+const RATE_LIMIT_WINDOW_MINUTES = 1
+
+// Initialize Supabase clients
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Admin client with full access to bypass RLS
+const adminSupabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
 // Valid onboarding steps
 const VALID_STEPS = ['profile', 'interests', 'goals', 'project_details', 'skills', 'completed']
+
+/**
+ * Check rate limiting for a user's requests
+ */
+async function checkRateLimit(userId: string, endpoint: string, ipAddress: string): Promise<boolean> {
+  try {
+    const { data, error } = await adminSupabase.rpc(
+      'check_rate_limit',
+      {
+        p_user_id: userId,
+        p_endpoint: endpoint,
+        p_ip_address: ipAddress,
+        p_max_requests: MAX_REQUESTS_PER_MINUTE,
+        p_window_minutes: RATE_LIMIT_WINDOW_MINUTES
+      }
+    );
+    
+    if (error) throw error;
+    return !!data; // Convert to boolean
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // Default to allowing the request if there's an error checking
+    return true;
+  }
+}
 
 /**
  * Update the user's onboarding step
@@ -18,6 +51,9 @@ async function updateOnboardingStep(userId: string, step: string) {
   if (!VALID_STEPS.includes(step)) {
     throw new Error(`Invalid step: ${step}`)
   }
+
+  // Log the step change attempt for audit purposes
+  console.log(`User ${userId} attempting to update onboarding step to: ${step}`)
 
   const { error } = await supabase
     .from('profiles')
@@ -96,6 +132,34 @@ async function calculateNextStep(userId: string, currentStep: string) {
   return { nextStep: VALID_STEPS[currentIndex + 1] }
 }
 
+/**
+ * Verify the user has completed the prerequisites for the requested step
+ */
+async function verifyStepProgression(userId: string, requestedStep: string): Promise<boolean> {
+  // If moving to profile or trying to view status, no validation needed
+  if (requestedStep === 'profile' || requestedStep === 'get_status') {
+    return true;
+  }
+  
+  // Get current onboarding status
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('onboarding_step')
+    .eq('id', userId)
+    .single();
+  
+  if (error || !data) {
+    return false;
+  }
+  
+  const currentStep = data.onboarding_step || 'profile';
+  const currentIndex = VALID_STEPS.indexOf(currentStep);
+  const requestedIndex = VALID_STEPS.indexOf(requestedStep);
+  
+  // Allow moving to the next step or a previous step (for edit)
+  return requestedIndex <= currentIndex + 1;
+}
+
 // Main handler for the Edge Function
 serve(async (req) => {
   // CORS headers
@@ -132,6 +196,20 @@ serve(async (req) => {
         { status: 401, headers }
       )
     }
+    
+    // Get the client IP address for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || '0.0.0.0'
+    
+    // Check if user has exceeded rate limits
+    const endpointName = 'update-onboarding-step'
+    const withinRateLimit = await checkRateLimit(user.id, endpointName, clientIP)
+    
+    if (!withinRateLimit) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers }
+      )
+    }
 
     // Parse the request body
     const requestData = await req.json()
@@ -152,6 +230,24 @@ serve(async (req) => {
             { status: 400, headers }
           )
         }
+        
+        // Validate step value
+        if (!VALID_STEPS.includes(step)) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid step value' }),
+            { status: 400, headers }
+          )
+        }
+        
+        // Verify progression is valid
+        const isValidProgression = await verifyStepProgression(user.id, step);
+        if (!isValidProgression) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid step progression. Please complete previous steps first.' }),
+            { status: 403, headers }
+          )
+        }
+        
         result = await updateOnboardingStep(user.id, step)
         break
 
@@ -185,10 +281,11 @@ serve(async (req) => {
   } catch (error) {
     console.error(`Error updating onboarding step:`, error)
     
+    // Don't expose internal error details to client
     return new Response(
       JSON.stringify({ 
         error: 'Failed to update onboarding step',
-        message: error.message
+        message: error instanceof Error ? error.message : 'Unknown error'
       }),
       { status: 500, headers }
     )

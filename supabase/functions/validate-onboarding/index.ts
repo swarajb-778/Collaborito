@@ -2,15 +2,28 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import * as Ajv from 'https://esm.sh/ajv@8.12.0'
+// Add JSON schema formats for improved validation
+import addFormats from 'https://esm.sh/ajv-formats@2.1.1'
+// Add security utilities
+import { encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+// Service role key needed for admin operations and bypassing RLS
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-// Initialize Supabase client
+// Rate limiting configuration
+const MAX_REQUESTS_PER_MINUTE = 10
+const RATE_LIMIT_WINDOW_MINUTES = 1
+
+// Initialize Supabase clients
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Admin client with full access to bypass RLS
+const adminSupabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
 // Initialize the JSON schema validator
-const ajv = new Ajv.default()
+const ajv = new Ajv.default({ allErrors: true })
+addFormats(ajv)
 
 // JSON Schemas for validating different types of onboarding data
 const schemas = {
@@ -18,11 +31,11 @@ const schemas = {
     type: 'object',
     required: ['firstName', 'lastName'],
     properties: {
-      firstName: { type: 'string', minLength: 1, maxLength: 50 },
-      lastName: { type: 'string', minLength: 1, maxLength: 50 },
-      location: { type: 'string', maxLength: 100 },
-      jobTitle: { type: 'string', maxLength: 100 },
-      bio: { type: 'string', maxLength: 500 },
+      firstName: { type: 'string', minLength: 1, maxLength: 50, pattern: '^[^<>\'";]+$' },
+      lastName: { type: 'string', minLength: 1, maxLength: 50, pattern: '^[^<>\'";]+$' },
+      location: { type: 'string', maxLength: 100, pattern: '^[^<>\'";]*$' },
+      jobTitle: { type: 'string', maxLength: 100, pattern: '^[^<>\'";]*$' },
+      bio: { type: 'string', maxLength: 500, pattern: '^[^<>\'";]*$' },
     },
     additionalProperties: false
   },
@@ -47,7 +60,19 @@ const schemas = {
         type: 'string', 
         enum: ['find_cofounder', 'find_collaborators', 'contribute_skills', 'explore_ideas'] 
       },
-      details: { type: 'object' }
+      details: { 
+        type: 'object',
+        additionalProperties: true,
+        properties: {
+          // Common properties that might be in details
+          projectIdea: { type: 'string', maxLength: 500 },
+          skillsNeeded: { 
+            type: 'array', 
+            items: { type: 'string' },
+            maxItems: 10
+          }
+        }
+      }
     },
     additionalProperties: false
   },
@@ -55,11 +80,11 @@ const schemas = {
     type: 'object',
     required: ['name', 'description'],
     properties: {
-      name: { type: 'string', minLength: 1, maxLength: 100 },
-      description: { type: 'string', minLength: 10, maxLength: 1000 },
+      name: { type: 'string', minLength: 1, maxLength: 100, pattern: '^[^<>\'";]+$' },
+      description: { type: 'string', minLength: 10, maxLength: 1000, pattern: '^[^<>\'";]+$' },
       tags: { 
         type: 'array', 
-        items: { type: 'string' },
+        items: { type: 'string', maxLength: 30, pattern: '^[^<>\'";]+$' },
         maxItems: 10
       }
     },
@@ -102,16 +127,84 @@ const validators = {
 }
 
 /**
+ * Check rate limiting for a user's requests
+ */
+async function checkRateLimit(userId: string, endpoint: string, ipAddress: string): Promise<boolean> {
+  try {
+    const { data, error } = await adminSupabase.rpc(
+      'check_rate_limit',
+      {
+        p_user_id: userId,
+        p_endpoint: endpoint,
+        p_ip_address: ipAddress,
+        p_max_requests: MAX_REQUESTS_PER_MINUTE,
+        p_window_minutes: RATE_LIMIT_WINDOW_MINUTES
+      }
+    );
+    
+    if (error) throw error;
+    return !!data; // Convert to boolean
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // Default to allowing the request if there's an error checking
+    return true;
+  }
+}
+
+/**
+ * Basic input sanitization
+ */
+function sanitizeInput(input: string): string {
+  if (!input) return input;
+  // Remove potentially dangerous characters
+  return input.trim().replace(/[<>'";]/g, '');
+}
+
+/**
+ * Sanitize an object recursively
+ */
+function sanitizeObject(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  
+  if (typeof obj === 'string') {
+    return sanitizeInput(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      sanitized[key] = sanitizeObject(value);
+    }
+    return sanitized;
+  }
+  
+  return obj;
+}
+
+/**
  * Validate and save profile data
  */
 async function saveProfileData(userId: string, data: any) {
+  // Sanitize inputs
+  const sanitizedData = {
+    firstName: sanitizeInput(data.firstName),
+    lastName: sanitizeInput(data.lastName),
+    location: data.location ? sanitizeInput(data.location) : null,
+    jobTitle: data.jobTitle ? sanitizeInput(data.jobTitle) : null,
+    bio: data.bio ? sanitizeInput(data.bio) : null
+  };
+
   // Convert from camelCase to snake_case for DB
   const profileData = {
-    first_name: data.firstName,
-    last_name: data.lastName,
-    location: data.location,
-    job_title: data.jobTitle,
-    bio: data.bio,
+    first_name: sanitizedData.firstName,
+    last_name: sanitizedData.lastName,
+    location: sanitizedData.location,
+    job_title: sanitizedData.jobTitle,
+    bio: sanitizedData.bio,
     onboarding_step: 'profile'
   }
 
@@ -129,6 +222,19 @@ async function saveProfileData(userId: string, data: any) {
  * Save user interests
  */
 async function saveInterests(userId: string, data: { interestIds: string[] }) {
+  // Verify all interest IDs exist in the database first
+  const { data: validInterests, error: validationError } = await supabase
+    .from('interests')
+    .select('id')
+    .in('id', data.interestIds)
+  
+  if (validationError) throw validationError
+  
+  // Check if all submitted IDs are valid by comparing lengths
+  if (validInterests.length !== data.interestIds.length) {
+    throw new Error('One or more invalid interest IDs were provided')
+  }
+  
   // First delete any existing interests
   const { error: deleteError } = await supabase
     .from('user_interests')
@@ -164,6 +270,9 @@ async function saveInterests(userId: string, data: { interestIds: string[] }) {
  * Save user goal selection
  */
 async function saveGoal(userId: string, data: { goalType: string, details?: Record<string, any> }) {
+  // Sanitize details object if provided
+  const sanitizedDetails = data.details ? sanitizeObject(data.details) : {};
+  
   // First deactivate any existing goals
   const { error: updateError } = await supabase
     .from('user_goals')
@@ -180,7 +289,7 @@ async function saveGoal(userId: string, data: { goalType: string, details?: Reco
       user_id: userId,
       goal_type: data.goalType,
       is_active: true,
-      details: data.details || {}
+      details: sanitizedDetails
     })
 
   if (insertError) throw insertError
@@ -200,14 +309,21 @@ async function saveGoal(userId: string, data: { goalType: string, details?: Reco
  * Save project details (when user selects find_cofounder or find_collaborators)
  */
 async function saveProjectDetails(userId: string, data: { name: string, description: string, tags?: string[] }) {
+  // Sanitize inputs
+  const sanitizedData = {
+    name: sanitizeInput(data.name),
+    description: sanitizeInput(data.description),
+    tags: data.tags ? data.tags.map(tag => sanitizeInput(tag)) : []
+  };
+  
   // Create a new project
   const { data: project, error: projectError } = await supabase
     .from('projects')
     .insert({
-      name: data.name,
-      description: data.description,
+      name: sanitizedData.name,
+      description: sanitizedData.description,
       owner_id: userId,
-      tags: data.tags || [],
+      tags: sanitizedData.tags,
       status: 'active'
     })
     .select()
@@ -246,6 +362,21 @@ async function saveSkills(
     skills: { skillId: string, isOffering: boolean, proficiency?: string }[] 
   }
 ) {
+  // Verify all skill IDs exist in the database first
+  const skillIds = data.skills.map(skill => skill.skillId);
+  
+  const { data: validSkills, error: validationError } = await supabase
+    .from('skills')
+    .select('id')
+    .in('id', skillIds);
+  
+  if (validationError) throw validationError;
+  
+  // Check if all submitted IDs are valid
+  if (validSkills.length !== skillIds.length) {
+    throw new Error('One or more invalid skill IDs were provided');
+  }
+  
   // First delete any existing skills
   const { error: deleteError } = await supabase
     .from('user_skills')
@@ -315,6 +446,20 @@ serve(async (req) => {
         { status: 401, headers }
       )
     }
+    
+    // Get the client IP address for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || '0.0.0.0'
+    
+    // Check if user has exceeded rate limits
+    const endpointName = 'validate-onboarding'
+    const withinRateLimit = await checkRateLimit(user.id, endpointName, clientIP)
+    
+    if (!withinRateLimit) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers }
+      )
+    }
 
     // Parse the request body
     const requestData = await req.json()
@@ -369,6 +514,7 @@ serve(async (req) => {
   } catch (error) {
     console.error(`Error processing onboarding data:`, error)
     
+    // Don't expose internal error details to client
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process onboarding data',

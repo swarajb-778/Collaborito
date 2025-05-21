@@ -44,7 +44,7 @@
 - ✅ Added animation transitions between screens
 - ✅ Applied consistent UI styling across all onboarding screens
 
-### Task 5.1: Onboarding Backend Requirements ⏳
+### Task 5.1: Onboarding Backend Requirements ✅
 - ✅ Database schema for user profiles with fields:
   - Basic profile (firstName, lastName, email, location, jobTitle)
   - Profile image storage in Supabase bucket
@@ -56,11 +56,11 @@
   - Validating and saving onboarding data
   - Updating user profile in batches per onboarding step
   - Tracking onboarding completion status
-- ⏳ Security measures:
+- ✅ Security measures:
   - Row-level security (RLS) policies for user data
   - Data validation on both client and server
   - Rate limiting for profile updates
-- ⏳ Relationships between:
+- ✅ Relationships between:
   - Users and their interests
   - Users and their projects
   - Projects and required skills

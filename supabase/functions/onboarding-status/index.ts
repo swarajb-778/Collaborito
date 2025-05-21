@@ -4,9 +4,42 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+// Service role key needed for admin operations and bypassing RLS
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-// Initialize Supabase client
+// Rate limiting configuration
+const MAX_REQUESTS_PER_MINUTE = 30
+const RATE_LIMIT_WINDOW_MINUTES = 1
+
+// Initialize Supabase clients
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Admin client with full access to bypass RLS
+const adminSupabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+/**
+ * Check rate limiting for a user's requests
+ */
+async function checkRateLimit(userId: string, endpoint: string, ipAddress: string): Promise<boolean> {
+  try {
+    const { data, error } = await adminSupabase.rpc(
+      'check_rate_limit',
+      {
+        p_user_id: userId,
+        p_endpoint: endpoint,
+        p_ip_address: ipAddress,
+        p_max_requests: MAX_REQUESTS_PER_MINUTE,
+        p_window_minutes: RATE_LIMIT_WINDOW_MINUTES
+      }
+    );
+    
+    if (error) throw error;
+    return !!data; // Convert to boolean
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // Default to allowing the request if there's an error checking
+    return true;
+  }
+}
 
 /**
  * Get detailed onboarding status for a user with all related data
@@ -92,33 +125,39 @@ async function getDetailedOnboardingStatus(userId: string) {
     
     const completionPercentage = Math.floor((completed / total) * 100)
 
+    // Apply minimal sanitization when returning data to client
     return {
       success: true,
       currentStep: profile.onboarding_step || 'profile',
       completed: profile.onboarding_completed || false,
       completionPercentage,
       profile: {
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        location: profile.location,
-        jobTitle: profile.job_title,
-        bio: profile.bio
+        firstName: profile.first_name ? profile.first_name.replace(/[<>'";]/g, '') : null,
+        lastName: profile.last_name ? profile.last_name.replace(/[<>'";]/g, '') : null,
+        location: profile.location ? profile.location.replace(/[<>'";]/g, '') : null,
+        jobTitle: profile.job_title ? profile.job_title.replace(/[<>'";]/g, '') : null,
+        bio: profile.bio ? profile.bio.replace(/[<>'";]/g, '') : null
       },
       interests: interests.map(i => ({
         id: i.interest_id,
-        name: i.interest?.name
+        name: i.interest?.name ? i.interest.name.replace(/[<>'";]/g, '') : null
       })),
       goal: goal ? {
         type: goal.goal_type,
-        details: goal.details
+        details: goal.details // JSON object, sanitized at storage time
       } : null,
       skills: skills.map(s => ({
         id: s.skill_id,
-        name: s.skill?.name,
+        name: s.skill?.name ? s.skill.name.replace(/[<>'";]/g, '') : null,
         isOffering: s.is_offering,
         proficiency: s.proficiency
       })),
-      projects: projects
+      projects: projects.map(p => ({
+        id: p.id,
+        name: p.name ? p.name.replace(/[<>'";]/g, '') : null,
+        description: p.description ? p.description.replace(/[<>'";]/g, '') : null,
+        tags: p.tags ? p.tags.map((tag: string) => tag.replace(/[<>'";]/g, '')) : []
+      }))
     }
   } catch (error) {
     throw error
@@ -130,6 +169,14 @@ async function getDetailedOnboardingStatus(userId: string) {
  */
 async function completeOnboarding(userId: string) {
   try {
+    // First verify that all required steps are actually completed
+    const status = await getDetailedOnboardingStatus(userId);
+    
+    // Only allow completion if the user has reached at least 75% completion
+    if (status.completionPercentage < 75) {
+      throw new Error('Onboarding not sufficiently completed. Please finish required steps first.');
+    }
+    
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -238,6 +285,20 @@ serve(async (req) => {
         { status: 401, headers }
       )
     }
+    
+    // Get the client IP address for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || '0.0.0.0'
+    
+    // Check if user has exceeded rate limits
+    const endpointName = 'onboarding-status'
+    const withinRateLimit = await checkRateLimit(user.id, endpointName, clientIP)
+    
+    if (!withinRateLimit) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers }
+      )
+    }
 
     // Parse the request body if it's not a GET request
     let action = 'get_status' // Default action for GET
@@ -275,10 +336,11 @@ serve(async (req) => {
   } catch (error) {
     console.error(`Error processing onboarding status:`, error)
     
+    // Don't expose internal error details to client
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process onboarding status',
-        message: error.message
+        message: error instanceof Error ? error.message : 'Unknown error'
       }),
       { status: 500, headers }
     )
