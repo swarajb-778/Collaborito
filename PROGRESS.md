@@ -52,7 +52,7 @@
   - User goals with specific pathway tracking
   - Project details for "find collaborator" pathway
   - Skills offered/needed based on user goal
-- ⏳ Supabase functions for:
+- ✅ Supabase functions for:
   - Validating and saving onboarding data
   - Updating user profile in batches per onboarding step
   - Tracking onboarding completion status
