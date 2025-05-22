@@ -1,0 +1,6 @@
+# Ignore everything git ignores
+.gitignore
+
+# But allow this specific file
+!.env
+!.env.example 
