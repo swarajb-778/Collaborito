@@ -106,37 +106,31 @@ export default function RegisterScreen() {
   };
 
   const handleSignUp = async () => {
-    setError(''); // Clear previous errors
-
-    // Validate username only if we don't already have a username error
-    if (!validateUsername(username) && !usernameError) {
-      setUsernameError('Username must be 3-20 characters long and can only contain letters, numbers, and underscores.');
+    // Validate inputs first
+    if (!username.trim()) {
+      setError('Username is required');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     
-    // If there's a username error, don't proceed
-    if (usernameError) {
+    if (!validateUsername(username)) {
+      setError('Username must be 3-20 characters with letters, numbers, and underscores only');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-
-    // Basic Validation
-    if (!username || !email || !password) {
-      setError('Please fill in all required fields.');
+    
+    if (!email.trim()) {
+      setError('Email is required');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email address.');
+    
+    if (!password.trim()) {
+      setError('Password is required');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
+    
     if (!termsAccepted) {
       setError('You must accept the terms and privacy policy to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -144,36 +138,50 @@ export default function RegisterScreen() {
     }
     
     setIsLoading(true);
+    setError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // No longer split username into first/last name
-      // We'll let the user enter first and last name in the onboarding screen
-      const firstName = '';
-      const lastName = '';
+      // Use the username as a temporary display name until onboarding
+      // Split username into first/last name as fallback
+      const nameParts = username.trim().split('_');
+      const firstName = nameParts[0] || username;
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-      await signUp(email, password, firstName, lastName); 
+      console.log('Starting signup process with:', { email, firstName, lastName });
+      
+      const signupSuccess = await signUp(email, password, firstName, lastName);
+      
+      if (!signupSuccess) {
+        throw new Error('Failed to create account');
+      }
+      
+      // Wait a moment for user data to be stored
+      console.log('Sign up successful, waiting for user data to be set...');
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Navigate to onboarding screen after successful sign-up
-      console.log('Sign up successful, navigating to onboarding');
-      
-      // Navigate to onboarding with a slight delay
-      const navigateToOnboarding = () => {
-        console.log('Executing navigation to onboarding');
-        router.replace('/onboarding');
-      };
+      console.log('Navigating to onboarding');
       
       // Show brief success message then navigate
-      Alert.alert('Account Created!', 'Welcome to Collaborito. Let\'s complete your profile.', [
-        { 
-          text: 'Continue', 
-          onPress: () => setTimeout(navigateToOnboarding, 300) 
-        }
-      ]);
+      Alert.alert(
+        'Account Created!', 
+        'Welcome to Collaborito. Let\'s complete your profile.', 
+        [
+          { 
+            text: 'Continue', 
+            onPress: () => {
+              console.log('Executing navigation to onboarding');
+              router.replace('/onboarding');
+            }
+          }
+        ],
+        { cancelable: false }
+      );
 
     } catch (error: any) {
-      setError(error.message || 'Sign up failed. Please try again.');
       console.error('Sign up error:', error);
+      setError(error.message || 'Sign up failed. Please try again.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);

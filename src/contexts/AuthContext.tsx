@@ -320,7 +320,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
       setLoading(true);
-      console.log('Signing up with email:', email);
+      console.log('Signing up with email:', email, 'firstName:', firstName, 'lastName:', lastName);
       
       // Validate inputs
       if (!email || !validateEmail(email)) {
@@ -331,13 +331,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Password must be at least 6 characters');
       }
       
-      if (!firstName || !lastName) {
-        throw new Error('First and last name are required');
+      // firstName and lastName can be empty - they'll be collected during onboarding
+      // Just ensure they don't contain malicious content if provided
+      if (firstName && containsSqlInjection(firstName)) {
+        console.error('Potential SQL injection attempt detected in firstName');
+        throw new Error('Invalid first name format');
       }
       
-      // Check for SQL injection
-      if (containsSqlInjection(email) || containsSqlInjection(password) || 
-          containsSqlInjection(firstName) || containsSqlInjection(lastName)) {
+      if (lastName && containsSqlInjection(lastName)) {
+        console.error('Potential SQL injection attempt detected in lastName');
+        throw new Error('Invalid last name format');
+      }
+      
+      // Check for SQL injection in required fields
+      if (containsSqlInjection(email) || containsSqlInjection(password)) {
         console.error('Potential SQL injection attempt detected');
         throw new Error('Invalid input format');
       }
@@ -354,22 +361,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData: User = {
         id: 'new' + Date.now(),
         email: email,
-        firstName: firstName,
-        lastName: lastName,
+        firstName: firstName || '', // Allow empty, will be filled during onboarding
+        lastName: lastName || '',   // Allow empty, will be filled during onboarding
         profileImage: null,
         oauthProvider: 'email'
       };
       
-      // Store user data and update state
-      await storeUserData(userData);
-      setUser(userData);
-      setLoggedIn(true);
+      console.log('Creating user with data:', userData);
       
-      console.log('Sign up successful');
+      // Store user data and update state
+      const storeSuccess = await storeUserData(userData);
+      
+      if (!storeSuccess) {
+        throw new Error('Failed to store user data');
+      }
+      
+      console.log('Sign up successful, user data stored');
       return true;
     } catch (error) {
       console.error('Sign up error:', error);
-      Alert.alert('Sign Up Error', error instanceof Error ? error.message : 'Failed to create account');
+      // Don't show alert here, let the calling component handle it
       return false;
     } finally {
       setLoading(false);
@@ -678,22 +689,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Add updateUser function
   const updateUser = async (userData: Partial<User>) => {
     try {
+      console.log('updateUser called with data:', userData);
+      console.log('Current user state:', user);
+      
       if (!user) {
         console.error('Cannot update user: No user is currently logged in');
+        console.error('User state:', { user, loading, loggedIn });
+        return false;
+      }
+      
+      if (!user.id) {
+        console.error('Cannot update user: User ID is missing');
+        console.error('User object:', user);
+        return false;
+      }
+      
+      // Validate update data
+      if (userData.firstName && containsSqlInjection(userData.firstName)) {
+        console.error('Invalid firstName in update data');
+        return false;
+      }
+      
+      if (userData.lastName && containsSqlInjection(userData.lastName)) {
+        console.error('Invalid lastName in update data');
         return false;
       }
       
       // Combine existing user data with the new data
       const updatedUser = { ...user, ...userData };
       
+      console.log('Storing updated user data:', updatedUser);
+      
       // Store the updated user data
       await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
       
-      console.log('User profile updated:', updatedUser);
+      console.log('User profile updated successfully:', updatedUser);
       return true;
     } catch (error) {
       console.error('Error updating user data:', error);
+      console.error('Update data that failed:', userData);
+      console.error('Current user at time of error:', user);
       return false;
     }
   };

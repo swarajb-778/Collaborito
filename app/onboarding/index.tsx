@@ -28,12 +28,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe 
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
-  // Move logging inside useEffect or remove it entirely
-  
   const router = useRouter();
-  const { user, updateUser } = useAuth(); // Get updateUser from context
+  const { user, updateUser, loading } = useAuth(); // Get loading state from context
   const [savingProfile, setSavingProfile] = useState(false);
-  const insets = useSafeAreaInsets(); // Get safe area insets
+  const [userDataReady, setUserDataReady] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Animation values like in register.tsx
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -59,24 +58,51 @@ export default function OnboardingScreen() {
     ]).start();
   }, []);
 
-
-  // Log user data for debugging
+  // Monitor user data availability
   useEffect(() => {
     console.log('Onboarding screen received user:', user);
-  }, [user]);
+    console.log('Auth loading state:', loading);
+    
+    // Check if user data is available
+    if (!loading && user && user.id) {
+      setUserDataReady(true);
+      console.log('User data is ready for onboarding');
+    } else if (!loading && !user) {
+      console.error('No user data available after auth loading completed');
+      // Navigate back to login if no user data after loading
+      Alert.alert(
+        'Session Error',
+        'Unable to retrieve user data. Please sign in again.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/welcome/signin')
+          }
+        ]
+      );
+    }
+  }, [user, loading]);
 
-  // Initialize form fields with empty strings since registration no longer provides first/last name
+  // Initialize form fields with user data if available
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [location, setLocation] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  
+  // Initialize form fields with existing user data when available
+  useEffect(() => {
+    if (user && userDataReady) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+    }
+  }, [user, userDataReady]);
   
   // Keep error states
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [locationError, setLocationError] = useState('');
   const [jobTitleError, setJobTitleError] = useState('');
-  
+
   // Keep validation logic
   const validateForm = () => {
     let isValid = true;
@@ -108,13 +134,23 @@ export default function OnboardingScreen() {
     return isValid;
   };
 
-  // Keep completion logic
+  // Enhanced completion logic with better error handling
   const handleComplete = async () => {
+    // Check if user data is available before proceeding
+    if (!userDataReady || !user) {
+      Alert.alert('Error', 'User session not ready. Please try again.');
+      return;
+    }
+
     if (!validateForm()) return;
     
     try {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      console.log('Attempting to update user profile...');
+      console.log('Current user ID:', user.id);
+      console.log('Update data:', { firstName, lastName, location, jobTitle });
       
       // Update user profile with entered data
       const userProfileUpdate = {
@@ -125,14 +161,14 @@ export default function OnboardingScreen() {
         // jobTitle,
       };
       
-      // Save user profile data
+      // Save user profile data with additional validation
       const updateSuccess = await updateUser(userProfileUpdate);
       
       if (!updateSuccess) {
         throw new Error('Failed to update user profile');
       }
       
-      console.log('Profile updated with:', { firstName, lastName, location, jobTitle });
+      console.log('Profile updated successfully with:', { firstName, lastName, location, jobTitle });
       
       // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
@@ -145,10 +181,22 @@ export default function OnboardingScreen() {
   };
 
   const handleSkip = () => {
+    // Allow skipping even if user data is not ready
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     console.log('Skipping onboarding, navigating to interests screen');
     router.replace('/onboarding/interests' as any);
   };
+
+  // Show loading spinner while auth is loading or user data is not ready
+  if (loading || !userDataReady) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loadingText}>Setting up your profile...</Text>
+      </View>
+    );
+  }
 
   // Adapt return statement to match register.tsx structure
   return (
@@ -512,5 +560,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline', // Make it look like a link
     fontWeight: '600', // Slightly bolder
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A5568',
+    marginTop: 20,
   },
 }); 
