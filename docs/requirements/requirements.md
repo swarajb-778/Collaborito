@@ -1,9 +1,9 @@
 # Collaborito – Mobile App Requirements
 
 ## Project Description
-Collaborito is a mobile app that facilitates collaboration between users on projects. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, and leverage AI capabilities for enhanced productivity.
+Collaborito is a mobile app that facilitates collaboration between users on projects and provides comprehensive workspace/eventspace booking capabilities. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, book venues for events, and leverage AI capabilities for enhanced productivity.
 
-The core functionality includes user authentication via LinkedIn OAuth, project management, real-time messaging, task management, and file sharing. The app is enhanced with AI features powered by Claude 3.7, providing intelligent assistance such as chat summarization, task generation, and writing assistance.
+The core functionality includes user authentication via LinkedIn OAuth, project management, real-time messaging, task management, file sharing, and a full-featured venue booking system. The app is enhanced with AI features powered by Claude 3.7, providing intelligent assistance such as chat summarization, task generation, writing assistance, and smart venue recommendations.
 
 Built with Expo React Native and TypeScript, the app uses Supabase for backend services (authentication, database, storage, and serverless functions). The development follows a phased approach, starting from foundation setup and progressing through core features, AI enhancements, and final polishing before deployment to app stores.
 
@@ -78,7 +78,67 @@ before start Just make sure to make it super modern, add microanimations, and ge
   - Implement task completion toggling
   - Add task assignment functionality (optional)
 
-## Phase 3: Enhanced Features & AI
+## Phase 3: Workspace & Event Space Booking System
+- **Task 1**: Database Schema & Backend Setup
+  - Design venues table with location, capacity, pricing, amenities, and contact information
+  - Create venue_images table for storing multiple high-quality photos per venue
+  - Implement bookings table with user_id, venue_id, booking dates, status, and payment info
+  - Add booking_reviews table for user feedback and ratings system
+  - Create venue_availability table for real-time availability tracking
+  - Set up payment_transactions table for secure payment processing
+  - Configure RLS policies for secure access to venue and booking data
+
+- **Task 2**: Venue Discovery & Listing
+  - Build venue browsing interface with modern card-based design
+  - Implement location-based search with maps integration (Google Maps/Apple Maps)
+  - Add advanced filtering by capacity, price range, amenities, venue type, and location
+  - Create venue comparison feature for side-by-side analysis
+  - Implement search functionality with autocomplete and suggestions
+  - Add venue categorization (co-working spaces, event halls, meeting rooms, outdoor venues)
+
+- **Task 3**: Venue Detail & Information Display
+  - Design comprehensive venue detail pages with image galleries
+  - Display venue features, amenities, and specifications
+  - Show real-time availability calendar with pricing
+  - Implement 360° virtual tour integration (optional)
+  - Add venue contact information and directions
+  - Display user reviews and ratings with photos
+  - Include venue policies, cancellation terms, and booking rules
+
+- **Task 4**: Booking Flow & Payment Integration
+  - Create intuitive step-by-step booking process
+  - Implement date/time selection with availability checking
+  - Add guest count and special requirements input
+  - Integrate secure payment processing (Stripe/PayPal/Apple Pay/Google Pay)
+  - Build booking confirmation system with automated emails/notifications
+  - Implement booking modification and cancellation features
+  - Add booking protection and insurance options
+
+- **Task 5**: Booking Management & Calendar
+  - Create user booking dashboard with upcoming and past bookings
+  - Implement calendar integration for scheduling
+  - Add booking reminders and notifications
+  - Build venue owner dashboard for managing bookings
+  - Create booking analytics and reporting for venue owners
+  - Implement group booking and recurring event features
+
+- **Task 6**: Reviews & Community Features
+  - Build venue review and rating system with photo uploads
+  - Implement review moderation and reporting features
+  - Add user-generated content guidelines
+  - Create venue recommendation engine based on user preferences
+  - Implement social sharing of events and venues
+  - Add community forums for event planning discussions
+
+- **Task 7**: Modern UI/UX Implementation
+  - Design responsive layouts for various screen sizes
+  - Implement smooth animations and micro-interactions
+  - Add skeleton loading states and smooth transitions
+  - Create intuitive navigation and user flows
+  - Implement accessibility features and screen reader support
+  - Add dark mode support for better user experience
+
+## Phase 4: Enhanced Features & AI
 - **Task 1**: AI Assistant Chatbot Integration
   - Create UI for AI chat interactions
   - Implement Supabase Edge Function for secure Claude API calls
@@ -91,25 +151,32 @@ before start Just make sure to make it super modern, add microanimations, and ge
   - Create writing assistance for descriptions
   - Design UI for displaying AI-generated insights
 
-- **Task 3**: Push Notifications & Alerts
+- **Task 3**: AI-Powered Venue Recommendations
+  - Integrate Claude AI for intelligent venue suggestions
+  - Implement event type analysis for venue matching
+  - Add automated booking optimization based on preferences
+  - Create smart pricing alerts and recommendations
+
+- **Task 4**: Push Notifications & Alerts
   - Set up Expo Notifications for push permissions
   - Store device push tokens in Supabase
   - Implement server-side triggers for notifications
   - Configure deep links for notification routing
+  - Add booking confirmations and reminders
 
-- **Task 4**: File Sharing & Storage
+- **Task 5**: File Sharing & Storage
   - Add file attachment functionality to projects/chats
   - Implement file upload to Supabase Storage
   - Store file metadata in database
   - Display files with appropriate previews and download options
 
-- **Task 5**: Search & Discovery
+- **Task 6**: Search & Discovery
   - Implement project search functionality
   - Add user/collaborator search feature
-  - Create unified search experience (optional)
+  - Create unified search experience (projects and venues)
   - Optimize search performance with proper indexing
 
-## Phase 4: Final Polish & Deployment
+## Phase 5: Final Polish & Deployment
 - **Task 1**: UI/UX Polish and Consistency
   - Refine all UI elements to match design specifications
   - Add appropriate icons and images
@@ -141,7 +208,7 @@ before start Just make sure to make it super modern, add microanimations, and ge
   - Monitor infrastructure (Supabase, API usage)
   - Collect and respond to user feedback
 
-## Phase 5: Documentation & MCP/AI Notes
+## Phase 6: Documentation & MCP/AI Notes
 - **Task 1**: Developer Documentation
   - Create detailed README.md with project overview
   - Document setup instructions and architecture

@@ -2,22 +2,22 @@
 
 [![CI/CD Pipeline](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml/badge.svg)](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml)
 
-An AI-powered community platform that helps entrepreneurs match with collaborators - unlike inefficient networking communities.
+An AI-powered community platform that helps entrepreneurs match with collaborators and book workspaces for their events - unlike inefficient networking communities.
 
 ## Project Overview
 
-Collaborito is a mobile app that facilitates collaboration between users on projects. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, and leverage AI capabilities for enhanced productivity.
+Collaborito is a mobile app that facilitates collaboration between users on projects and provides workspace booking for events. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, book event spaces, and leverage AI capabilities for enhanced productivity.
 
-The core functionality includes user authentication via LinkedIn OAuth, project management, real-time messaging, task management, and file sharing. The app is enhanced with AI features powered by Claude 3.7, providing intelligent assistance such as chat summarization, task generation, and writing assistance.
+The core functionality includes user authentication via LinkedIn OAuth, project management, real-time messaging, task management, file sharing, and comprehensive workspace/eventspace booking. The app is enhanced with AI features powered by Claude 3.7, providing intelligent assistance such as chat summarization, task generation, and writing assistance.
 
 ## Tech Stack
 
 - **Frontend**: Expo React Native with TypeScript
 - **Backend**: Supabase (Authentication, Database, Storage, Serverless Functions)
-  - PostgreSQL database with structured schema for user profiles, interests, goals, and skills
-  - Storage buckets for profile images and project files
+  - PostgreSQL database with structured schema for user profiles, interests, goals, skills, venues, and bookings
+  - Storage buckets for profile images, project files, and venue images
   - Row-level security policies for data protection
-  - Serverless functions for data validation and processing
+  - Serverless functions for data validation, processing, and booking management
 - **AI**: Claude 3.7 API
 
 ## Getting Started
@@ -82,6 +82,15 @@ The core functionality includes user authentication via LinkedIn OAuth, project 
 - Project creation and management
 - Real-time chat for project discussions
 - Task management and to-do lists
+- **Workspace & Event Space Booking:**
+  - Browse available venues by location and capacity
+  - View detailed venue information with high-quality images
+  - Check real-time availability and pricing
+  - Compare venue features and amenities
+  - Secure booking with integrated payment processing
+  - Booking management and calendar integration
+  - Venue reviews and ratings system
+  - Special occasion and event planning support
 - AI-powered assistance via Claude 3.7
 - File sharing and collaboration
 
