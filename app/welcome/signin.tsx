@@ -13,7 +13,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -185,27 +186,27 @@ export default function SignInScreen() {
   
   const handleSignIn = async () => {
     if (!email || !password) {
-      setError('Email and password are required');
+      Alert.alert('Validation Error', 'Email and password are required', [{ text: 'OK' }]);
       return;
     }
     
     // Validate email format
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
-      setError('Invalid email format');
+      Alert.alert('Invalid Email', 'Please enter a valid email address', [{ text: 'OK' }]);
       return;
     }
     
     // Basic password validation
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      Alert.alert('Weak Password', 'Password must be at least 6 characters long', [{ text: 'OK' }]);
       return;
     }
     
     // Check for SQL injection patterns
     if (containsSqlInjection(email) || containsSqlInjection(password)) {
       console.error('Potential SQL injection attempt detected');
-      setError('Invalid input format detected');
+      Alert.alert('Invalid Input', 'Invalid input format detected', [{ text: 'OK' }]);
       return;
     }
     
@@ -239,7 +240,7 @@ export default function SignInScreen() {
     } catch (error: any) {
       // Display the specific error message from AuthContext
       const errorMessage = error?.message || 'Invalid email or password';
-      setError(errorMessage);
+      Alert.alert('Sign In Failed', errorMessage, [{ text: 'OK' }]);
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -295,7 +296,7 @@ export default function SignInScreen() {
       // After successful LinkedIn sign in, manually navigate to tabs
       router.replace('/(tabs)');
     } catch (error) {
-      setError('LinkedIn sign in failed');
+      Alert.alert('LinkedIn Sign In Failed', 'There was an error signing in with LinkedIn. Please try again.', [{ text: 'OK' }]);
       console.error('LinkedIn login error:', error);
     } finally {
       setIsLoading(false);
@@ -318,7 +319,7 @@ export default function SignInScreen() {
       })
       .catch(error => {
         console.error('Demo login error:', error);
-        setError('Failed to sign in with demo account');
+        Alert.alert('Demo Sign In Failed', 'There was an error signing in with the demo account. Please try again.', [{ text: 'OK' }]);
       })
       .finally(() => {
         setIsLoading(false);
@@ -457,9 +458,6 @@ export default function SignInScreen() {
                     </LinearGradient>
                   </TouchableOpacity>
                   
-                  {/* Error message if any */}
-                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                  
                   {/* Back to options */}
                   <TouchableOpacity 
                     style={styles.backToOptions}
@@ -550,8 +548,7 @@ export default function SignInScreen() {
                     </Text>
                   </TouchableOpacity>
                   
-                  {/* Error message if any */}
-                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
                 </Animated.View>
               )}
             </View>

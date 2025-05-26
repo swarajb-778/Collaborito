@@ -29,47 +29,45 @@ export default function SignupScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
-    let isValid = true;
+    // Clear all error states first
+    setNameError('');
+    setEmailError('');
+    setPasswordError('');
+
     if (!fullName.trim()) {
-      setNameError('Full Name is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Full Name is required', [{ text: 'OK' }]);
+      return false;
     } else if (containsSqlInjection(fullName)) {
-      setNameError('Invalid characters detected');
-      isValid = false;
+      Alert.alert('Invalid Input', 'Full name contains invalid characters', [{ text: 'OK' }]);
       console.error('Potential SQL injection attempt detected in name field');
-    } else {
-      setNameError('');
+      return false;
     }
 
     if (!email) {
-      setEmailError('Email is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Email is required', [{ text: 'OK' }]);
+      return false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Email is invalid');
-      isValid = false;
+      Alert.alert('Invalid Email', 'Please enter a valid email address', [{ text: 'OK' }]);
+      return false;
     } else if (containsSqlInjection(email)) {
-      setEmailError('Invalid email format detected');
-      isValid = false;
+      Alert.alert('Invalid Input', 'Email contains invalid characters', [{ text: 'OK' }]);
       console.error('Potential SQL injection attempt detected in email');
-    } else {
-      setEmailError('');
+      return false;
     }
 
     if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Password is required', [{ text: 'OK' }]);
+      return false;
     } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      isValid = false;
+      Alert.alert('Weak Password', 'Password must be at least 6 characters long', [{ text: 'OK' }]);
+      return false;
     } else if (containsSqlInjection(password)) {
-      setPasswordError('Invalid password format detected');
-      isValid = false;
+      Alert.alert('Invalid Input', 'Password contains invalid characters', [{ text: 'OK' }]);
       console.error('Potential SQL injection attempt detected in password');
-    } else {
-      setPasswordError('');
+      return false;
     }
 
-    return isValid;
+    return true;
   };
 
   // Helper function to detect SQL injection patterns
@@ -181,7 +179,6 @@ export default function SignupScreen() {
                   value={fullName}
                   onChangeText={setFullName}
                   leftIcon={<FontAwesome5 name="user" size={16} color={colors.muted} style={styles.inputIcon} />}
-                  error={nameError}
                 />
                 <TextInput
                   label="Email"
@@ -191,7 +188,6 @@ export default function SignupScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   leftIcon={<FontAwesome5 name="envelope" size={16} color={colors.muted} style={styles.inputIcon} />}
-                  error={emailError}
                 />
                 <TextInput
                   label="Password"
@@ -200,7 +196,6 @@ export default function SignupScreen() {
                   onChangeText={setPassword}
                   secureTextEntry
                   leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
-                  error={passwordError}
                 />
 
                 <Button

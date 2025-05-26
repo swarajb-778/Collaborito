@@ -103,35 +103,35 @@ export default function OnboardingScreen() {
   const [locationError, setLocationError] = useState('');
   const [jobTitleError, setJobTitleError] = useState('');
 
-  // Keep validation logic
+  // Keep validation logic with popup alerts
   const validateForm = () => {
-    let isValid = true;
     setFirstNameError('');
     setLastNameError('');
     setLocationError('');
     setJobTitleError('');
     
     if (!firstName.trim()) {
-      setFirstNameError('First name is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'First name is required', [{ text: 'OK' }]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
     }
     if (!lastName.trim()) {
-      setLastNameError('Last name is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Last name is required', [{ text: 'OK' }]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
     }
     if (!location.trim()) {
-      setLocationError('Location is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Location is required', [{ text: 'OK' }]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
     }
     if (!jobTitle.trim()) {
-      setJobTitleError('Job title is required');
-      isValid = false;
+      Alert.alert('Validation Error', 'Job title is required', [{ text: 'OK' }]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
     }
     
-    if (!isValid) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-    return isValid;
+    return true;
   };
 
   // Enhanced completion logic with better error handling
@@ -264,7 +264,7 @@ export default function OnboardingScreen() {
                      returnKeyType="next"
                    />
                  </View>
-                 {firstNameError ? <Text style={styles.inlineErrorText}>{firstNameError}</Text> : null}
+
                </View>
 
                <View style={styles.inputWrapper}>
@@ -282,7 +282,7 @@ export default function OnboardingScreen() {
                      returnKeyType="next"
                    />
                  </View>
-                  {lastNameError ? <Text style={styles.inlineErrorText}>{lastNameError}</Text> : null}
+
                </View>
                 
                <View style={styles.inputWrapper}>
@@ -300,7 +300,7 @@ export default function OnboardingScreen() {
                      returnKeyType="next"
                    />
                  </View>
-                  {locationError ? <Text style={styles.inlineErrorText}>{locationError}</Text> : null}
+
                </View>
                
                <View style={styles.inputWrapper}>
@@ -318,7 +318,7 @@ export default function OnboardingScreen() {
                      returnKeyType="done"
                    />
                  </View>
-                  {jobTitleError ? <Text style={styles.inlineErrorText}>{jobTitleError}</Text> : null}
+
                </View>
                
               {/* Error Message Area (if needed for general errors) */}

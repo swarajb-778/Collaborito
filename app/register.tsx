@@ -108,31 +108,31 @@ export default function RegisterScreen() {
   const handleSignUp = async () => {
     // Validate inputs first
     if (!username.trim()) {
-      setError('Username is required');
+      Alert.alert('Validation Error', 'Username is required', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     
     if (!validateUsername(username)) {
-      setError('Username must be 3-20 characters with letters, numbers, and underscores only');
+      Alert.alert('Invalid Username', 'Username must be 3-20 characters with letters, numbers, and underscores only', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     
     if (!email.trim()) {
-      setError('Email is required');
+      Alert.alert('Validation Error', 'Email is required', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     
     if (!password.trim()) {
-      setError('Password is required');
+      Alert.alert('Validation Error', 'Password is required', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     
     if (!termsAccepted) {
-      setError('You must accept the terms and privacy policy to continue.');
+      Alert.alert('Terms Required', 'You must accept the terms and privacy policy to continue.', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -178,7 +178,7 @@ export default function RegisterScreen() {
 
     } catch (error: any) {
       console.error('Sign up error:', error);
-      setError(error.message || 'Sign up failed. Please try again.');
+      Alert.alert('Sign Up Failed', error.message || 'Sign up failed. Please try again.', [{ text: 'OK' }]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);
@@ -331,8 +331,7 @@ export default function RegisterScreen() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Error Message */}
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
 
               {/* Create Account Button */}
               <TouchableOpacity 
