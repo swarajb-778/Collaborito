@@ -150,11 +150,8 @@ export default function RegisterScreen() {
 
       console.log('Starting signup process with:', { email, firstName, lastName });
       
-      const signupSuccess = await signUp(email, password, firstName, lastName);
-      
-      if (!signupSuccess) {
-        throw new Error('Failed to create account');
-      }
+      // signUp now throws errors instead of returning boolean
+      await signUp(email, password, firstName, lastName);
       
       // Wait a moment for user data to be stored
       console.log('Sign up successful, waiting for user data to be set...');

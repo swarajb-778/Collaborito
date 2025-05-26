@@ -236,8 +236,10 @@ export default function SignInScreen() {
       
       // After successful sign in, manually navigate to tabs
       router.replace('/(tabs)');
-    } catch (error) {
-      setError('Invalid email or password');
+    } catch (error: any) {
+      // Display the specific error message from AuthContext
+      const errorMessage = error?.message || 'Invalid email or password';
+      setError(errorMessage);
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);

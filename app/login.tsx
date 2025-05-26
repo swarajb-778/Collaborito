@@ -140,22 +140,46 @@ export default function LoginScreen() {
         // Sign up with validated inputs
         await signUp(email, password, firstName, lastName);
         
-        // Prepare navigation to onboarding
-        console.log('Signup successful, preparing to navigate to onboarding');
-        const navigateToOnboarding = () => {
-          console.log('Executing navigation to onboarding');
-          router.replace('/onboarding');
-        };
+        // Show success message before navigating
+        Alert.alert(
+          'Account Created!', 
+          'Welcome to Collaborito! Let\'s complete your profile.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                // Navigate to onboarding after user acknowledges success
+                setTimeout(() => {
+                  router.replace('/onboarding');
+                }, 100);
+              }
+            }
+          ]
+        );
         
-        // Execute with a slight delay to ensure all state updates are processed
-        setTimeout(navigateToOnboarding, 500);
       } else if (mode === 'reset') {
         Alert.alert('Reset Password', `An email will be sent to ${email} with instructions to reset your password.`);
         console.log('Password reset initiated, switching to signin mode');
         setMode('signin');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
+      
+      // Show specific error message to user
+      const errorMessage = error?.message || 'An unexpected error occurred. Please try again.';
+      
+      if (mode === 'signin') {
+        Alert.alert('Sign In Failed', errorMessage);
+      } else if (mode === 'signup') {
+        Alert.alert('Sign Up Failed', errorMessage);
+        
+        // Clear form errors if they were set
+        setEmailError('');
+        setPasswordError('');
+        
+      } else if (mode === 'reset') {
+        Alert.alert('Reset Password Failed', errorMessage);
+      }
     }
   };
   

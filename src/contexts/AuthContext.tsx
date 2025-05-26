@@ -239,17 +239,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Validate email and password to prevent SQL injection
       if (!email || !validateEmail(email)) {
-        throw new Error('Invalid email format');
+        throw new Error('Please enter a valid email address');
       }
       
       if (!password || password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+        throw new Error('Password must be at least 6 characters long');
       }
       
       // Check for SQL injection patterns
       if (containsSqlInjection(email) || containsSqlInjection(password)) {
         console.error('Potential SQL injection attempt detected');
-        throw new Error('Invalid email or password format');
+        throw new Error('Invalid characters detected in email or password');
       }
       
       // Simulate API call for email/password authentication
@@ -279,8 +279,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       console.error('Sign in error:', error);
-      Alert.alert('Sign In Error', error instanceof Error ? error.message : 'Failed to sign in');
-      return false;
+      // Throw the error so calling components can handle it properly
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -324,29 +324,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Validate inputs
       if (!email || !validateEmail(email)) {
-        throw new Error('Invalid email format');
+        throw new Error('Please enter a valid email address');
       }
       
       if (!password || password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+        throw new Error('Password must be at least 6 characters long');
       }
       
       // firstName and lastName can be empty - they'll be collected during onboarding
       // Just ensure they don't contain malicious content if provided
       if (firstName && containsSqlInjection(firstName)) {
         console.error('Potential SQL injection attempt detected in firstName');
-        throw new Error('Invalid first name format');
+        throw new Error('First name contains invalid characters');
       }
       
       if (lastName && containsSqlInjection(lastName)) {
         console.error('Potential SQL injection attempt detected in lastName');
-        throw new Error('Invalid last name format');
+        throw new Error('Last name contains invalid characters');
       }
       
       // Check for SQL injection in required fields
       if (containsSqlInjection(email) || containsSqlInjection(password)) {
         console.error('Potential SQL injection attempt detected');
-        throw new Error('Invalid input format');
+        throw new Error('Invalid characters detected in email or password');
       }
       
       // Simulate API call for registration
@@ -373,15 +373,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storeSuccess = await storeUserData(userData);
       
       if (!storeSuccess) {
-        throw new Error('Failed to store user data');
+        throw new Error('Failed to save account data. Please try again.');
       }
       
       console.log('Sign up successful, user data stored');
       return true;
     } catch (error) {
       console.error('Sign up error:', error);
-      // Don't show alert here, let the calling component handle it
-      return false;
+      // Now throw the error so calling components can catch it and show proper messages
+      throw error;
     } finally {
       setLoading(false);
     }

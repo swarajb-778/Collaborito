@@ -113,18 +113,40 @@ export default function SignupScreen() {
       // Add a small delay for any state updates to complete
       console.log('Signup completed, preparing to navigate to onboarding');
       
-      // Force direct navigation to onboarding screen
-      const navigateToOnboarding = () => {
-        console.log('Executing navigation to onboarding');
-        router.replace('/onboarding');
-      };
-      
-      // Execute with a slight delay to ensure all state updates are processed
-      setTimeout(navigateToOnboarding, 500);
+      // Show success message
+      Alert.alert(
+        'Account Created!', 
+        'Welcome to Collaborito! Let\'s complete your profile.', 
+        [
+          {
+            text: 'Continue',
+            onPress: () => {
+              // Navigate to onboarding after user acknowledges success
+              setTimeout(() => {
+                router.replace('/onboarding');
+              }, 100);
+            }
+          }
+        ]
+      );
       
     } catch (error: any) {
       console.error('SignUp error:', error);
-      Alert.alert('Sign Up Failed', error?.message || 'An unexpected error occurred. Please try again.');
+      
+      // Show specific error message to user
+      const errorMessage = error?.message || 'An unexpected error occurred. Please try again.';
+      
+      Alert.alert(
+        'Sign Up Failed', 
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+      
+      // Clear form errors if they were set
+      setNameError('');
+      setEmailError('');
+      setPasswordError('');
+      
     } finally {
       setIsSubmitting(false);
     }
