@@ -15,6 +15,7 @@ export type User = {
   email: string;
   firstName: string;
   lastName: string;
+  username?: string;
   profileImage: string | null;
   oauthProvider: string;
   oauthTokens?: {
@@ -92,7 +93,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
+  signUp: (email: string, password: string, username?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signInWithLinkedIn: () => Promise<void>;
   signInWithDemo: () => Promise<boolean>;
@@ -317,10 +318,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sqlPatterns.some(pattern => pattern.test(input));
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signUp = async (email: string, password: string, username?: string) => {
     try {
       setLoading(true);
-      console.log('Signing up with email:', email, 'firstName:', firstName, 'lastName:', lastName);
+      console.log('Signing up with email:', email, 'username:', username);
       
       // Validate inputs
       if (!email || !validateEmail(email)) {
@@ -333,14 +334,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // firstName and lastName can be empty - they'll be collected during onboarding
       // Just ensure they don't contain malicious content if provided
-      if (firstName && containsSqlInjection(firstName)) {
-        console.error('Potential SQL injection attempt detected in firstName');
-        throw new Error('First name contains invalid characters');
-      }
-      
-      if (lastName && containsSqlInjection(lastName)) {
-        console.error('Potential SQL injection attempt detected in lastName');
-        throw new Error('Last name contains invalid characters');
+      if (username && containsSqlInjection(username)) {
+        console.error('Potential SQL injection attempt detected in username');
+        throw new Error('Username contains invalid characters');
       }
       
       // Check for SQL injection in required fields
@@ -361,8 +357,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData: User = {
         id: 'new' + Date.now(),
         email: email,
-        firstName: firstName || '', // Allow empty, will be filled during onboarding
-        lastName: lastName || '',   // Allow empty, will be filled during onboarding
+        firstName: '', // Leave empty, will be filled during onboarding
+        lastName: '',   // Leave empty, will be filled during onboarding
+        username: username || '', // Store username separately
         profileImage: null,
         oauthProvider: 'email'
       };

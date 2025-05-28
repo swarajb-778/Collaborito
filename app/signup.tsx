@@ -101,12 +101,13 @@ export default function SignupScreen() {
     setIsSubmitting(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Don't parse fullName into firstName/lastName - let onboarding collect real names
+      // Store fullName temporarily if needed, but signup only needs email/password
+      console.log('Starting signup process with fullName for temporary display:', fullName);
 
-      // Try signup with sanitized inputs
-      await signUp(email, password, firstName, lastName);
+      // Try signup with sanitized inputs - leave names empty for onboarding
+      await signUp(email, password);
       
       // Add a small delay for any state updates to complete
       console.log('Signup completed, preparing to navigate to onboarding');

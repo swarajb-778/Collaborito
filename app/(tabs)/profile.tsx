@@ -131,8 +131,10 @@ export default function ProfileScreen() {
   const getDisplayName = () => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
+    } else if (user?.username) {
+      return user.username; // Use stored username when names aren't available
     } else if (user?.email) {
-      return user.email.split('@')[0]; // Extract username from email
+      return user.email.split('@')[0]; // Extract username from email as fallback
     }
     return USER.name;
   };

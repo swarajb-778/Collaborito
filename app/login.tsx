@@ -131,12 +131,12 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       } else if (mode === 'signup') {
         console.log('Creating new user account...');
-        const nameParts = fullName.trim().split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
         
-        // Sign up with validated inputs
-        await signUp(email, password, firstName, lastName);
+        // Don't parse fullName into firstName/lastName - let onboarding collect real names
+        console.log('Starting signup process with fullName for temporary display:', fullName);
+        
+        // Sign up with validated inputs - leave names empty for onboarding
+        await signUp(email, password);
         
         // Show success message before navigating
         Alert.alert(

@@ -142,16 +142,10 @@ export default function RegisterScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // Use the username as a temporary display name until onboarding
-      // Split username into first/last name as fallback
-      const nameParts = username.trim().split('_');
-      const firstName = nameParts[0] || username;
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      console.log('Starting signup process with:', { email, firstName, lastName });
+      console.log('Starting signup process with username:', username);
       
       // signUp now throws errors instead of returning boolean
-      await signUp(email, password, firstName, lastName);
+      await signUp(email, password, username);
       
       // Wait a moment for user data to be stored
       console.log('Sign up successful, waiting for user data to be set...');
