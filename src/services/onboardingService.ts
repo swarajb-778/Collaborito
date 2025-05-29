@@ -371,4 +371,148 @@ export const getUserOnboardingStatus = async (userId: string): Promise<{
       error: error instanceof Error ? error.message : 'Failed to fetch onboarding status' 
     };
   }
-}; 
+};
+
+export interface OnboardingProfileData {
+  firstName: string;
+  lastName: string;
+  location?: string;
+  jobTitle?: string;
+  bio?: string;
+}
+
+export interface OnboardingInterestsData {
+  interestIds: string[];
+}
+
+export interface OnboardingGoalsData {
+  goalType: 'find_cofounder' | 'find_collaborators' | 'contribute_skills' | 'explore_ideas';
+  details?: Record<string, any>;
+}
+
+export interface OnboardingProjectData {
+  name: string;
+  description: string;
+  tags?: string[];
+}
+
+export interface OnboardingSkillData {
+  skillId: string;
+  isOffering: boolean;
+  proficiency?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+}
+
+export interface OnboardingSkillsData {
+  skills: OnboardingSkillData[];
+}
+
+export type OnboardingStep = 'profile' | 'interests' | 'goals' | 'project_details' | 'skills' | 'completed';
+
+class OnboardingService {
+  private async callEdgeFunction(functionName: string, data: any) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('No authentication token available');
+    }
+
+    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || `Failed to call ${functionName}`);
+    }
+
+    return await response.json();
+  }
+
+  async saveProfileData(data: OnboardingProfileData) {
+    return this.callEdgeFunction('validate-onboarding', {
+      step: 'profile',
+      data,
+    });
+  }
+
+  async saveInterestsData(data: OnboardingInterestsData) {
+    return this.callEdgeFunction('validate-onboarding', {
+      step: 'interests',
+      data,
+    });
+  }
+
+  async saveGoalsData(data: OnboardingGoalsData) {
+    return this.callEdgeFunction('validate-onboarding', {
+      step: 'goals',
+      data,
+    });
+  }
+
+  async saveProjectData(data: OnboardingProjectData) {
+    return this.callEdgeFunction('validate-onboarding', {
+      step: 'project_details',
+      data,
+    });
+  }
+
+  async saveSkillsData(data: OnboardingSkillsData) {
+    return this.callEdgeFunction('validate-onboarding', {
+      step: 'skills',
+      data,
+    });
+  }
+
+  async updateStep(step: OnboardingStep) {
+    return this.callEdgeFunction('update-onboarding-step', {
+      action: 'update_step',
+      step,
+    });
+  }
+
+  async getNextStep() {
+    return this.callEdgeFunction('update-onboarding-step', {
+      action: 'get_next_step',
+    });
+  }
+
+  async getOnboardingStatus() {
+    return this.callEdgeFunction('update-onboarding-step', {
+      action: 'get_status',
+    });
+  }
+
+  async markOnboardingComplete() {
+    return this.callEdgeFunction('onboarding-status', {
+      action: 'complete',
+    });
+  }
+
+  // Helper methods for getting reference data
+  async getInterests() {
+    const { data, error } = await supabase
+      .from('interests')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async getSkills() {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    return data;
+  }
+}
+
+export const onboardingService = new OnboardingService(); 
