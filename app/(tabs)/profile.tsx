@@ -164,11 +164,11 @@ export default function ProfileScreen() {
             <Card style={[styles.bioCard, { backgroundColor: theme.card }]} variant="elevated">
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Bio</Text>
               <Text style={[styles.bioText, { color: theme.text }]}>
-                {user?.oauthProvider === 'linkedin'
-                  ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
-                  : USER.bio}
-              </Text>
-            </Card>
+              {user?.oauthProvider === 'linkedin'
+                ? `Professional LinkedIn user with expertise in collaboration and networking. Connect with me to explore opportunities in the Collaborito platform.`
+                : USER.bio}
+            </Text>
+          </Card>
           </Animated.View>
         );
       case 'Skills':
@@ -176,24 +176,24 @@ export default function ProfileScreen() {
           <Animated.View entering={FadeInDown.duration(300).springify()}>
             <Card style={[styles.skillsCard, { backgroundColor: theme.card }]} variant="elevated">
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Skills</Text>
-              <View style={styles.skillsContainer}>
-                {user?.oauthProvider === 'linkedin' ? (
-                  // LinkedIn-specific skills
-                  ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
+            <View style={styles.skillsContainer}>
+              {user?.oauthProvider === 'linkedin' ? (
+                // LinkedIn-specific skills
+                ['Networking', 'Collaboration', 'Professional', 'Team Building', 'Communication'].map((skill, index) => (
                     <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
                       <Text style={[styles.skillText, { color: COLORS.primary }]}>{skill}</Text>
-                    </View>
-                  ))
-                ) : (
-                  // Default skills
-                  USER.skills.map((skill, index) => (
+                  </View>
+                ))
+              ) : (
+                // Default skills
+                USER.skills.map((skill, index) => (
                     <View key={index} style={[styles.skillBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
                       <Text style={[styles.skillText, { color: COLORS.primary }]}>{skill}</Text>
-                    </View>
-                  ))
-                )}
-              </View>
-            </Card>
+                  </View>
+                ))
+              )}
+            </View>
+          </Card>
           </Animated.View>
         );
       case 'Account':
@@ -201,10 +201,10 @@ export default function ProfileScreen() {
           <Animated.View entering={FadeInDown.duration(300).springify()}>
             <Card style={[styles.authInfoCard, { backgroundColor: theme.card }]} variant="elevated">
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Information</Text>
-              <View style={styles.authInfoItem}>
+            <View style={styles.authInfoItem}>
                 <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>Signed in with:</Text>
                 <Text style={[styles.authInfoValue, { color: theme.text }]}>{getAuthProviderName()}</Text>
-              </View>
+            </View>
               <View style={styles.authInfoItem}>
                 <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>Email:</Text>
                 <Text style={[styles.authInfoValue, { color: theme.text }]}>{user?.email || USER.email}</Text>
@@ -213,47 +213,47 @@ export default function ProfileScreen() {
                 <View style={styles.authInfoItem}>
                   <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>User ID:</Text>
                   <Text style={[styles.authInfoValue, { color: theme.text }]}>{user.id}</Text>
-                </View>
-              )}
-            </Card>
+              </View>
+            )}
+          </Card>
           </Animated.View>
         );
       case 'Actions':
         return (
           <Animated.View entering={FadeInDown.duration(300).springify()}>
             <Card style={[styles.actionsCard, { backgroundColor: theme.card }]} variant="elevated">
-              <TouchableOpacity
+            <TouchableOpacity
                 style={[styles.actionButton, { borderBottomColor: theme.border }]}
-                onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
-              >
+              onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
+            >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primary }]}>
                   <FontAwesome5 name="user-edit" size={18} color="#FFF" />
                 </View>
                 <Text style={[styles.actionText, { color: theme.text }]}>Edit Profile</Text>
                 <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
+            </TouchableOpacity>
+            
+            <TouchableOpacity
                 style={[styles.actionButton, { borderBottomColor: theme.border }]}
-                onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
-              >
+              onPress={() => Alert.alert('Notifications', 'Notifications coming soon!')}
+            >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.secondary }]}>
                   <FontAwesome5 name="bell" size={18} color="#FFF" />
                 </View>
                 <Text style={[styles.actionText, { color: theme.text }]}>Notifications</Text>
                 <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.actionButton, { borderBottomWidth: 0 }]}
-                onPress={signOut}
-              >
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, { borderBottomWidth: 0 }]}
+              onPress={signOut}
+            >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.accent }]}>
                   <FontAwesome5 name="sign-out-alt" size={18} color="#FFF" />
                 </View>
                 <Text style={[styles.actionText, { color: theme.text }]}>Sign Out</Text>
                 <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
-              </TouchableOpacity>
+            </TouchableOpacity>
             </Card>
           </Animated.View>
         );
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
       
       {/* Enhanced background with better gradients and shapes */}
       <View style={styles.backgroundShapesContainer}>
-        <LinearGradient
+      <LinearGradient
           colors={colorScheme === 'dark' 
             ? ['rgba(67, 97, 238, 0.15)', 'rgba(76, 201, 240, 0.1)', 'rgba(0, 0, 0, 0)'] 
             : ['rgba(255, 220, 100, 0.2)', 'rgba(67, 97, 238, 0.1)', 'rgba(255, 255, 255, 0)']} 
@@ -285,15 +285,15 @@ export default function ProfileScreen() {
         <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.headerBlurContainer}>
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: theme.text }]}>My Profile</Text>
-            <TouchableOpacity 
+        <TouchableOpacity 
               style={[styles.settingsButton, { backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 Alert.alert('Settings', 'Settings page coming soon!');
               }}
-            >
+        >
               <FontAwesome5 name="cog" size={22} color={theme.text} />
-            </TouchableOpacity>
+        </TouchableOpacity>
           </View>
         </BlurView>
         
@@ -308,8 +308,8 @@ export default function ProfileScreen() {
           >
             {/* Enhanced Profile Card */}
             <RNAnimated.View style={[styles.avatarWrapper, { transform: [{ scale: logoScale }] }]}>
-              <TouchableOpacity onPress={handleAvatarPress}>
-                <Animated.View style={[styles.avatarContainer, animatedStyles]}>
+          <TouchableOpacity onPress={handleAvatarPress}>
+            <Animated.View style={[styles.avatarContainer, animatedStyles]}>
                   <LinearGradient
                     colors={[COLORS.primary, COLORS.secondary]}
                     start={{ x: 0, y: 0 }}
@@ -317,78 +317,78 @@ export default function ProfileScreen() {
                     style={styles.avatarBorder}
                   >
                     <View style={styles.avatarInnerBorder}>
-                      <Image 
-                        source={{ uri: getProfileImage() }} 
-                        style={styles.avatar} 
-                      />
+              <Image 
+                source={{ uri: getProfileImage() }} 
+                style={styles.avatar} 
+              />
                     </View>
                   </LinearGradient>
-                </Animated.View>
-              </TouchableOpacity>
-              
+            </Animated.View>
+          </TouchableOpacity>
+          
               <Text style={[styles.name, { color: theme.text }]}>{getDisplayName()}</Text>
               <Text style={[styles.email, { color: theme.textMuted }]}>{user?.email || USER.email}</Text>
               
-              {user?.oauthProvider === 'linkedin' && (
-                <View style={styles.linkedInBadge}>
-                  <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
-                  <Text style={styles.linkedInText}>LinkedIn Member</Text>
-                </View>
-              )}
+          {user?.oauthProvider === 'linkedin' && (
+            <View style={styles.linkedInBadge}>
+              <FontAwesome5 name="linkedin" size={14} color="#0077B5" />
+              <Text style={styles.linkedInText}>LinkedIn Member</Text>
+            </View>
+          )}
             </RNAnimated.View>
-            
+        
             <RNAnimated.View 
               style={[styles.formContainer, { opacity: formOpacity }]}
             >
               {/* Enhanced Stats Container */}
               <Card style={[styles.statsContainer, { backgroundColor: theme.card }]} variant="elevated">
-                <View style={styles.statItem}>
+          <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: theme.text }]}>{USER.projects}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Projects</Text>
-                </View>
+          </View>
                 <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
-                <View style={styles.statItem}>
+          <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: theme.text }]}>{USER.tasks}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Tasks</Text>
-                </View>
+          </View>
                 <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
-                <View style={styles.statItem}>
+          <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: theme.text }]}>{USER.connections}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Connections</Text>
-                </View>
+          </View>
               </Card>
-              
+        
               {/* Enhanced Tab Bar */}
               <View style={[styles.tabBarContainer, { borderBottomColor: theme.border }]}>
-                {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
-                  <TouchableOpacity
-                    key={tab}
-                    style={[
-                      styles.tabItem,
+          {['Bio', 'Skills', 'Account', 'Actions'].map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tabItem,
                       activeTab === tab && styles.activeTabItem
-                    ]}
+              ]}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setActiveTab(tab);
                     }}
-                  >
-                    <Text style={[
-                      styles.tabText,
+            >
+              <Text style={[
+                styles.tabText,
                       { color: activeTab === tab ? COLORS.primary : theme.textMuted },
                       activeTab === tab && styles.activeTabText
-                    ]}>
-                      {tab}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              
-              {/* Tab Content */}
-              <View style={styles.tabContentContainer}>
-                {renderTabContent()}
-              </View>
+              ]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        {/* Tab Content */}
+        <View style={styles.tabContentContainer}>
+          {renderTabContent()}
+        </View>
             </RNAnimated.View>
-          </ScrollView>
+      </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>

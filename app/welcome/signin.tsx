@@ -353,19 +353,19 @@ export default function SignInScreen() {
         <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
           <Ionicons name="chevron-back" size={28} color="#242428" />
         </TouchableOpacity>
-        
+      
         {/* Logo at the top */}
         <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-          <Image 
-            source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Image 
-            source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
-            style={styles.textLogo}
-            resizeMode="contain"
-          />
+        <Image 
+          source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Image 
+          source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+          style={styles.textLogo}
+          resizeMode="contain"
+        />
         </Animated.View>
         
         {/* Gallery below the logo */}
@@ -392,10 +392,10 @@ export default function SignInScreen() {
           <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
             <View style={styles.cardContent}>
               <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>
+        <Text style={styles.subtitle}>
                 Sign in to continue your journey with Collaborito
-              </Text>
-              
+        </Text>
+        
               {showEmailForm ? (
                 <Animated.View style={[styles.emailFormContainer, { opacity: formOpacity }]}>
                   {/* Email input */}
@@ -459,11 +459,11 @@ export default function SignInScreen() {
                   </TouchableOpacity>
                   
                   {/* Back to options */}
-                  <TouchableOpacity 
+          <TouchableOpacity 
                     style={styles.backToOptions}
                     onPress={toggleEmailForm}
-                    disabled={isLoading}
-                  >
+            disabled={isLoading}
+          >
                     <Text style={styles.backToOptionsText}>Back to other options</Text>
                   </TouchableOpacity>
                 </Animated.View>
@@ -490,15 +490,15 @@ export default function SignInScreen() {
                         <Text style={[styles.socialButtonText, styles.whiteButtonText]}>Sign in with LinkedIn</Text>
                       </View>
                     </LinearGradient>
-                  </TouchableOpacity>
-                  
+          </TouchableOpacity>
+          
                   {/* Email Sign In - Secondary */}
-                  <TouchableOpacity 
+          <TouchableOpacity 
                     style={[styles.socialButton, styles.emailButton]}
                     onPress={toggleEmailForm}
-                    disabled={isLoading}
+            disabled={isLoading}
                     activeOpacity={0.7}
-                  >
+          >
                     <LinearGradient
                       colors={['#2D3748', '#1A202C']}
                       start={{ x: 0, y: 0 }}
@@ -512,20 +512,20 @@ export default function SignInScreen() {
                         </Text>
                       </View>
                     </LinearGradient>
-                  </TouchableOpacity>
-                  
-                  {/* Divider */}
-                  <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
-                  
+          </TouchableOpacity>
+          
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          
                   {/* Create Account Button - Call to Action */}
-                  <TouchableOpacity 
+          <TouchableOpacity 
                     style={[styles.socialButton, styles.createAccountButton]}
                     onPress={navigateToRegister}
-                    disabled={isLoading}
+            disabled={isLoading}
                     activeOpacity={0.7}
                   >
                     <View style={styles.buttonContentRow}>
@@ -534,8 +534,8 @@ export default function SignInScreen() {
                         Create Account
                       </Text>
                     </View>
-                  </TouchableOpacity>
-                  
+          </TouchableOpacity>
+          
                   {/* Demo Account Sign In - Text Link */}
                   <TouchableOpacity 
                     onPress={handleDemoSignIn}
@@ -546,16 +546,16 @@ export default function SignInScreen() {
                     <Text style={styles.demoAccountText}>
                       Sign in with <Text style={styles.demoAccountTextHighlight}>Demo Account</Text>
                     </Text>
-                  </TouchableOpacity>
+          </TouchableOpacity>
                   
 
                 </Animated.View>
               )}
-            </View>
+        </View>
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
-    </View>
+      </View>
   );
 }
 
