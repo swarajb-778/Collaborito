@@ -23,51 +23,25 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { onboardingService, OnboardingInterestsData } from '../../src/services/onboardingService';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-// List of available interest topics
-const INTERESTS = [
-  { id: 1, name: 'Art' },
-  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
-  { id: 3, name: 'Biotechnology' },
-  { id: 4, name: 'Business' },
-  { id: 5, name: 'Books' },
-  { id: 6, name: 'Climate Change' },
-  { id: 7, name: 'Civic Engagement' },
-  { id: 8, name: 'Dancing' },
-  { id: 9, name: 'Data Science' },
-  { id: 10, name: 'Education' },
-  { id: 11, name: 'Entrepreneurship' },
-  { id: 12, name: 'Fashion' },
-  { id: 13, name: 'Fitness' },
-  { id: 14, name: 'Food' },
-  { id: 15, name: 'Gaming' },
-  { id: 16, name: 'Health & Wellness' },
-  { id: 17, name: 'Investing & Finance' },
-  { id: 18, name: 'Marketing' },
-  { id: 19, name: 'Movies' },
-  { id: 20, name: 'Music' },
-  { id: 21, name: 'Parenting' },
-  { id: 22, name: 'Pets' },
-  { id: 23, name: 'Product Design' },
-  { id: 24, name: 'Reading' },
-  { id: 25, name: 'Real Estate' },
-  { id: 26, name: 'Robotics' },
-  { id: 27, name: 'Science & Tech' },
-  { id: 28, name: 'Social Impact' },
-  { id: 29, name: 'Sports' },
-  { id: 30, name: 'Travel' },
-  { id: 31, name: 'Writing' },
-  { id: 32, name: 'Other' },
-];
+// Interface for interest data from backend
+interface Interest {
+  id: string;
+  name: string;
+  category?: string;
+}
 
 export default function OnboardingInterestsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [selectedInterests, setSelectedInterests] = useState<number[]>([]);
+  const [interests, setInterests] = useState<Interest[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
   // Animation values
@@ -77,6 +51,9 @@ export default function OnboardingInterestsScreen() {
   useEffect(() => {
     // Log only once when component mounts
     console.log('Rendering OnboardingInterestsScreen');
+    
+    // Load interests from backend
+    loadInterests();
     
     // Animate logo and form on screen load
     Animated.parallel([
@@ -94,7 +71,21 @@ export default function OnboardingInterestsScreen() {
     ]).start();
   }, []);
 
-  const toggleInterest = (id: number) => {
+  const loadInterests = async () => {
+    try {
+      setIsLoading(true);
+      const interestsData = await onboardingService.getInterests();
+      setInterests(interestsData);
+      console.log('Loaded interests from backend:', interestsData.length);
+    } catch (error) {
+      console.error('Error loading interests:', error);
+      Alert.alert('Error', 'Failed to load interests. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleInterest = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedInterests(prevSelected => {
@@ -117,18 +108,33 @@ export default function OnboardingInterestsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // In a real app, this would save the selected interests to the user's profile
-      console.log('Selected interests:', selectedInterests.map(id => INTERESTS.find(item => item.id === id)?.name));
+      console.log('Saving selected interests to backend...');
+      console.log('Selected interest IDs:', selectedInterests);
+      console.log('Selected interest names:', selectedInterests.map(id => interests.find(item => item.id === id)?.name));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare data for backend
+      const interestsData: OnboardingInterestsData = {
+        interestIds: selectedInterests
+      };
       
-      // Navigate to the goals screen instead of tabs
+      // Save interests using backend service
+      await onboardingService.saveInterestsData(interestsData);
+      console.log('Interests saved successfully to backend');
+      
+      // Update onboarding step
+      await onboardingService.updateStep('goals');
+      console.log('Onboarding step updated to goals');
+      
+      // Navigate to the goals screen
       router.replace('/onboarding/goals' as any);
       
     } catch (error) {
       console.error('Error saving interests:', error);
-      Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
+      Alert.alert(
+        'Error', 
+        'There was a problem saving your interests. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -140,7 +146,7 @@ export default function OnboardingInterestsScreen() {
   };
 
   // Render interest item
-  const renderInterestItem = ({ item }: { item: { id: number; name: string } }) => (
+  const renderInterestItem = ({ item }: { item: Interest }) => (
     <TouchableOpacity
       style={[
         styles.interestItem,
@@ -185,73 +191,81 @@ export default function OnboardingInterestsScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoiding}
         >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Logo container */}
-            <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-              <Image 
-                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Image 
-                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
-                style={styles.textLogo}
-                resizeMode="contain"
-              />
-            </Animated.View>
-
-            {/* Content container */}
-            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-              <Text style={styles.title}>Your Interests</Text>
-              <Text style={styles.subtitle}>
-                I'm interested in the following topics. Select a few to make it easier to find people and projects you might find interesting.
-              </Text>
-              
-              {/* Interests grid */}
-              <View style={styles.interestsContainer}>
-                <FlatList
-                  data={INTERESTS}
-                  renderItem={renderInterestItem}
-                  keyExtractor={(item) => item.id.toString()}
-                  numColumns={2}
-                  scrollEnabled={false} // The parent ScrollView handles scrolling
-                  contentContainerStyle={styles.interestsList}
+          {isLoading ? (
+            // Show loading state while interests are being fetched
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#000000" />
+              <Text style={styles.loadingText}>Loading interests...</Text>
+            </View>
+          ) : (
+            <ScrollView 
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Logo container */}
+              <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+                <Image 
+                  source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+                  style={styles.logo}
+                  resizeMode="contain"
                 />
-              </View>
+                <Image 
+                  source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+                  style={styles.textLogo}
+                  resizeMode="contain"
+                />
+              </Animated.View>
 
-              {/* Continue Button */}
-              <TouchableOpacity 
-                style={[styles.button, styles.primaryButton]}
-                onPress={handleContinue}
-                disabled={isSubmitting}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#000000', '#333333']} 
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color="#FFF" size="small" /> 
-                  ) : (
-                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Skip Link */}
-              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
-                <Text style={styles.skipLinkText}>
-                  I'll select my interests later
+              {/* Content container */}
+              <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
+                <Text style={styles.title}>Your Interests</Text>
+                <Text style={styles.subtitle}>
+                  I'm interested in the following topics. Select a few to make it easier to find people and projects you might find interesting.
                 </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </ScrollView>
+                
+                {/* Interests grid */}
+                <View style={styles.interestsContainer}>
+                  <FlatList
+                    data={interests}
+                    renderItem={renderInterestItem}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    scrollEnabled={false} // The parent ScrollView handles scrolling
+                    contentContainerStyle={styles.interestsList}
+                  />
+                </View>
+
+                {/* Continue Button */}
+                <TouchableOpacity 
+                  style={[styles.button, styles.primaryButton]}
+                  onPress={handleContinue}
+                  disabled={isSubmitting || selectedInterests.length === 0}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={['#000000', '#333333']} 
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.buttonGradient}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color="#FFF" size="small" /> 
+                    ) : (
+                      <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Skip Link */}
+                <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
+                  <Text style={styles.skipLinkText}>
+                    I'll select my interests later
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </ScrollView>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -449,5 +463,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+    marginTop: 10,
   },
 }); 
