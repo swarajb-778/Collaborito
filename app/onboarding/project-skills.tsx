@@ -28,40 +28,22 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { onboardingService, OnboardingSkillsData } from '../../src/services/onboardingService';
 
 const { width, height } = Dimensions.get('window');
 
-// List of project skills
-const PROJECT_SKILLS = [
-  { id: 1, name: 'Accounting' },
-  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
-  { id: 3, name: 'Biotechnology' },
-  { id: 4, name: 'Business' },
-  { id: 5, name: 'Content Creation (e.g. video, copywriting)' },
-  { id: 6, name: 'Counseling & Therapy' },
-  { id: 7, name: 'Data Analysis' },
-  { id: 8, name: 'DevOps' },
-  { id: 9, name: 'Finance' },
-  { id: 10, name: 'Fundraising' },
-  { id: 11, name: 'Graphic Design' },
-  { id: 12, name: 'Legal' },
-  { id: 13, name: 'Manufacturing' },
-  { id: 14, name: 'Marketing' },
-  { id: 15, name: 'Policy' },
-  { id: 16, name: 'Product Management' },
-  { id: 17, name: 'Project Management' },
-  { id: 18, name: 'Public Relations' },
-  { id: 19, name: 'Research' },
-  { id: 20, name: 'Sales' },
-  { id: 21, name: 'Software Development (Backend)' },
-  { id: 22, name: 'Software Development (Frontend)' },
-  { id: 23, name: 'UI/UX Design' },
-  { id: 24, name: 'Other' },
-];
+// Interface for skill data from backend
+interface Skill {
+  id: string;
+  name: string;
+  category?: string;
+}
 
 export default function ProjectSkillsScreen() {
-  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -107,6 +89,9 @@ export default function ProjectSkillsScreen() {
   useEffect(() => {
     console.log('Rendering ProjectSkillsScreen with goalId:', goalId);
     
+    // Load skills from backend
+    loadSkills();
+    
     // Animate logo and form on screen load
     RNAnimated.parallel([
       RNAnimated.timing(logoScale, {
@@ -123,7 +108,21 @@ export default function ProjectSkillsScreen() {
     ]).start();
   }, []);
 
-  const toggleSkill = (id: number) => {
+  const loadSkills = async () => {
+    try {
+      setIsLoading(true);
+      const skillsData = await onboardingService.getSkills();
+      setSkills(skillsData);
+      console.log('Loaded skills from backend:', skillsData.length);
+    } catch (error) {
+      console.error('Error loading skills:', error);
+      Alert.alert('Error', 'Failed to load skills. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleSkill = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedSkills(prevSelected => {
@@ -146,29 +145,63 @@ export default function ProjectSkillsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Selected skills:', selectedSkills.map(id => PROJECT_SKILLS.find(item => item.id === id)?.name));
+      console.log('Saving selected skills to backend...');
+      console.log('Selected skill IDs:', selectedSkills);
+      console.log('Selected skill names:', selectedSkills.map(id => skills.find(item => item.id === id)?.name));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Determine if user is offering or looking for these skills based on goal
+      const isOffering = goalId === 3; // Contribute skills
+      
+      // Prepare data for backend
+      const skillsData: OnboardingSkillsData = {
+        skills: selectedSkills.map(skillId => ({
+          skillId,
+          isOffering,
+          proficiency: isOffering ? 'intermediate' : undefined // Default proficiency when offering
+        }))
+      };
+      
+      // Save skills using backend service
+      await onboardingService.saveSkillsData(skillsData);
+      console.log('Skills saved successfully to backend');
+      
+      // Mark onboarding as complete
+      await onboardingService.markOnboardingComplete();
+      console.log('Onboarding marked as complete');
       
       // Navigate to main app
       router.replace('/(tabs)' as any);
       
     } catch (error) {
-      console.error('Error saving project skills:', error);
-      Alert.alert('Error', 'There was a problem saving your project skills. Please try again.');
+      console.error('Error saving skills:', error);
+      Alert.alert(
+        'Error', 
+        'There was a problem saving your skills. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(tabs)' as any);
+  const handleSkip = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Mark onboarding as complete even when skipping
+      await onboardingService.markOnboardingComplete();
+      console.log('Onboarding marked as complete (skipped skills)');
+      
+      router.replace('/(tabs)' as any);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      // Fallback navigation even if backend call fails
+      router.replace('/(tabs)' as any);
+    }
   };
 
   // Render skill item
-  const renderSkillItem = ({ item }: { item: { id: number; name: string } }) => (
+  const renderSkillItem = ({ item }: { item: Skill }) => (
     <TouchableOpacity
       style={[
         styles.skillItem,
@@ -210,72 +243,80 @@ export default function ProjectSkillsScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Logo container */}
-          <RNAnimated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-            <Image 
-              source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Image 
-              source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
-              style={styles.textLogo}
-              resizeMode="contain"
-            />
-          </RNAnimated.View>
-
-          {/* Content container */}
-          <RNAnimated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-            <Text style={styles.title}>{getTitleText()}</Text>
-            <Text style={styles.subtitle}>
-              {getSubtitleText()}
-            </Text>
-            
-            {/* Skills grid */}
-            <View style={styles.skillsContainer}>
-              <FlatList
-                data={PROJECT_SKILLS}
-                renderItem={renderSkillItem}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={2}
-                scrollEnabled={false} // The parent ScrollView handles scrolling
-                contentContainerStyle={styles.skillsList}
+        {isLoading ? (
+          // Show loading state while skills are being fetched
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#000000" />
+            <Text style={styles.loadingText}>Loading skills...</Text>
+          </View>
+        ) : (
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Logo container */}
+            <RNAnimated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+              <Image 
+                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+                style={styles.logo}
+                resizeMode="contain"
               />
-            </View>
+              <Image 
+                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+                style={styles.textLogo}
+                resizeMode="contain"
+              />
+            </RNAnimated.View>
 
-            {/* Continue Button */}
-            <TouchableOpacity 
-              style={[styles.button, styles.primaryButton]}
-              onPress={handleContinue}
-              disabled={isSubmitting}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#000000', '#333333']} 
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFF" size="small" /> 
-                ) : (
-                  <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Skip Link */}
-            <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
-              <Text style={styles.skipLinkText}>
-                I'll select skills later
+            {/* Content container */}
+            <RNAnimated.View style={[styles.formContainer, { opacity: formOpacity }]}>
+              <Text style={styles.title}>{getTitleText()}</Text>
+              <Text style={styles.subtitle}>
+                {getSubtitleText()}
               </Text>
-            </TouchableOpacity>
-          </RNAnimated.View>
-        </ScrollView>
+              
+              {/* Skills grid */}
+              <View style={styles.skillsContainer}>
+                <FlatList
+                  data={skills}
+                  renderItem={renderSkillItem}
+                  keyExtractor={(item) => item.id}
+                  numColumns={2}
+                  scrollEnabled={false} // The parent ScrollView handles scrolling
+                  contentContainerStyle={styles.skillsList}
+                />
+              </View>
+
+              {/* Continue Button */}
+              <TouchableOpacity 
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleContinue}
+                disabled={isSubmitting || selectedSkills.length === 0}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']} 
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" size="small" /> 
+                  ) : (
+                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Complete Setup</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Skip Link */}
+              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
+                <Text style={styles.skipLinkText}>
+                  I'll select skills later
+                </Text>
+              </TouchableOpacity>
+            </RNAnimated.View>
+          </ScrollView>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -469,5 +510,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#575757',
+    marginTop: 10,
   },
 }); 
