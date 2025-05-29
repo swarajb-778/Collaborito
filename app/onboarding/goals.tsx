@@ -26,14 +26,16 @@ import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { onboardingService, OnboardingGoalsData } from '../../src/services/onboardingService';
 
 const { width, height } = Dimensions.get('window');
 
-// Define the goals options (keeping icons)
+// Define the goals options - map them to backend format
 const GOALS = [
   {
     id: 1,
     name: 'Find a co-founder',
+    backendType: 'find_cofounder' as const,
     icon: 'people-outline',
     iconType: 'Ionicons',
     description: 'Seek a partner to build your vision together.'
@@ -41,6 +43,7 @@ const GOALS = [
   {
     id: 2,
     name: 'Find collaborators',
+    backendType: 'find_collaborators' as const,
     icon: 'account-group-outline',
     iconType: 'MaterialCommunityIcons',
     description: 'Get help with your project or idea.'
@@ -48,6 +51,7 @@ const GOALS = [
   {
     id: 3,
     name: 'Contribute skills',
+    backendType: 'contribute_skills' as const,
     icon: 'hammer-outline',
     iconType: 'Ionicons',
     description: 'Offer your expertise to existing projects.'
@@ -55,6 +59,7 @@ const GOALS = [
   {
     id: 4,
     name: 'Explore ideas',
+    backendType: 'explore_ideas' as const,
     icon: 'lightbulb-outline',
     iconType: 'MaterialCommunityIcons',
     description: 'Discover new ventures and opportunities.'
@@ -114,27 +119,57 @@ export default function OnboardingGoalsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      const selectedGoalName = GOALS.find(item => item.id === selectedGoal)?.name;
-      console.log('Selected goal:', selectedGoalName);
+      const selectedGoalData = GOALS.find(item => item.id === selectedGoal);
+      if (!selectedGoalData) {
+        throw new Error('Invalid goal selection');
+      }
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      console.log('Saving selected goal to backend...');
+      console.log('Selected goal:', selectedGoalData.name, selectedGoalData.backendType);
       
-      // Redirect based on selected goal
-      if (selectedGoal === 1 || selectedGoal === 2) { // Find a co-founder or Find collaborators
+      // Prepare data for backend
+      const goalsData: OnboardingGoalsData = {
+        goalType: selectedGoalData.backendType,
+        details: {
+          goalName: selectedGoalData.name,
+          goalDescription: selectedGoalData.description
+        }
+      };
+      
+      // Save goal using backend service
+      await onboardingService.saveGoalsData(goalsData);
+      console.log('Goal saved successfully to backend');
+      
+      // Get next step from backend based on selected goal
+      const nextStepResponse = await onboardingService.getNextStep();
+      const nextStep = nextStepResponse.nextStep;
+      console.log('Next onboarding step:', nextStep);
+      
+      // Update onboarding step
+      await onboardingService.updateStep(nextStep);
+      console.log('Onboarding step updated to:', nextStep);
+      
+      // Navigate based on next step
+      if (nextStep === 'project_details') {
         router.replace('/onboarding/project-detail' as any);
-      } else if (selectedGoal === 3 || selectedGoal === 4) { // Contribute skills or Explore ideas
-        router.replace({
-          pathname: '/onboarding/project-skills',
-          params: { goalId: selectedGoal }
-        } as any);
+      } else if (nextStep === 'skills') {
+        router.replace('/onboarding/project-skills' as any);
+      } else if (nextStep === 'completed') {
+        // Mark onboarding as complete and go to main app
+        await onboardingService.markOnboardingComplete();
+        router.replace('/(tabs)');
       } else {
-        // Fallback - go directly to the main app
+        // Fallback
         router.replace('/(tabs)');
       }
       
     } catch (error) {
       console.error('Error saving goal:', error);
-      Alert.alert('Error', 'There was a problem saving your goal. Please try again.');
+      Alert.alert(
+        'Error', 
+        'There was a problem saving your goal. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsSubmitting(false);
     }
