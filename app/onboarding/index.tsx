@@ -23,6 +23,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
+import { onboardingService, OnboardingProfileData } from '../../src/services/onboardingService';
 
 // Get screen dimensions like in register.tsx
 const { width, height } = Dimensions.get('window');
@@ -134,7 +135,7 @@ export default function OnboardingScreen() {
     return true;
   };
 
-  // Enhanced completion logic with better error handling
+  // Enhanced completion logic with backend integration
   const handleComplete = async () => {
     // Check if user data is available before proceeding
     if (!userDataReady || !user) {
@@ -148,33 +149,44 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Attempting to update user profile...');
+      console.log('Saving profile data to backend...');
       console.log('Current user ID:', user.id);
-      console.log('Update data:', { firstName, lastName, location, jobTitle });
+      console.log('Profile data:', { firstName, lastName, location, jobTitle });
       
-      // Update user profile with entered data
-      const userProfileUpdate = {
-        firstName,
-        lastName,
-        // You could add these to the User type and save them too
-        // location,
-        // jobTitle,
+      // Prepare data for backend
+      const profileData: OnboardingProfileData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        location: location.trim(),
+        jobTitle: jobTitle.trim(),
       };
       
-      // Save user profile data with additional validation
-      const updateSuccess = await updateUser(userProfileUpdate);
+      // Save profile data using backend service
+      await onboardingService.saveProfileData(profileData);
+      console.log('Profile data saved successfully to backend');
       
-      if (!updateSuccess) {
-        throw new Error('Failed to update user profile');
-      }
+      // Update onboarding step
+      await onboardingService.updateStep('interests');
+      console.log('Onboarding step updated to interests');
       
-      console.log('Profile updated successfully with:', { firstName, lastName, location, jobTitle });
+      // Also update user profile in auth context for immediate UI updates
+      const userProfileUpdate = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      };
+      
+      await updateUser(userProfileUpdate);
+      console.log('Local user profile updated');
       
       // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'There was a problem updating your profile. Please try again.');
+      console.error('Error saving profile data:', error);
+      Alert.alert(
+        'Error', 
+        'There was a problem saving your profile. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setSavingProfile(false);
     }
