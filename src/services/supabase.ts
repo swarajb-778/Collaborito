@@ -352,4 +352,62 @@ export interface Task {
   description?: string;
   status: 'todo' | 'in_progress' | 'done';
   assigned_to?: string;
-} 
+}
+
+/**
+ * Check if required tables exist
+ */
+export const checkRequiredTables = async () => {
+  try {
+    console.log('Checking for required onboarding tables...');
+    
+    // Check if interests table exists
+    const { data: interestsData, error: interestsError } = await supabase
+      .from('interests')
+      .select('count')
+      .limit(1);
+    
+    if (interestsError && interestsError.code === '42P01') {
+      console.error('❌ Interests table missing');
+      return false;
+    } else if (interestsError) {
+      console.error('Error checking interests table:', interestsError);
+      return false;
+    }
+    
+    // Check if skills table exists
+    const { data: skillsData, error: skillsError } = await supabase
+      .from('skills')
+      .select('count')
+      .limit(1);
+    
+    if (skillsError && skillsError.code === '42P01') {
+      console.error('❌ Skills table missing');
+      return false;
+    } else if (skillsError) {
+      console.error('Error checking skills table:', skillsError);
+      return false;
+    }
+    
+    // Check if user_interests table exists
+    const { data: userInterestsData, error: userInterestsError } = await supabase
+      .from('user_interests')
+      .select('count')
+      .limit(1);
+    
+    if (userInterestsError && userInterestsError.code === '42P01') {
+      console.error('❌ User interests table missing');
+      return false;
+    } else if (userInterestsError) {
+      console.error('Error checking user_interests table:', userInterestsError);
+      return false;
+    }
+    
+    console.log('✅ All required tables exist');
+    return true;
+    
+  } catch (error) {
+    console.error('Error checking required tables:', error);
+    return false;
+  }
+}; 
