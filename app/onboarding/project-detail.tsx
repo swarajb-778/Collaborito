@@ -26,6 +26,7 @@ import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { onboardingService, OnboardingProjectData } from '../../src/services/onboardingService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -86,31 +87,79 @@ export default function OnboardingProjectDetailScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Project details:', { projectName, projectDescription });
+      console.log('Saving project details to backend...');
+      console.log('Project details:', { projectName: projectName.trim(), projectDescription: projectDescription.trim() });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare data for backend
+      const projectData: OnboardingProjectData = {
+        name: projectName.trim(),
+        description: projectDescription.trim(),
+        tags: [] // Could add tags in future
+      };
       
-      // Navigate to project skills screen with goal ID
-      router.replace({
-        pathname: '/onboarding/project-skills',
-        params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
-      } as any);
+      // Save project data using backend service
+      await onboardingService.saveProjectData(projectData);
+      console.log('Project details saved successfully to backend');
+      
+      // Get next step from backend
+      const nextStepResponse = await onboardingService.getNextStep();
+      const nextStep = nextStepResponse.nextStep;
+      console.log('Next onboarding step:', nextStep);
+      
+      // Update onboarding step
+      await onboardingService.updateStep(nextStep);
+      console.log('Onboarding step updated to:', nextStep);
+      
+      // Navigate based on next step
+      if (nextStep === 'skills') {
+        router.replace('/onboarding/project-skills' as any);
+      } else if (nextStep === 'completed') {
+        // Mark onboarding as complete and go to main app
+        await onboardingService.markOnboardingComplete();
+        router.replace('/(tabs)');
+      } else {
+        // Fallback
+        router.replace('/(tabs)');
+      }
       
     } catch (error) {
       console.error('Error saving project details:', error);
-      Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+      Alert.alert(
+        'Error', 
+        'There was a problem saving your project details. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace({
-      pathname: '/onboarding/project-skills',
-      params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
-    } as any);
+  const handleSkip = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Get next step from backend
+      const nextStepResponse = await onboardingService.getNextStep();
+      const nextStep = nextStepResponse.nextStep;
+      console.log('Skipping project details, next step:', nextStep);
+      
+      // Update onboarding step
+      await onboardingService.updateStep(nextStep);
+      
+      // Navigate based on next step
+      if (nextStep === 'skills') {
+        router.replace('/onboarding/project-skills' as any);
+      } else if (nextStep === 'completed') {
+        await onboardingService.markOnboardingComplete();
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      console.error('Error skipping project details:', error);
+      // Fallback navigation
+      router.replace('/onboarding/project-skills' as any);
+    }
   };
 
   return (
