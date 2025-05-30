@@ -1,0 +1,30 @@
+diff --git a/node_modules/expo-auth-session/build/index.js b/node_modules/expo-auth-session/build/index.js
+index 7205e86..5c05641 100644
+--- a/node_modules/expo-auth-session/build/index.js
++++ b/node_modules/expo-auth-session/build/index.js
+@@ -1,13 +1,13 @@
+-export * from './AuthRequest';
+-export * from './AuthRequestHooks';
+-export * from './AuthSession';
+-export * from './Errors';
+-export * from './Fetch';
+-export * from './Discovery';
+-export * from './TokenRequest';
++export * from './AuthRequest.js';
++export * from './AuthRequestHooks.js';
++export * from './AuthSession.js';
++export * from './Errors.js';
++export * from './Fetch.js';
++export * from './Discovery.js';
++export * from './TokenRequest.js';
+ // Types
+-export * from './AuthRequest.types';
+-export * from './AuthSession.types';
+-export * from './TokenRequest.types';
+-export * from './providers/Provider.types';
++export * from './AuthRequest.types.js';
++export * from './AuthSession.types.js';
++export * from './TokenRequest.types.js';
++export * from './providers/Provider.types.js';
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file

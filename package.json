@@ -11,7 +11,8 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "check-supabase-fix": "node check-supabase-fix.js",
-    "setup": "node project-setup.js"
+    "setup": "node project-setup.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
@@ -64,6 +65,7 @@
     "eslint-plugin-react": "^7.37.5",
     "jest": "^29.2.1",
     "jest-expo": "~53.0.4",
+    "patch-package": "^8.0.0",
     "react-test-renderer": "19.0.0",
     "readline-sync": "^1.4.10",
     "ts-node": "^10.9.2",
