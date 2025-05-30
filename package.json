@@ -24,7 +24,7 @@
     "base64-arraybuffer": "^1.0.2",
     "dotenv": "^16.4.7",
     "expo": "53.0.9",
-    "expo-auth-session": "~6.1.5",
+    "expo-auth-session": "^6.1.5",
     "expo-blur": "~14.1.4",
     "expo-constants": "~17.1.5",
     "expo-file-system": "~18.1.8",
@@ -76,5 +76,8 @@
         "listUnknownPackages": false
       }
     }
+  },
+  "engines": {
+    "node": ">=18.0.0 <22.0.0"
   }
 }

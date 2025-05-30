@@ -38,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       'expo-router',
       'expo-secure-store',
       'expo-web-browser',
-      'expo-auth-session',
+      // 'expo-auth-session',
       'expo-linking',
       'expo-status-bar',
       'expo-linear-gradient',
