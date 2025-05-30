@@ -74,9 +74,14 @@ export default function OnboardingInterestsScreen() {
   const loadInterests = async () => {
     try {
       setIsLoading(true);
-      const interestsData = await onboardingService.getInterests();
-      setInterests(interestsData);
-      console.log('Loaded interests from backend:', interestsData.length);
+      const response = await onboardingService.getInterests();
+      if (response.data) {
+        setInterests(response.data);
+        console.log('Loaded interests from backend:', response.data.length);
+      } else if (response.error) {
+        console.error('Error from service:', response.error);
+        Alert.alert('Error', response.error);
+      }
     } catch (error) {
       console.error('Error loading interests:', error);
       Alert.alert('Error', 'Failed to load interests. Please check your connection and try again.');

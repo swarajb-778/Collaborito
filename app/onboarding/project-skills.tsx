@@ -111,9 +111,14 @@ export default function ProjectSkillsScreen() {
   const loadSkills = async () => {
     try {
       setIsLoading(true);
-      const skillsData = await onboardingService.getSkills();
-      setSkills(skillsData);
-      console.log('Loaded skills from backend:', skillsData.length);
+      const response = await onboardingService.getSkills();
+      if (response.data) {
+        setSkills(response.data);
+        console.log('Loaded skills from backend:', response.data.length);
+      } else if (response.error) {
+        console.error('Error from service:', response.error);
+        Alert.alert('Error', response.error);
+      }
     } catch (error) {
       console.error('Error loading skills:', error);
       Alert.alert('Error', 'Failed to load skills. Please check your connection and try again.');

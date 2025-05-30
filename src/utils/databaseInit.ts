@@ -1,8 +1,8 @@
 import { supabase } from '../services/supabase';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { performanceService } from '../services/performanceService';
-import { errorRecoveryService } from '../services/errorRecoveryService';
+// import { performanceService } from '../services/performanceService';
+// import { errorRecoveryService } from '../services/errorRecoveryService';
 
 interface FallbackData {
   interests: Array<{ id: string; name: string; category: string }>;
@@ -120,7 +120,7 @@ class EnhancedDatabaseInit {
         console.log('✅ Database initialization completed successfully');
         
         // Preload data for better performance
-        performanceService.smartPrefetch('system', 'onboarding');
+        // performanceService.smartPrefetch('system', 'onboarding');
         
         return true;
       } else {
@@ -130,12 +130,12 @@ class EnhancedDatabaseInit {
       }
     } catch (error) {
       console.error('❌ Database initialization error:', error);
-      await errorRecoveryService.handleError(
-        error as Error,
-        'database_initialization',
-        undefined,
-        false
-      );
+      // await errorRecoveryService.handleError(
+      //   error as Error,
+      //   'database_initialization',
+      //   undefined,
+      //   false
+      // );
       
       await this.enableFallbackMode();
       return false;
