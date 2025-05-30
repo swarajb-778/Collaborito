@@ -371,7 +371,7 @@ export const getUserOnboardingStatus = async (userId: string): Promise<{
       error: error instanceof Error ? error.message : 'Failed to fetch onboarding status' 
     };
   }
-};
+}; 
 
 export interface OnboardingProfileData {
   firstName: string;

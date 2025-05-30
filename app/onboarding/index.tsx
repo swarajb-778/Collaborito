@@ -103,7 +103,7 @@ export default function OnboardingScreen() {
   const [lastNameError, setLastNameError] = useState('');
   const [locationError, setLocationError] = useState('');
   const [jobTitleError, setJobTitleError] = useState('');
-
+  
   // Keep validation logic with popup alerts
   const validateForm = () => {
     setFirstNameError('');
@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
     } catch (error) {
       console.error('Error saving profile data:', error);
       Alert.alert(
-        'Error', 
+        'Error',
         'There was a problem saving your profile. Please check your connection and try again.',
         [{ text: 'OK' }]
       );
