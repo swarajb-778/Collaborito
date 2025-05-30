@@ -1,6 +1,10 @@
 import { supabase, handleError } from './supabase';
 import { Profile, Interest, UserInterest, Skill, UserSkill, UserGoal, ProjectSkill } from '../types/supabase';
 import Constants from 'expo-constants';
+import { syncService } from './syncService';
+import { errorRecoveryService } from './errorRecoveryService';
+import { performanceService } from './performanceService';
+import { databaseInit } from '../utils/databaseInit';
 
 /**
  * Service for handling onboarding-related data operations
@@ -410,6 +414,11 @@ export interface OnboardingSkillsData {
 export type OnboardingStep = 'profile' | 'interests' | 'goals' | 'project_details' | 'skills' | 'completed';
 
 class OnboardingService {
+  constructor() {
+    // Initialize performance monitoring
+    performanceService.startPerformanceMonitoring();
+  }
+
   private async callEdgeFunction(functionName: string, data: any) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -436,7 +445,18 @@ class OnboardingService {
       return await response.json();
     } catch (error) {
       console.error(`Edge function ${functionName} failed:`, error);
-      throw error;
+      
+      // Use error recovery service
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        `edge_function_${functionName}`,
+        undefined,
+        false
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
     }
   }
 
@@ -648,62 +668,189 @@ class OnboardingService {
   }
 
   async saveProfileData(data: OnboardingProfileData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
     try {
-      return await this.callEdgeFunction('validate-onboarding', {
-        step: 'profile',
-        data,
-      });
+      // Use performance service for caching and metrics
+      return await performanceService.getOrFetch(
+        `save_profile_${user.id}`,
+        async () => {
+          try {
+            return await this.callEdgeFunction('validate-onboarding', {
+              step: 'profile',
+              data,
+            });
+          } catch (error) {
+            console.log('Edge function failed, using direct database approach');
+            return await this.saveProfileDataDirect(data);
+          }
+        },
+        30 * 1000 // Cache for 30 seconds
+      );
     } catch (error) {
-      console.log('Edge function failed, using direct database approach');
-      return await this.saveProfileDataDirect(data);
+      // Queue for sync and use error recovery
+      await syncService.queueOperation('profile', data, user.id);
+      
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        'save_profile_data',
+        user.id
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
+      
+      return { success: true, fromCache: true };
     }
   }
 
   async saveInterestsData(data: OnboardingInterestsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
     try {
-      return await this.callEdgeFunction('validate-onboarding', {
-        step: 'interests',
-        data,
-      });
+      return await performanceService.getOrFetch(
+        `save_interests_${user.id}`,
+        async () => {
+          try {
+            return await this.callEdgeFunction('validate-onboarding', {
+              step: 'interests',
+              data,
+            });
+          } catch (error) {
+            console.log('Edge function failed, using direct database approach');
+            return await this.saveInterestsDataDirect(data);
+          }
+        },
+        30 * 1000
+      );
     } catch (error) {
-      console.log('Edge function failed, using direct database approach');
-      return await this.saveInterestsDataDirect(data);
+      await syncService.queueOperation('interests', data, user.id);
+      
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        'save_interests_data',
+        user.id
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
+      
+      return { success: true, fromCache: true };
     }
   }
 
   async saveGoalsData(data: OnboardingGoalsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
     try {
-      return await this.callEdgeFunction('validate-onboarding', {
-        step: 'goals',
-        data,
-      });
+      return await performanceService.getOrFetch(
+        `save_goals_${user.id}`,
+        async () => {
+          try {
+            return await this.callEdgeFunction('validate-onboarding', {
+              step: 'goals',
+              data,
+            });
+          } catch (error) {
+            console.log('Edge function failed, using direct database approach');
+            return await this.saveGoalsDataDirect(data);
+          }
+        },
+        30 * 1000
+      );
     } catch (error) {
-      console.log('Edge function failed, using direct database approach');
-      return await this.saveGoalsDataDirect(data);
+      await syncService.queueOperation('goals', data, user.id);
+      
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        'save_goals_data',
+        user.id
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
+      
+      return { success: true, fromCache: true };
     }
   }
 
   async saveProjectData(data: OnboardingProjectData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
     try {
-      return await this.callEdgeFunction('validate-onboarding', {
-        step: 'project_details',
-        data,
-      });
+      return await performanceService.getOrFetch(
+        `save_project_${user.id}`,
+        async () => {
+          try {
+            return await this.callEdgeFunction('validate-onboarding', {
+              step: 'project_details',
+              data,
+            });
+          } catch (error) {
+            console.log('Edge function failed, using direct database approach');
+            return await this.saveProjectDataDirect(data);
+          }
+        },
+        30 * 1000
+      );
     } catch (error) {
-      console.log('Edge function failed, using direct database approach');
-      return await this.saveProjectDataDirect(data);
+      await syncService.queueOperation('project', data, user.id);
+      
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        'save_project_data',
+        user.id
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
+      
+      return { success: true, fromCache: true };
     }
   }
 
   async saveSkillsData(data: OnboardingSkillsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
     try {
-      return await this.callEdgeFunction('validate-onboarding', {
-        step: 'skills',
-        data,
-      });
+      return await performanceService.getOrFetch(
+        `save_skills_${user.id}`,
+        async () => {
+          try {
+            return await this.callEdgeFunction('validate-onboarding', {
+              step: 'skills',
+              data,
+            });
+          } catch (error) {
+            console.log('Edge function failed, using direct database approach');
+            return await this.saveSkillsDataDirect(data);
+          }
+        },
+        30 * 1000
+      );
     } catch (error) {
-      console.log('Edge function failed, using direct database approach');
-      return await this.saveSkillsDataDirect(data);
+      await syncService.queueOperation('skills', data, user.id);
+      
+      const recovered = await errorRecoveryService.handleError(
+        error as Error,
+        'save_skills_data',
+        user.id
+      );
+      
+      if (!recovered) {
+        throw error;
+      }
+      
+      return { success: true, fromCache: true };
     }
   }
 
@@ -821,23 +968,59 @@ class OnboardingService {
 
   // Helper methods for getting reference data
   async getInterests() {
-    const { data, error } = await supabase
-      .from('interests')
-      .select('*')
-      .order('name');
-    
-    if (error) throw error;
-    return data;
+    try {
+      return await performanceService.getOrFetch(
+        'interests_data',
+        async () => {
+          const { data, error } = await supabase
+            .from('interests')
+            .select('*')
+            .order('name');
+          
+          if (error) {
+            // Use enhanced database initialization fallback
+            console.log('Falling back to cached interests data');
+            return await databaseInit.getCachedInterests();
+          }
+          
+          return data || [];
+        },
+        10 * 60 * 1000 // Cache for 10 minutes
+      );
+    } catch (error) {
+      console.error('Error fetching interests:', error);
+      
+      // Ultimate fallback
+      return await databaseInit.getCachedInterests();
+    }
   }
 
   async getSkills() {
-    const { data, error } = await supabase
-      .from('skills')
-      .select('*')
-      .order('name');
-    
-    if (error) throw error;
-    return data;
+    try {
+      return await performanceService.getOrFetch(
+        'skills_data',
+        async () => {
+          const { data, error } = await supabase
+            .from('skills')
+            .select('*')
+            .order('name');
+          
+          if (error) {
+            // Use enhanced database initialization fallback
+            console.log('Falling back to cached skills data');
+            return await databaseInit.getCachedSkills();
+          }
+          
+          return data || [];
+        },
+        10 * 60 * 1000 // Cache for 10 minutes
+      );
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      
+      // Ultimate fallback
+      return await databaseInit.getCachedSkills();
+    }
   }
 }
 
