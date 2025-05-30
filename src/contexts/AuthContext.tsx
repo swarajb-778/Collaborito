@@ -5,6 +5,7 @@ import { makeRedirectUri, useAuthRequest, ResponseType } from 'expo-auth-session
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabase';
+import { initializeDatabase, checkDatabaseHealth } from '../utils/databaseInit';
 
 // For the development mock server
 import { startServer } from '../utils/mockAuthServer';
@@ -140,6 +141,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initializeAuth = async () => {
     try {
       setLoading(true);
+      
+      // First check database health and initialize if needed
+      console.log('Checking database health...');
+      const isHealthy = await checkDatabaseHealth();
+      
+      if (!isHealthy) {
+        console.log('Database needs initialization...');
+        const initialized = await initializeDatabase();
+        
+        if (!initialized) {
+          console.warn('Database initialization failed, but continuing...');
+        }
+      }
       
       // First check for existing Supabase session
       const { data: { session }, error } = await supabase.auth.getSession();
