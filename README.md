@@ -4,6 +4,41 @@
 
 An AI-powered community platform that helps entrepreneurs match with collaborators and book workspaces for their events - unlike inefficient networking communities.
 
+## 🚨 Important: Node.js Version Requirement
+
+**CRITICAL:** This app requires Node.js version 18.x or 20.x. Node.js 22.x is NOT compatible due to ES module conflicts.
+
+### Current Environment Status
+- ✅ TypeScript compilation: Working
+- ✅ Code structure: Fixed
+- ❌ Expo runtime: Requires Node.js 18.x or 20.x
+
+### Quick Fix
+If you're using Node.js 22.x, please install Node.js 18 or 20:
+
+1. **Using Node Version Manager (nvm):**
+   ```bash
+   # Install Node.js 20 (recommended)
+   nvm install 20
+   nvm use 20
+   
+   # Then run the app
+   npm start
+   ```
+
+2. **Or download directly:**
+   - Visit [Node.js official website](https://nodejs.org/)
+   - Download Node.js 20.x LTS
+   - Install and restart your terminal
+
+### 🔧 Recent Fixes Applied
+
+1. **Circular Dependencies Resolved**: Removed circular imports between services
+2. **TypeScript Errors Fixed**: All compilation errors resolved
+3. **Onboarding Service**: Simplified and functional
+4. **Metro Config**: Enhanced for better module resolution
+5. **Startup Script**: Added `fix-startup.js` for diagnostics
+
 ## Project Overview
 
 Collaborito is a mobile app that facilitates collaboration between users on projects and provides workspace booking for events. The app enables users to create projects, invite collaborators, communicate through real-time chat, manage tasks, book event spaces, and leverage AI capabilities for enhanced productivity.
