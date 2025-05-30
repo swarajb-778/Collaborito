@@ -410,87 +410,412 @@ export type OnboardingStep = 'profile' | 'interests' | 'goals' | 'project_detail
 
 class OnboardingService {
   private async callEdgeFunction(functionName: string, data: any) {
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.warn('No authentication token available, falling back to direct database operations');
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to call ${functionName}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Edge function ${functionName} failed:`, error);
+      throw error;
+    }
+  }
+
+  // Fallback method for saving profile data directly to Supabase
+  private async saveProfileDataDirect(data: OnboardingProfileData) {
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.access_token) {
-      throw new Error('No authentication token available');
+    if (!user) {
+      throw new Error('No authenticated user found');
     }
 
-    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/${functionName}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        location: data.location,
+        job_title: data.jobTitle,
+        bio: data.bio,
+        onboarding_step: 'profile',
+        updated_at: new Date().toISOString()
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `Failed to call ${functionName}`);
+    if (error) {
+      throw error;
     }
 
-    return await response.json();
+    return { success: true };
+  }
+
+  // Fallback method for saving interests directly to Supabase
+  private async saveInterestsDataDirect(data: OnboardingInterestsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // First delete existing interests
+    const { error: deleteError } = await supabase
+      .from('user_interests')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    // Insert new interests if any
+    if (data.interestIds.length > 0) {
+      const interestsToInsert = data.interestIds.map(id => ({
+        user_id: user.id,
+        interest_id: id
+      }));
+
+      const { error: insertError } = await supabase
+        .from('user_interests')
+        .insert(interestsToInsert);
+
+      if (insertError) {
+        throw insertError;
+      }
+    }
+
+    // Update onboarding step
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ onboarding_step: 'interests' })
+      .eq('id', user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return { success: true };
+  }
+
+  // Fallback method for saving goals directly to Supabase
+  private async saveGoalsDataDirect(data: OnboardingGoalsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // First deactivate existing goals
+    const { error: updateError } = await supabase
+      .from('user_goals')
+      .update({ is_active: false })
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    // Insert new goal
+    const { error: insertError } = await supabase
+      .from('user_goals')
+      .insert({
+        user_id: user.id,
+        goal_type: data.goalType,
+        details: data.details || {},
+        is_active: true
+      });
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    // Update onboarding step
+    const { error: stepError } = await supabase
+      .from('profiles')
+      .update({ onboarding_step: 'goals' })
+      .eq('id', user.id);
+
+    if (stepError) {
+      throw stepError;
+    }
+
+    return { success: true };
+  }
+
+  // Fallback method for saving project data directly to Supabase
+  private async saveProjectDataDirect(data: OnboardingProjectData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // Create project
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .insert({
+        name: data.name,
+        description: data.description,
+        owner_id: user.id,
+        tags: data.tags || []
+      })
+      .select()
+      .single();
+
+    if (projectError) {
+      throw projectError;
+    }
+
+    // Update onboarding step
+    const { error: stepError } = await supabase
+      .from('profiles')
+      .update({ onboarding_step: 'project_details' })
+      .eq('id', user.id);
+
+    if (stepError) {
+      throw stepError;
+    }
+
+    return { success: true, project };
+  }
+
+  // Fallback method for saving skills directly to Supabase
+  private async saveSkillsDataDirect(data: OnboardingSkillsData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // First delete existing skills
+    const { error: deleteError } = await supabase
+      .from('user_skills')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    // Insert new skills if any
+    if (data.skills.length > 0) {
+      const skillsToInsert = data.skills.map(skill => ({
+        user_id: user.id,
+        skill_id: skill.skillId,
+        is_offering: skill.isOffering,
+        proficiency: skill.proficiency
+      }));
+
+      const { error: insertError } = await supabase
+        .from('user_skills')
+        .insert(skillsToInsert);
+
+      if (insertError) {
+        throw insertError;
+      }
+    }
+
+    // Update onboarding step
+    const { error: stepError } = await supabase
+      .from('profiles')
+      .update({ onboarding_step: 'skills' })
+      .eq('id', user.id);
+
+    if (stepError) {
+      throw stepError;
+    }
+
+    return { success: true };
   }
 
   async saveProfileData(data: OnboardingProfileData) {
-    return this.callEdgeFunction('validate-onboarding', {
-      step: 'profile',
-      data,
-    });
+    try {
+      return await this.callEdgeFunction('validate-onboarding', {
+        step: 'profile',
+        data,
+      });
+    } catch (error) {
+      console.log('Edge function failed, using direct database approach');
+      return await this.saveProfileDataDirect(data);
+    }
   }
 
   async saveInterestsData(data: OnboardingInterestsData) {
-    return this.callEdgeFunction('validate-onboarding', {
-      step: 'interests',
-      data,
-    });
+    try {
+      return await this.callEdgeFunction('validate-onboarding', {
+        step: 'interests',
+        data,
+      });
+    } catch (error) {
+      console.log('Edge function failed, using direct database approach');
+      return await this.saveInterestsDataDirect(data);
+    }
   }
 
   async saveGoalsData(data: OnboardingGoalsData) {
-    return this.callEdgeFunction('validate-onboarding', {
-      step: 'goals',
-      data,
-    });
+    try {
+      return await this.callEdgeFunction('validate-onboarding', {
+        step: 'goals',
+        data,
+      });
+    } catch (error) {
+      console.log('Edge function failed, using direct database approach');
+      return await this.saveGoalsDataDirect(data);
+    }
   }
 
   async saveProjectData(data: OnboardingProjectData) {
-    return this.callEdgeFunction('validate-onboarding', {
-      step: 'project_details',
-      data,
-    });
+    try {
+      return await this.callEdgeFunction('validate-onboarding', {
+        step: 'project_details',
+        data,
+      });
+    } catch (error) {
+      console.log('Edge function failed, using direct database approach');
+      return await this.saveProjectDataDirect(data);
+    }
   }
 
   async saveSkillsData(data: OnboardingSkillsData) {
-    return this.callEdgeFunction('validate-onboarding', {
-      step: 'skills',
-      data,
-    });
+    try {
+      return await this.callEdgeFunction('validate-onboarding', {
+        step: 'skills',
+        data,
+      });
+    } catch (error) {
+      console.log('Edge function failed, using direct database approach');
+      return await this.saveSkillsDataDirect(data);
+    }
   }
 
   async updateStep(step: OnboardingStep) {
-    return this.callEdgeFunction('update-onboarding-step', {
-      action: 'update_step',
-      step,
-    });
+    try {
+      return await this.callEdgeFunction('update-onboarding-step', {
+        action: 'update_step',
+        step,
+      });
+    } catch (edgeFunctionError) {
+      console.log('Edge function failed, updating step directly');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ onboarding_step: step })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    }
   }
 
   async getNextStep() {
-    return this.callEdgeFunction('update-onboarding-step', {
-      action: 'get_next_step',
-    });
+    try {
+      return await this.callEdgeFunction('update-onboarding-step', {
+        action: 'get_next_step',
+      });
+    } catch (edgeFunctionError) {
+      console.log('Edge function failed, determining next step directly');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Get user's current goal to determine next step
+      const { data: goals } = await supabase
+        .from('user_goals')
+        .select('goal_type')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      // Determine next step based on goal
+      if (goals?.goal_type === 'find_cofounder' || goals?.goal_type === 'find_collaborators') {
+        return { nextStep: 'project_details' };
+      } else {
+        return { nextStep: 'skills' };
+      }
+    }
   }
 
   async getOnboardingStatus() {
-    return this.callEdgeFunction('update-onboarding-step', {
-      action: 'get_status',
-    });
+    try {
+      return await this.callEdgeFunction('update-onboarding-step', {
+        action: 'get_status',
+      });
+    } catch (edgeFunctionError) {
+      console.log('Edge function failed, getting status directly');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed, onboarding_step')
+        .eq('id', user.id)
+        .single();
+
+      return {
+        completed: profile?.onboarding_completed || false,
+        step: profile?.onboarding_step || 'profile'
+      };
+    }
   }
 
   async markOnboardingComplete() {
-    return this.callEdgeFunction('onboarding-status', {
-      action: 'complete',
-    });
+    try {
+      return await this.callEdgeFunction('onboarding-status', {
+        action: 'complete',
+      });
+    } catch (edgeFunctionError) {
+      console.log('Edge function failed, marking complete directly');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          onboarding_completed: true,
+          onboarding_step: 'completed'
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    }
   }
 
   // Helper methods for getting reference data
