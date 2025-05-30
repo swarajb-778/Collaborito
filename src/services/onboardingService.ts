@@ -1,5 +1,6 @@
 import { supabase, handleError } from './supabase';
 import { Profile, Interest, UserInterest, Skill, UserSkill, UserGoal, ProjectSkill } from '../types/supabase';
+import Constants from 'expo-constants';
 
 /**
  * Service for handling onboarding-related data operations
@@ -418,7 +419,7 @@ class OnboardingService {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/${functionName}`, {
+      const response = await fetch(`${Constants.expoConfig?.extra?.SUPABASE_URL}/functions/v1/${functionName}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
