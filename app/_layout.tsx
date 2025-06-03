@@ -1,3 +1,6 @@
+// Import polyfills FIRST before any other imports
+import '../polyfills';
+
 import React, { useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
