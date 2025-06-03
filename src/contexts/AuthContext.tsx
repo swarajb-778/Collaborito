@@ -201,38 +201,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Handling Supabase user:', supabaseUser.id);
       
-      // Get or create user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
+      // Import auth helpers
+      const { ensureUserProfile, createUserObject, retryOperation } = await import('../utils/authHelpers');
       
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
-      }
+      // Ensure user profile exists with retry mechanism
+      const profile = await retryOperation(
+        () => ensureUserProfile(supabaseUser),
+        3,
+        1000
+      );
       
-      // Create user object
-      const userData: User = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        firstName: profile?.first_name || supabaseUser.user_metadata?.given_name || '',
-        lastName: profile?.last_name || supabaseUser.user_metadata?.family_name || '',
-        username: profile?.username || '',
-        profileImage: profile?.profile_image_path || supabaseUser.user_metadata?.avatar_url || null,
-        oauthProvider: supabaseUser.app_metadata?.provider || 'email',
-        user_metadata: supabaseUser.user_metadata,
-        app_metadata: supabaseUser.app_metadata
-      };
+      // Create user object with robust data handling
+      const userData: User = createUserObject(supabaseUser, profile);
       
       // Store user data
       await storeUserData(userData);
       setUser(userData);
       setLoggedIn(true);
       
-      console.log('User authenticated with Supabase:', userData.id);
+      console.log('✅ User authenticated with Supabase:', userData.id);
+      console.log('User data:', { 
+        id: userData.id, 
+        email: userData.email, 
+        firstName: userData.firstName, 
+        lastName: userData.lastName 
+      });
+      
     } catch (error) {
-      console.error('Error handling Supabase user:', error);
+      console.error('❌ Error handling Supabase user:', error);
+      
+      // Try to create a basic user object even if profile creation failed
+      try {
+        const basicUserData: User = {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          firstName: supabaseUser.user_metadata?.given_name || '',
+          lastName: supabaseUser.user_metadata?.family_name || '',
+          username: supabaseUser.user_metadata?.username || '',
+          profileImage: supabaseUser.user_metadata?.avatar_url || null,
+          oauthProvider: supabaseUser.app_metadata?.provider || 'email',
+          user_metadata: supabaseUser.user_metadata,
+          app_metadata: supabaseUser.app_metadata
+        };
+        
+        await storeUserData(basicUserData);
+        setUser(basicUserData);
+        setLoggedIn(true);
+        
+        console.log('⚠️ User authenticated with basic data (profile creation failed)');
+      } catch (fallbackError) {
+        console.error('❌ Complete authentication failure:', fallbackError);
+        Alert.alert(
+          'Authentication Error',
+          'There was a problem setting up your account. Please try signing in again.'
+        );
+      }
     }
   };
 
@@ -474,25 +497,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Creating user profile for:', supabaseUser.id);
       
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: supabaseUser.id,
-          full_name: supabaseUser.user_metadata?.full_name || '',
-          first_name: supabaseUser.user_metadata?.given_name || '',
-          last_name: supabaseUser.user_metadata?.family_name || '',
-          username: username || '',
-          onboarding_completed: false,
-          onboarding_step: 'profile'
-        });
+      // Import auth helpers
+      const { ensureUserProfile } = await import('../utils/authHelpers');
       
-      if (error) {
-        console.error('Error creating profile:', error);
-      } else {
-        console.log('User profile created successfully');
-      }
+      // Use the robust profile creation helper
+      await ensureUserProfile(supabaseUser, {
+        username: username || '',
+        onboarding_completed: false,
+        onboarding_step: 'profile'
+      });
+      
+      console.log('✅ User profile created successfully');
     } catch (error) {
-      console.error('Error in createUserProfile:', error);
+      console.error('❌ Error in createUserProfile:', error);
+      // Don't throw here - the authentication should still proceed
+      console.warn('Profile creation failed, but authentication will continue');
     }
   };
 

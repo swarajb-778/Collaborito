@@ -17,6 +17,7 @@
     "validate-supabase": "node scripts/validate-supabase.js",
     "setup-database": "node scripts/setup-database.js",
     "insert-sample-data": "node scripts/insert-sample-data.js",
+    "insert-sample-data-admin": "node scripts/insert-sample-data-admin.js",
     "status-check": "node scripts/final-status-check.js"
   },
   "dependencies": {
