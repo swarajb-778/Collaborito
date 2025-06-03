@@ -12,8 +12,9 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "check-supabase-fix": "node check-supabase-fix.js",
     "setup": "node project-setup.js",
-    "postinstall": "node scripts/fix-expo-auth-node22.js",
-    "fix-expo-auth": "node scripts/fix-expo-auth-node22.js"
+    "postinstall": "node scripts/fix-expo-auth-node22.js && echo '🔍 Validating Supabase connection...' && node scripts/validate-supabase.js",
+    "fix-expo-auth": "node scripts/fix-expo-auth-node22.js",
+    "validate-supabase": "node scripts/validate-supabase.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
