@@ -36,16 +36,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     scheme: 'collaborito',
     plugins: [
       'expo-router',
-      'expo-secure-store',
-      'expo-web-browser',
-      'expo-auth-session',
-      'expo-linking',
-      'expo-status-bar',
-      'expo-linear-gradient',
-      'expo-haptics',
-      ['expo-font', {
-        fonts: ['./assets/fonts/Nunito-Regular.ttf']
-      }]
+      // 'expo-secure-store',
+      // 'expo-web-browser',
+      // 'expo-auth-session',
+      // 'expo-linking',
+      // 'expo-status-bar',
+      // 'expo-linear-gradient',
+      // 'expo-haptics',
+      // ['expo-font', {
+      //   fonts: ['./assets/fonts/Nunito-Regular.ttf']
+      // }]
     ],
     extra: {
       SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL || (isDev ? 'https://ekydublgvsoaaepdhtzc.supabase.co' : ''),
