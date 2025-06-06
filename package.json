@@ -15,6 +15,8 @@
     "postinstall": "node scripts/fix-expo-auth-node22.js && echo '🔍 Validating Supabase connection...' && node scripts/validate-supabase.js",
     "fix-expo-auth": "node scripts/fix-expo-auth-node22.js",
     "validate-supabase": "node scripts/validate-supabase.js",
+    "test-onboarding-simple": "node scripts/simple-onboarding-test.js",
+    "test-onboarding-full": "node scripts/test-onboarding-flow.js",
     "setup-database": "node scripts/setup-database.js",
     "insert-sample-data": "node scripts/insert-sample-data.js",
     "insert-sample-data-admin": "node scripts/insert-sample-data-admin.js",
@@ -59,7 +61,8 @@
     "react-native-svg": "15.11.2",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webview": "13.13.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",

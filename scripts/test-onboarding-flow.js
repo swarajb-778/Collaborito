@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -13,7 +14,7 @@ async function testUserProfileCreation() {
   
   try {
     // Test profile creation for a mock user
-    const mockUserId = `test_user_${Date.now()}`;
+    const mockUserId = uuidv4();
     
     // Create profile
     const { data, error } = await supabase
@@ -127,7 +128,7 @@ async function testUserInterestsAndSkills() {
   console.log('\n👤 Testing user interests and skills...');
   
   try {
-    const mockUserId = `test_user_${Date.now()}`;
+    const mockUserId = uuidv4();
     
     // Create a test profile first
     const { error: profileError } = await supabase
@@ -226,7 +227,7 @@ async function testOnboardingCompletion() {
   console.log('\n🎉 Testing onboarding completion...');
   
   try {
-    const mockUserId = `test_user_${Date.now()}`;
+    const mockUserId = uuidv4();
     
     // Create a test profile
     const { error: profileError } = await supabase
