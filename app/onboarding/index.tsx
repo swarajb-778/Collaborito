@@ -68,21 +68,68 @@ export default function OnboardingScreen() {
     if (!loading && user && user.id) {
       setUserDataReady(true);
       console.log('User data is ready for onboarding');
+      
+      // Run diagnostics to ensure everything is working properly
+      runDiagnostics();
     } else if (!loading && !user) {
       console.error('No user data available after auth loading completed');
-      // Navigate back to login if no user data after loading
-      Alert.alert(
-        'Session Error',
-        'Unable to retrieve user data. Please sign in again.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/welcome/signin')
-          }
-        ]
-      );
+      
+      // Run diagnostics to identify the issue
+      runDiagnostics().then((isHealthy) => {
+        if (!isHealthy) {
+          Alert.alert(
+            'Connection Issue',
+            'There seems to be a problem with the database connection. Please check your internet connection and try again.',
+            [
+              {
+                text: 'Retry',
+                                 onPress: () => {
+                   if (typeof window !== 'undefined' && window.location.reload) {
+                     window.location.reload();
+                   } else {
+                     router.replace('/welcome/signin');
+                   }
+                 }
+              },
+              {
+                text: 'Sign In Again',
+                onPress: () => router.replace('/welcome/signin')
+              }
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Session Error',
+            'Unable to retrieve user data. Please sign in again.',
+            [
+              {
+                text: 'OK',
+                onPress: () => router.replace('/welcome/signin')
+              }
+            ]
+          );
+        }
+      });
     }
   }, [user, loading]);
+
+  const runDiagnostics = async () => {
+    try {
+      const { quickDiagnostic } = await import('../../src/utils/databaseDiagnostics');
+      const isHealthy = await quickDiagnostic(user?.id);
+      
+      if (!isHealthy) {
+        console.warn('⚠️ System diagnostics failed - there may be connectivity issues');
+      } else {
+        console.log('✅ System diagnostics passed');
+      }
+      
+      return isHealthy;
+    } catch (error) {
+      console.error('❌ Failed to run diagnostics:', error);
+      return false;
+    }
+  };
 
   // Initialize form fields with user data if available
   const [firstName, setFirstName] = useState('');

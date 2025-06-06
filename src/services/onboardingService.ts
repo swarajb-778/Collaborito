@@ -462,29 +462,70 @@ class OnboardingService {
 
   // Fallback method for saving profile data directly to Supabase
   private async saveProfileDataDirect(data: OnboardingProfileData) {
+    console.log('💾 Saving profile data directly to Supabase...');
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       throw new Error('No authenticated user found');
     }
 
-    const { error } = await supabase
+    console.log('Current user ID:', user.id);
+
+    // First check if profile exists, if not create it
+    const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        first_name: data.firstName,
-        last_name: data.lastName,
-        location: data.location,
-        job_title: data.jobTitle,
-        bio: data.bio,
-        onboarding_step: 'profile',
-        updated_at: new Date().toISOString()
-      });
+      .select('id')
+      .eq('id', user.id)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is fine
+      console.error('Error checking existing profile:', fetchError);
+      throw fetchError;
+    }
+
+    const profileData = {
+      id: user.id,
+      email: user.email,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      location: data.location,
+      job_title: data.jobTitle,
+      bio: data.bio,
+      onboarding_step: 'interests',
+      onboarding_completed: false,
+      updated_at: new Date().toISOString()
+    };
+
+    let error;
+
+    if (existingProfile) {
+      console.log('Updating existing profile');
+      // Update existing profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id);
+      error = updateError;
+    } else {
+      console.log('Creating new profile');
+      // Create new profile
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          ...profileData,
+          created_at: new Date().toISOString()
+        });
+      error = insertError;
+    }
 
     if (error) {
+      console.error('Error saving profile:', error);
       throw error;
     }
 
+    console.log('✅ Profile data saved successfully');
     return { success: true };
   }
 
