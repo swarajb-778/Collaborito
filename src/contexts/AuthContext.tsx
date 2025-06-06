@@ -199,22 +199,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSupabaseUser = async (supabaseUser: any, session: any) => {
     try {
-      console.log('Handling Supabase user:', supabaseUser.id);
+      console.log('Processing Supabase user:', supabaseUser.id);
       
-      // Import auth helpers
-      const { ensureUserProfile, createUserObject, retryOperation } = await import('../utils/authHelpers');
+      // Create user data for the app context FIRST - this allows onboarding to proceed
+      const userData: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        firstName: supabaseUser.user_metadata?.given_name || 
+                  supabaseUser.user_metadata?.firstName ||
+                  supabaseUser.user_metadata?.first_name || '',
+        lastName: supabaseUser.user_metadata?.family_name || 
+                 supabaseUser.user_metadata?.lastName ||
+                 supabaseUser.user_metadata?.last_name || '',
+        username: supabaseUser.user_metadata?.username || '',
+        profileImage: supabaseUser.user_metadata?.avatar_url || null,
+        oauthProvider: supabaseUser.app_metadata?.provider || 'email',
+        oauthTokens: session ? {
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at
+        } : undefined,
+        user_metadata: supabaseUser.user_metadata,
+        app_metadata: supabaseUser.app_metadata
+      };
       
-      // Ensure user profile exists with retry mechanism
-      const profile = await retryOperation(
-        () => ensureUserProfile(supabaseUser),
-        3,
-        1000
-      );
-      
-      // Create user object with robust data handling
-      const userData: User = createUserObject(supabaseUser, profile);
-      
-      // Store user data
+      // Store user data and set authentication state immediately
       await storeUserData(userData);
       setUser(userData);
       setLoggedIn(true);
@@ -226,6 +235,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: userData.firstName, 
         lastName: userData.lastName 
       });
+      
+      // Create or update user profile in the database AFTER setting auth state
+      // This allows onboarding to proceed even if profile creation fails
+      try {
+        await createUserProfile(supabaseUser);
+        console.log('✅ User profile created/updated in database');
+      } catch (profileError) {
+        console.warn('⚠️ Profile creation failed, but user authentication succeeded:', profileError);
+        // Don't throw here - the user is authenticated and can proceed with onboarding
+      }
       
     } catch (error) {
       console.error('❌ Error handling Supabase user:', error);
@@ -497,15 +516,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Creating user profile for:', supabaseUser.id);
       
-      // Import auth helpers
-      const { ensureUserProfile } = await import('../utils/authHelpers');
+      // Check if profile already exists
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', supabaseUser.id)
+        .single();
       
-      // Use the robust profile creation helper
-      await ensureUserProfile(supabaseUser, {
+      if (existingProfile) {
+        console.log('✅ User profile already exists');
+        return;
+      }
+      
+      // Create new profile if it doesn't exist
+      const profileData = {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        first_name: supabaseUser.user_metadata?.given_name || 
+                   supabaseUser.user_metadata?.firstName || '',
+        last_name: supabaseUser.user_metadata?.family_name || 
+                  supabaseUser.user_metadata?.lastName || '',
         username: username || '',
+        avatar_url: supabaseUser.user_metadata?.avatar_url,
         onboarding_completed: false,
         onboarding_step: 'profile'
-      });
+      };
+      
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert(profileData);
+      
+      if (insertError) {
+        throw insertError;
+      }
       
       console.log('✅ User profile created successfully');
     } catch (error) {
