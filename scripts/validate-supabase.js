@@ -1,86 +1,149 @@
 #!/usr/bin/env node
 
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv/config');
+require('dotenv').config();
 
-console.log('🔍 Validating Supabase configuration...');
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-// Get environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+console.log('🔍 Validating Supabase Connection...\n');
 
-console.log('Environment variables check:');
-console.log('- EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
-console.log('- EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Set (length: ' + supabaseAnonKey?.length + ')' : '❌ Missing');
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('\n❌ Missing required Supabase environment variables!');
-  console.log('\nPlease ensure your .env file contains:');
-  console.log('EXPO_PUBLIC_SUPABASE_URL=your_supabase_url');
-  console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key');
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Missing Supabase credentials');
+  console.error('SUPABASE_URL:', SUPABASE_URL ? '✓' : '❌');
+  console.error('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✓' : '❌');
   process.exit(1);
 }
 
-console.log('\n🔗 Testing Supabase connection...');
+console.log('✅ Environment variables found');
+console.log(`📍 URL: ${SUPABASE_URL}`);
+console.log(`🔑 Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
 
-// Create Supabase client
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function validateConnection() {
   try {
-    // Test basic connectivity
-    console.log('Testing basic connectivity...');
+    console.log('\n🔗 Testing connection...');
+    
+    // Test basic connection
     const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
     
     if (error) {
       console.error('❌ Connection failed:', error.message);
-      
-      // Provide specific error guidance
-      if (error.message.includes('Invalid API key')) {
-        console.log('\n🔧 Troubleshooting Invalid API key:');
-        console.log('1. Check if your Supabase project is still active');
-        console.log('2. Verify the SUPABASE_URL is correct');
-        console.log('3. Verify the SUPABASE_ANON_KEY is correct and not expired');
-        console.log('4. Check if your project has been paused or suspended');
-        console.log('5. Try regenerating the API key in your Supabase dashboard');
-      }
-      
       return false;
     }
     
-    console.log('✅ Connection successful!');
+    console.log('✅ Connection successful');
+    console.log(`📊 Profiles table exists with ${data?.length || 0} records`);
     
-    // Test auth functionality
-    console.log('\nTesting authentication system...');
-    const { data: session } = await supabase.auth.getSession();
-    console.log('✅ Auth system accessible');
-    
-    // Test if required tables exist
-    console.log('\nChecking database schema...');
-    const tables = ['profiles', 'interests', 'skills', 'goals'];
-    
-    for (const table of tables) {
-      try {
-        const { error: tableError } = await supabase.from(table).select('count', { count: 'exact', head: true });
-        if (tableError) {
-          console.log(`⚠️  Table '${table}': ${tableError.message}`);
-        } else {
-          console.log(`✅ Table '${table}': accessible`);
-        }
-      } catch (err) {
-        console.log(`❌ Table '${table}': error -`, err.message);
-      }
-    }
-    
-    console.log('\n🎉 Supabase validation completed!');
     return true;
-    
   } catch (error) {
-    console.error('❌ Validation failed:', error.message);
+    console.error('❌ Connection error:', error.message);
     return false;
   }
 }
 
-validateConnection().then(success => {
-  process.exit(success ? 0 : 1);
-}); 
+async function validateTables() {
+  console.log('\n📋 Checking required tables...');
+  
+  const requiredTables = [
+    'profiles',
+    'interests', 
+    'skills',
+    'user_interests',
+    'user_skills',
+    'user_goals'
+  ];
+  
+  const results = {};
+  
+  for (const table of requiredTables) {
+    try {
+      const { data, error, count } = await supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.log(`❌ ${table}: ${error.message}`);
+        results[table] = { exists: false, count: 0, error: error.message };
+      } else {
+        console.log(`✅ ${table}: ${count || 0} records`);
+        results[table] = { exists: true, count: count || 0 };
+      }
+    } catch (error) {
+      console.log(`❌ ${table}: ${error.message}`);
+      results[table] = { exists: false, count: 0, error: error.message };
+    }
+  }
+  
+  return results;
+}
+
+async function checkSampleData() {
+  console.log('\n🎯 Checking sample data...');
+  
+  try {
+    const { data: interests, error: interestsError } = await supabase
+      .from('interests')
+      .select('*')
+      .limit(5);
+    
+    if (interestsError) {
+      console.log('❌ Interests data:', interestsError.message);
+    } else {
+      console.log(`✅ Sample interests: ${interests?.length || 0} found`);
+      if (interests && interests.length > 0) {
+        console.log('   -', interests.map(i => i.name).join(', '));
+      }
+    }
+    
+    const { data: skills, error: skillsError } = await supabase
+      .from('skills')
+      .select('*')
+      .limit(5);
+    
+    if (skillsError) {
+      console.log('❌ Skills data:', skillsError.message);
+    } else {
+      console.log(`✅ Sample skills: ${skills?.length || 0} found`);
+      if (skills && skills.length > 0) {
+        console.log('   -', skills.map(s => s.name).join(', '));
+      }
+    }
+  } catch (error) {
+    console.log('❌ Sample data check failed:', error.message);
+  }
+}
+
+async function main() {
+  const connected = await validateConnection();
+  
+  if (!connected) {
+    console.log('\n❌ Validation failed - connection issue');
+    process.exit(1);
+  }
+  
+  const tableResults = await validateTables();
+  await checkSampleData();
+  
+  console.log('\n📈 Validation Summary:');
+  console.log('='.repeat(40));
+  
+  const allTablesExist = Object.values(tableResults).every(result => result.exists);
+  
+  if (allTablesExist) {
+    console.log('✅ All required tables exist');
+    console.log('✅ Supabase is ready for onboarding flow');
+  } else {
+    console.log('⚠️  Some tables are missing or have issues');
+    console.log('💡 Run the database setup script to create missing tables');
+  }
+  
+  return allTablesExist;
+}
+
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+module.exports = { validateConnection, validateTables, checkSampleData }; 
