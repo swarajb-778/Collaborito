@@ -14,14 +14,12 @@ async function testUserProfileCreation() {
   try {
     // Test profile creation for a mock user
     const mockUserId = `test_user_${Date.now()}`;
-    const mockEmail = `test_${Date.now()}@example.com`;
     
     // Create profile
     const { data, error } = await supabase
       .from('profiles')
       .insert({
         id: mockUserId,
-        email: mockEmail,
         first_name: 'Test',
         last_name: 'User',
         onboarding_completed: false,
@@ -136,7 +134,6 @@ async function testUserInterestsAndSkills() {
       .from('profiles')
       .insert({
         id: mockUserId,
-        email: `test_${Date.now()}@example.com`,
         first_name: 'Test',
         last_name: 'User',
         onboarding_completed: false,
@@ -236,7 +233,6 @@ async function testOnboardingCompletion() {
       .from('profiles')
       .insert({
         id: mockUserId,
-        email: `test_${Date.now()}@example.com`,
         first_name: 'Test',
         last_name: 'User',
         onboarding_completed: false,

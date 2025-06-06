@@ -531,7 +531,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Create new profile if it doesn't exist
       const profileData = {
         id: supabaseUser.id,
-        email: supabaseUser.email,
         first_name: supabaseUser.user_metadata?.given_name || 
                    supabaseUser.user_metadata?.firstName || '',
         last_name: supabaseUser.user_metadata?.family_name || 

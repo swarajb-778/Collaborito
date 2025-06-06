@@ -487,7 +487,6 @@ class OnboardingService {
 
     const profileData = {
       id: user.id,
-      email: user.email,
       first_name: data.firstName,
       last_name: data.lastName,
       location: data.location,
