@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabase';
 import { initializeDatabase, checkDatabaseHealth } from '../utils/databaseInit';
+import { AuthErrorHandler } from '../utils/authErrorHandler';
 
 // For the development mock server
 import { startServer } from '../utils/mockAuthServer';
@@ -155,7 +156,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      // First check for existing Supabase session
+      // Set up auth state change listener FIRST
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event);
+        console.log('Session exists:', !!session);
+        console.log('User exists:', !!session?.user);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('Processing SIGNED_IN event with session');
+          await handleSupabaseUser(session.user, session);
+        } else if (event === 'INITIAL_SESSION' && session?.user) {
+          console.log('Processing INITIAL_SESSION with session');
+          await handleSupabaseUser(session.user, session);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('Processing SIGNED_OUT event');
+          await handleSignOut();
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('Processing TOKEN_REFRESHED event');
+          await handleSupabaseUser(session.user, session);
+        }
+      });
+      
+      // Check for existing Supabase session
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -179,17 +201,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      // Set up auth state change listener
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed:', event);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          await handleSupabaseUser(session.user, session);
-        } else if (event === 'SIGNED_OUT') {
-          await handleSignOut();
-        }
-      });
-      
     } catch (error) {
       console.error('Error initializing auth:', error);
     } finally {
@@ -200,6 +211,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleSupabaseUser = async (supabaseUser: any, session: any) => {
     try {
       console.log('Processing Supabase user:', supabaseUser.id);
+      console.log('Session access token exists:', !!session?.access_token);
+      
+      // Store session data for Supabase client
+      if (session) {
+        await SecureStore.setItemAsync('userSession', JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+          token_type: session.token_type,
+          user: session.user
+        }));
+        console.log('✅ Session data stored securely');
+      }
       
       // Create user data for the app context FIRST - this allows onboarding to proceed
       const userData: User = {
@@ -235,6 +259,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: userData.firstName, 
         lastName: userData.lastName 
       });
+      
+      // Verify session is available to Supabase client
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      console.log('✅ Supabase session verified:', !!currentUser);
       
       // Create or update user profile in the database AFTER setting auth state
       // This allows onboarding to proceed even if profile creation fails
@@ -491,12 +519,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data.user) {
         console.log('Sign up successful with Supabase');
+        console.log('User confirmed:', !!data.user.email_confirmed_at);
+        console.log('Session exists:', !!data.session);
         
-        // Create initial profile if user is confirmed
-        if (data.user.email_confirmed_at || data.session) {
+        // Check if email confirmation is required
+        if (!data.session && !data.user.email_confirmed_at) {
+          console.log('🔔 Email confirmation required');
+          
+          const authError = AuthErrorHandler.handleSignupError(data);
+          
+          // Show user-friendly message about email confirmation
+          Alert.alert(
+            'Check Your Email',
+            'We\'ve sent a confirmation link to your email address. Please click the link to complete your registration and then try signing in.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  console.log('📧 User acknowledged email confirmation requirement');
+                }
+              }
+            ]
+          );
+          
+          // For development, also log the technical guidance
+          console.log('🔧 Developer guidance:', AuthErrorHandler.getErrorGuidance(authError.code));
+          
+          return true; // Return true because signup was technically successful
+        }
+        
+        // For email signup, if auto-confirm is enabled, session will be available immediately
+        if (data.session) {
+          console.log('Session available immediately, processing user');
+          await handleSupabaseUser(data.user, data.session);
+        } else {
+          console.log('No session yet, but user was created successfully');
+          
+          // If no session but user exists, create a temporary user object
+          // This allows the UI to show appropriate state
+          const tempUserData: User = {
+            id: data.user.id,
+            email: data.user.email || email,
+            firstName: '',
+            lastName: '',
+            username: username || '',
+            profileImage: null,
+            oauthProvider: 'email',
+            user_metadata: data.user.user_metadata,
+            app_metadata: data.user.app_metadata
+          };
+          
+          await storeUserData(tempUserData);
+          setUser(tempUserData);
+          setLoggedIn(true);
+          
+          console.log('✅ Temporary user data created for unconfirmed account');
+        }
+        
+        // Create initial profile regardless of confirmation status
+        try {
           await createUserProfile(data.user, username);
-          if (data.session) {
-            await handleSupabaseUser(data.user, data.session);
+        } catch (profileError) {
+          console.warn('Profile creation failed during signup:', profileError);
+        }
+        
+        // Only verify session if one was created
+        if (data.session) {
+          // Wait a moment for session to be fully established
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Verify the session is working
+          const { data: { user: verifyUser }, error: verifyError } = await supabase.auth.getUser();
+          if (verifyUser) {
+            console.log('✅ Signup session verification successful');
+          } else {
+            console.warn('⚠️ Session verification failed after signup:', verifyError);
           }
         }
         

@@ -21,7 +21,9 @@
     "insert-sample-data": "node scripts/insert-sample-data.js",
     "insert-sample-data-admin": "node scripts/insert-sample-data-admin.js",
     "insert-sample-data-simple": "node scripts/insert-sample-data-simple.js",
-    "status-check": "node scripts/final-status-check.js"
+    "status-check": "node scripts/final-status-check.js",
+    "test-onboarding": "node scripts/test-onboarding-flow.js",
+    "test-auth-flow": "node scripts/test-auth-flow.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
