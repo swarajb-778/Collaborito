@@ -34,8 +34,25 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": "warn",
     "react/react-in-jsx-scope": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "warn"
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-require-imports": "error",
+    "react/no-unescaped-entities": "error",
+    "react/prop-types": "off",
+    "@typescript-eslint/no-unused-expressions": "error"
   },
+  overrides: [
+    {
+      files: ["*.js"],
+      parser: "espree",
+      parserOptions: {
+        ecmaVersion: 2020,
+        sourceType: "script"
+      },
+      rules: {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ],
   ignorePatterns: [
     "supabase/functions/**/*",
     "oauth-server.js",
@@ -44,6 +61,13 @@ module.exports = {
     "metro.config.js",
     "babel.config.js",
     "__mocks__/**/*",
-    "jest.setup.js"
+    "jest.setup.js",
+    "check-supabase-fix.js",
+    "check-supabase-update.js",
+    "project-setup.js",
+    "scripts/**/*.js",
+    "proxy-server/**/*.js",
+    "polyfills/**/*.js",
+    "src/__tests__/**/*.js"
   ]
 };
