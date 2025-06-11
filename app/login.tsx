@@ -506,7 +506,7 @@ export default function LoginScreen() {
                     style={styles.footerButton}
                   >
                     <Text style={[styles.footerTextSecondary, { color: 'rgba(255,255,255,0.8)' }]}>
-                      Don't have an account?{' '}
+                      Don&apos;t have an account?{' '}
                       <Text style={{ color: 'white', fontWeight: '600' }}>
                         Sign Up
                       </Text>
@@ -680,5 +680,9 @@ const styles = StyleSheet.create({
     width: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  linkText: {
+    color: 'white',
+    fontWeight: '600',
   },
 }); 
