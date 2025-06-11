@@ -192,11 +192,13 @@ export default function OnboardingInterestsScreen() {
           >
             {/* Logo container */}
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
                 style={styles.textLogo}
@@ -208,7 +210,7 @@ export default function OnboardingInterestsScreen() {
             <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
               <Text style={styles.title}>Your Interests</Text>
               <Text style={styles.subtitle}>
-                I'm interested in the following topics. Select a few to make it easier to find people and projects you might find interesting.
+                I&apos;m interested in the following topics. Select a few to make it easier to find people and projects you might find interesting.
               </Text>
               
               {/* Interests grid */}
@@ -247,7 +249,7 @@ export default function OnboardingInterestsScreen() {
               {/* Skip Link */}
               <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
                 <Text style={styles.skipLinkText}>
-                  I'll select my interests later
+                  I&apos;ll select my interests later
                 </Text>
               </TouchableOpacity>
             </Animated.View>
