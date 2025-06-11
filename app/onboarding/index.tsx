@@ -228,12 +228,13 @@ export default function OnboardingScreen() {
           >
             {/* Logo container from register.tsx */}
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-              {/* Ensure these image paths are correct */}
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
                 style={styles.textLogo}
@@ -348,7 +349,7 @@ export default function OnboardingScreen() {
               {/* Skip Link - Styled like login link in register.tsx */}
               <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={savingProfile}>
                 <Text style={styles.skipLinkText}>
-                    I'll complete this later
+                    I&apos;ll complete this later
                   </Text>
                 </TouchableOpacity>
 
