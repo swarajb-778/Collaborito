@@ -3,12 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { AppState } from 'react-native';
+import { AppState, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 import { makeRedirectUri } from 'expo-auth-session';
 import { decode } from 'base64-arraybuffer';
-import { Alert } from 'react-native';
+import { DevConfig } from '@/src/config/development';
 
 // Types for project members and roles
 import { Project, ProjectMember, Profile } from '../types/supabase';
@@ -34,18 +34,12 @@ const roleHierarchy: Record<string, number> = {
   member: 1
 };
 
-// Set up development mode detection with better validation
-const isDevelopmentMode = (() => {
-  const url = Constants.expoConfig?.extra?.SUPABASE_URL as string;
-  const key = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY as string;
-  
-  return !url || 
-    !key ||
-    url === 'development-placeholder' || 
-    key === 'development-placeholder' ||
-    url.includes('development-placeholder') ||
-    key.includes('development-placeholder');
-})();
+// Use development configuration utility
+const supabaseConfig = DevConfig.getSupabaseConfig();
+const isDevelopmentMode = !supabaseConfig.isValid || DevConfig.isDevelopment;
+
+// Log development information
+DevConfig.logDevInfo();
 
 // Create a custom storage implementation for Supabase to use with AsyncStorage
 class LargeSecureStore {
@@ -123,55 +117,8 @@ class LargeSecureStore {
   }
 }
 
-// Initialize Supabase
-const supabaseUrl = Constants.expoConfig?.extra?.SUPABASE_URL as string;
-const supabaseAnonKey = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY as string;
-
-// Comprehensive environment validation
-const validateEnvironment = () => {
-  const issues: string[] = [];
-  
-  if (!supabaseUrl) {
-    issues.push('SUPABASE_URL is not configured');
-  } else if (supabaseUrl === 'development-placeholder') {
-    issues.push('SUPABASE_URL is still set to development-placeholder');
-  } else if (!supabaseUrl.startsWith('https://')) {
-    issues.push('SUPABASE_URL must be a valid HTTPS URL');
-  }
-  
-  if (!supabaseAnonKey) {
-    issues.push('SUPABASE_ANON_KEY is not configured');
-  } else if (supabaseAnonKey === 'development-placeholder') {
-    issues.push('SUPABASE_ANON_KEY is still set to development-placeholder');
-  }
-  
-  if (issues.length > 0) {
-    console.error('Environment Configuration Issues:', issues);
-    if (__DEV__) {
-      console.warn('Running in development mode with mock Supabase configuration');
-    }
-  }
-  
-  return issues.length === 0;
-};
-
-// Validate Supabase configuration
-const isValidEnvironment = validateEnvironment();
-
-if (isDevelopmentMode || !isValidEnvironment) {
-  console.warn('Supabase running in development mode with mock functionality');
-}
-
-// Provide fallback values to prevent initialization errors
-const validatedUrl = (supabaseUrl && supabaseUrl !== 'development-placeholder') 
-  ? supabaseUrl 
-  : 'https://mock.supabase.co';
-  
-const validatedKey = (supabaseAnonKey && supabaseAnonKey !== 'development-placeholder') 
-  ? supabaseAnonKey 
-  : 'mock-anon-key';
-
-export const supabase = createClient(validatedUrl, validatedKey, {
+// Initialize Supabase with validated configuration
+export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
   auth: {
     storage: new LargeSecureStore(),
     autoRefreshToken: true,
