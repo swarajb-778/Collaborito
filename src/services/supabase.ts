@@ -34,10 +34,18 @@ const roleHierarchy: Record<string, number> = {
   member: 1
 };
 
-// Set up development mode detection
-const isDevelopmentMode = 
-  Constants.expoConfig?.extra?.SUPABASE_URL === 'development-placeholder' || 
-  Constants.expoConfig?.extra?.SUPABASE_ANON_KEY === 'development-placeholder';
+// Set up development mode detection with better validation
+const isDevelopmentMode = (() => {
+  const url = Constants.expoConfig?.extra?.SUPABASE_URL as string;
+  const key = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY as string;
+  
+  return !url || 
+    !key ||
+    url === 'development-placeholder' || 
+    key === 'development-placeholder' ||
+    url.includes('development-placeholder') ||
+    key.includes('development-placeholder');
+})();
 
 // Create a custom storage implementation for Supabase to use with AsyncStorage
 class LargeSecureStore {
