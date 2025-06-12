@@ -127,8 +127,38 @@ class LargeSecureStore {
 const supabaseUrl = Constants.expoConfig?.extra?.SUPABASE_URL as string;
 const supabaseAnonKey = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY as string;
 
+// Comprehensive environment validation
+const validateEnvironment = () => {
+  const issues: string[] = [];
+  
+  if (!supabaseUrl) {
+    issues.push('SUPABASE_URL is not configured');
+  } else if (supabaseUrl === 'development-placeholder') {
+    issues.push('SUPABASE_URL is still set to development-placeholder');
+  } else if (!supabaseUrl.startsWith('https://')) {
+    issues.push('SUPABASE_URL must be a valid HTTPS URL');
+  }
+  
+  if (!supabaseAnonKey) {
+    issues.push('SUPABASE_ANON_KEY is not configured');
+  } else if (supabaseAnonKey === 'development-placeholder') {
+    issues.push('SUPABASE_ANON_KEY is still set to development-placeholder');
+  }
+  
+  if (issues.length > 0) {
+    console.error('Environment Configuration Issues:', issues);
+    if (__DEV__) {
+      console.warn('Running in development mode with mock Supabase configuration');
+    }
+  }
+  
+  return issues.length === 0;
+};
+
 // Validate Supabase configuration
-if (isDevelopmentMode) {
+const isValidEnvironment = validateEnvironment();
+
+if (isDevelopmentMode || !isValidEnvironment) {
   console.warn('Supabase running in development mode with mock functionality');
 }
 
