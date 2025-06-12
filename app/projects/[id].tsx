@@ -30,6 +30,16 @@ export default function ProjectDetail() {
   const theme = colorScheme || 'light';
   const { user } = useAuth();
   
+  // Validate that id exists and is a string
+  if (!id || Array.isArray(id)) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Invalid project ID</Text>
+        <Button onPress={() => router.back()}>Go Back</Button>
+      </View>
+    );
+  }
+  
   // State variables
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<(ProjectMember & { profile: Profile })[]>([]);
@@ -740,6 +750,18 @@ const styles = StyleSheet.create({
   },
   actionCardSubtitle: {
     fontSize: 12,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 20,
     textAlign: 'center',
   },
 });
