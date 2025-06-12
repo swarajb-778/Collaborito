@@ -127,7 +127,21 @@ class LargeSecureStore {
 const supabaseUrl = Constants.expoConfig?.extra?.SUPABASE_URL as string;
 const supabaseAnonKey = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY as string;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Validate Supabase configuration
+if (isDevelopmentMode) {
+  console.warn('Supabase running in development mode with mock functionality');
+}
+
+// Provide fallback values to prevent initialization errors
+const validatedUrl = (supabaseUrl && supabaseUrl !== 'development-placeholder') 
+  ? supabaseUrl 
+  : 'https://mock.supabase.co';
+  
+const validatedKey = (supabaseAnonKey && supabaseAnonKey !== 'development-placeholder') 
+  ? supabaseAnonKey 
+  : 'mock-anon-key';
+
+export const supabase = createClient(validatedUrl, validatedKey, {
   auth: {
     storage: new LargeSecureStore(),
     autoRefreshToken: true,
