@@ -116,15 +116,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // In development, start the mock auth server
     if (__DEV__) {
-      const server = startServer();
-      setMockServer(server);
+      try {
+        const server = startServer();
+        setMockServer(server);
+      } catch (error) {
+        console.warn('Failed to start mock auth server:', error);
+      }
     }
     
     return () => {
       subscription.remove();
       // Clean up the mock server if it exists
       if (mockServer) {
-        mockServer.stop();
+        try {
+          mockServer.stop();
+        } catch (error) {
+          console.warn('Error stopping mock server:', error);
+        }
       }
     };
   }, []);
