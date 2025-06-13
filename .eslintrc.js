@@ -3,17 +3,19 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended"
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended"
   ],
   env: {
     browser: true,
     node: true,
     es6: true,
-    jest: true
+    jest: true,
+    "react-native/react-native": true
   },
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 2020,
+    ecmaVersion: 2022,
     sourceType: "module",
     ecmaFeatures: {
       jsx: true
@@ -22,7 +24,9 @@ module.exports = {
   },
   plugins: [
     "@typescript-eslint",
-    "react"
+    "react",
+    "react-hooks",
+    "react-native"
   ],
   settings: {
     react: {
@@ -30,29 +34,31 @@ module.exports = {
     }
   },
   rules: {
+    // TypeScript rules
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "warn",
-    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-require-imports": "error",
-    "react/no-unescaped-entities": "error",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    
+    // React rules
+    "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
-    "@typescript-eslint/no-unused-expressions": "error"
+    "react/display-name": "warn",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    
+    // React Native specific rules
+    "react-native/no-unused-styles": "warn",
+    "react-native/split-platform-components": "warn",
+    "react-native/no-inline-styles": "warn",
+    "react-native/no-color-literals": "warn",
+    
+    // General rules
+    "prefer-const": "warn",
+    "no-console": "off", // Allow console in React Native
+    "no-debugger": "warn"
   },
-  overrides: [
-    {
-      files: ["*.js"],
-      parser: "espree",
-      parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: "script"
-      },
-      rules: {
-        "@typescript-eslint/no-require-imports": "off"
-      }
-    }
-  ],
   ignorePatterns: [
     "supabase/functions/**/*",
     "oauth-server.js",
@@ -62,12 +68,9 @@ module.exports = {
     "babel.config.js",
     "__mocks__/**/*",
     "jest.setup.js",
-    "check-supabase-fix.js",
-    "check-supabase-update.js",
-    "project-setup.js",
-    "scripts/**/*.js",
-    "proxy-server/**/*.js",
-    "polyfills/**/*.js",
-    "src/__tests__/**/*.js"
+    "dist/**/*",
+    ".expo/**/*",
+    "ios/**/*",
+    "android/**/*"
   ]
 };
