@@ -3,7 +3,17 @@ const { getDefaultConfig } = require('expo/metro-config');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-// Disable package exports to fix Supabase/ws issue with stream module
-config.resolver.unstable_enablePackageExports = false;
+// Enable clear cache on start
+config.resetCache = true;
+
+// Ensure proper platform resolution
+config.resolver.platforms = ['ios', 'android', 'web'];
+
+// Add polyfill support
+config.resolver.alias = {
+  crypto: 'react-native-crypto-js',
+  stream: 'stream-browserify',
+  buffer: '@craftzdog/react-native-buffer',
+};
 
 module.exports = config;
