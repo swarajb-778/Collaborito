@@ -16,7 +16,8 @@
     "clear-cache": "node scripts/clear-cache.js",
     "diagnose": "node scripts/diagnose-expo.js",
     "fix-packages": "node scripts/diagnose-expo.js --fix",
-    "validate-modules": "node scripts/validate-module-resolution.js"
+    "validate-modules": "node scripts/validate-module-resolution.js",
+    "fix-modules": "node scripts/fix-module-resolution-complete.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
