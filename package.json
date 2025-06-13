@@ -13,7 +13,7 @@
     "check-supabase-fix": "node check-supabase-fix.js",
     "setup": "node project-setup.js",
     "clean": "npx expo install --fix && npm audit fix",
-    "health-check": "npx expo doctor && npm audit",
+    "health-check": "node scripts/health-check.js",
     "deps-check": "npx expo install --check",
     "deps-update": "npx expo install --fix && npm audit fix",
     "prebuild": "expo prebuild",
