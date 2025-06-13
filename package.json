@@ -19,7 +19,13 @@
     "prebuild": "expo prebuild",
     "clear-cache": "npx expo start -c",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "dev:clean": "node scripts/dev-utils.js clean",
+    "dev:reinstall": "node scripts/dev-utils.js reinstall",
+    "dev:check": "node scripts/dev-utils.js check",
+    "dev:info": "node scripts/dev-utils.js info",
+    "dev:optimize": "node scripts/dev-utils.js optimize",
+    "dev:reset": "node scripts/dev-utils.js full-reset"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
