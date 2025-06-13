@@ -216,13 +216,11 @@ export default function ProjectSkillsScreen() {
         >
           {/* Logo container */}
           <RNAnimated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
             <Image 
               source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
-            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
             <Image 
               source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
               style={styles.textLogo}
@@ -273,7 +271,7 @@ export default function ProjectSkillsScreen() {
             {/* Skip Link */}
             <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
               <Text style={styles.skipLinkText}>
-                I&apos;ll select skills later
+                I'll select skills later
               </Text>
             </TouchableOpacity>
           </RNAnimated.View>

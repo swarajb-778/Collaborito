@@ -1,5 +1,5 @@
 # Ignore everything git ignores
-.gitignore
+!.gitignore
 
 # But allow this specific file
 !.env

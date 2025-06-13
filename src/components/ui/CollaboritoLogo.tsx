@@ -1,24 +1,17 @@
 import React from 'react';
-import { Svg, Path, G } from 'react-native-svg';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import Svg, { Path, G } from 'react-native-svg';
+import { View, StyleSheet } from 'react-native';
 
 interface LogoProps {
-  width?: number;
-  height?: number;
+  size?: number;
   color?: string;
-  style?: ViewStyle;
+  style?: any;
 }
 
-export const CollaboritoLogo: React.FC<LogoProps> = ({ 
-  width = 24, 
-  height = 24, 
-  color = '#000', 
-  style,
-  ...otherProps
-}) => {
+export const CollaboritoLogo = ({ size = 120, color = '#000', style }: LogoProps) => {
   return (
     <View style={[styles.container, style]}>
-      <Svg width={width} height={height} viewBox="0 0 500 500" fill="none">
+      <Svg width={size} height={size} viewBox="0 0 500 500" fill="none">
         <G>
           {/* Hexagon background */}
           <Path

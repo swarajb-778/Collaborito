@@ -42,9 +42,9 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
     </ErrorBoundary>
   );
 }

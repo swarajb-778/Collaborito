@@ -222,13 +222,11 @@ export default function RegisterScreen() {
 
             {/* Logo */}
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../assets/images/welcome/collaborito-dark-logo.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
-              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
                 source={require('../assets/images/welcome/collaborito-text-logo.png')} 
                 style={styles.textLogo}

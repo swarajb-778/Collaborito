@@ -54,19 +54,16 @@ const Gallery = () => {
   return (
     <View style={styles.galleryGrid}>
       <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim1 }]}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-1.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-2.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-3.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -74,19 +71,16 @@ const Gallery = () => {
         />
       </Animated.View>
       <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim2 }]}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-4.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-5.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-6.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -94,19 +88,16 @@ const Gallery = () => {
         />
       </Animated.View>
       <Animated.View style={[styles.galleryColumn, { opacity: fadeAnim3 }]}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-7.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-8.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
           resizeMode="cover"
         />
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image 
           source={require('../../assets/images/welcome/gallery/gallery-9.png')} 
           style={[styles.galleryImage, { height: imageHeight }]} 
@@ -183,13 +174,11 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.mainContent}>
         {/* Logo at the top */}
         <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-          {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
           <Image 
           source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
             style={styles.logo}
           resizeMode="contain"
         />
-          {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
           <Image 
           source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
             style={styles.textLogo}

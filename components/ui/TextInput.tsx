@@ -10,9 +10,7 @@ import {
   ViewStyle,
   TextStyle,
   Easing,
-  Platform,
-  NativeSyntheticEvent,
-  TextInputFocusEventData
+  Platform
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -23,6 +21,7 @@ interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  onLeftIconPress?: () => void;
   style?: ViewStyle;
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
@@ -37,6 +36,7 @@ export const TextInput = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  onLeftIconPress,
   style,
   inputStyle,
   labelStyle,
@@ -120,19 +120,19 @@ export const TextInput = ({
   });
   
   // Event handlers
-  const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleFocus = (e: any) => {
     setIsFocused(true);
-    props.onFocus?.(e);
+    props.onFocus && props.onFocus(e);
   };
   
-  const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleBlur = (e: any) => {
     setIsFocused(false);
-    props.onBlur?.(e);
+    props.onBlur && props.onBlur(e);
   };
   
   const handleChangeText = (text: string) => {
     setInputValue(text);
-    props.onChangeText?.(text);
+    props.onChangeText && props.onChangeText(text);
   };
   
   const toggleSecureTextVisibility = () => {

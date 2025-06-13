@@ -3,19 +3,17 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended"
+    "plugin:react/recommended"
   ],
   env: {
     browser: true,
     node: true,
     es6: true,
-    jest: true,
-    "react-native/react-native": true
+    jest: true
   },
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 2022,
+    ecmaVersion: 2020,
     sourceType: "module",
     ecmaFeatures: {
       jsx: true
@@ -24,9 +22,7 @@ module.exports = {
   },
   plugins: [
     "@typescript-eslint",
-    "react",
-    "react-hooks",
-    "react-native"
+    "react"
   ],
   settings: {
     react: {
@@ -34,30 +30,11 @@ module.exports = {
     }
   },
   rules: {
-    // TypeScript rules
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    
-    // React rules
+    "@typescript-eslint/no-unused-vars": "warn",
     "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
-    "react/display-name": "warn",
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn",
-    
-    // React Native specific rules
-    "react-native/no-unused-styles": "warn",
-    "react-native/split-platform-components": "warn",
-    "react-native/no-inline-styles": "warn",
-    "react-native/no-color-literals": "warn",
-    
-    // General rules
-    "prefer-const": "warn",
-    "no-console": "off", // Allow console in React Native
-    "no-debugger": "warn"
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "warn"
   },
   ignorePatterns: [
     "supabase/functions/**/*",
@@ -67,10 +44,6 @@ module.exports = {
     "metro.config.js",
     "babel.config.js",
     "__mocks__/**/*",
-    "jest.setup.js",
-    "dist/**/*",
-    ".expo/**/*",
-    "ios/**/*",
-    "android/**/*"
+    "jest.setup.js"
   ]
 };
