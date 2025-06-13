@@ -8,14 +8,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --passWithNoTests",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "jest --watchAll",
+    "lint": "expo lint",
     "check-supabase-fix": "node check-supabase-fix.js",
     "setup": "node project-setup.js",
     "optimize": "node scripts/optimize-expo.js",
     "clear-cache": "node scripts/clear-cache.js",
     "diagnose": "node scripts/diagnose-expo.js",
-    "fix-packages": "node scripts/diagnose-expo.js --fix"
+    "fix-packages": "node scripts/diagnose-expo.js --fix",
+    "validate-modules": "node scripts/validate-module-resolution.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
