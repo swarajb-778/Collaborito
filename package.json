@@ -11,7 +11,15 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "check-supabase-fix": "node check-supabase-fix.js",
-    "setup": "node project-setup.js"
+    "setup": "node project-setup.js",
+    "clean": "npx expo install --fix && npm audit fix",
+    "health-check": "npx expo doctor && npm audit",
+    "deps-check": "npx expo install --check",
+    "deps-update": "npx expo install --fix && npm audit fix",
+    "prebuild": "expo prebuild",
+    "clear-cache": "npx expo start -c",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
