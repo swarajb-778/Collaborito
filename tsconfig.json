@@ -16,5 +16,8 @@
     ".expo/types/**/*.ts",
     "types/global.d.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "supabase/functions/**/*"
   ]
 }
