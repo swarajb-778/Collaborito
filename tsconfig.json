@@ -2,10 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "module": "Node16",
     "moduleResolution": "node16",
     "customConditions": [],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [
@@ -14,6 +17,7 @@
     "**/*.js",
     "**/*.jsx",
     ".expo/types/**/*.ts",
-    "types/global.d.ts"
+    "types/global.d.ts",
+    "expo-env.d.ts"
   ]
 }
