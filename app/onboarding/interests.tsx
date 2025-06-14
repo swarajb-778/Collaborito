@@ -17,12 +17,16 @@ import {
   FlatList 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Import image assets
+const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
+const CollaboritoTextLogo = require('../../assets/images/welcome/collaborito-text-logo.png');
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -65,19 +69,14 @@ const INTERESTS = [
 
 export default function OnboardingInterestsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const [selectedInterests, setSelectedInterests] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const insets = useSafeAreaInsets();
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Log only once when component mounts
-    console.log('Rendering OnboardingInterestsScreen');
-    
     // Animate logo and form on screen load
     Animated.parallel([
       Animated.timing(logoScale, {
@@ -118,17 +117,16 @@ export default function OnboardingInterestsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       // In a real app, this would save the selected interests to the user's profile
-      console.log('Selected interests:', selectedInterests.map(id => INTERESTS.find(item => item.id === id)?.name));
+      const _selectedInterestNames = selectedInterests.map(id => INTERESTS.find(item => item.id === id)?.name);
       
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
       
       // Navigate to the goals screen instead of tabs
-      router.replace('/onboarding/goals' as any);
+      router.replace('/onboarding/goals');
       
-    } catch (error) {
-      console.error('Error saving interests:', error);
-      Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
+          } catch (error) {
+        Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -136,7 +134,7 @@ export default function OnboardingInterestsScreen() {
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/onboarding/goals' as any);
+    router.replace('/onboarding/goals');
   };
 
   // Render interest item
@@ -193,12 +191,12 @@ export default function OnboardingInterestsScreen() {
             {/* Logo container */}
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
               <Image 
-                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+                source={CollaboritoLogo} 
                 style={styles.logo}
                 resizeMode="contain"
               />
               <Image 
-                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+                source={CollaboritoTextLogo} 
                 style={styles.textLogo}
                 resizeMode="contain"
               />
