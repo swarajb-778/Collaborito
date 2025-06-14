@@ -18,11 +18,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import image assets
 const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
@@ -117,7 +115,7 @@ export default function OnboardingInterestsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       // In a real app, this would save the selected interests to the user's profile
-      const _selectedInterestNames = selectedInterests.map(id => INTERESTS.find(item => item.id === id)?.name);
+      // selectedInterests contains the IDs to be saved
       
       // Simulate API call
       await new Promise<void>(resolve => setTimeout(resolve, 1000));
@@ -125,9 +123,9 @@ export default function OnboardingInterestsScreen() {
       // Navigate to the goals screen instead of tabs
       router.replace('/onboarding/goals');
       
-          } catch (error) {
+                } catch {
         Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };
