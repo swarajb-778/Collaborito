@@ -28,43 +28,62 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
-// List of project skills
+// Interface for dynamic skills from Supabase
+interface SupabaseSkill {
+  id: string;
+  name: string;
+  category?: string;
+}
+
+// List of fallback project skills (converted to string IDs for Supabase compatibility)
 const PROJECT_SKILLS = [
-  { id: 1, name: 'Accounting' },
-  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
-  { id: 3, name: 'Biotechnology' },
-  { id: 4, name: 'Business' },
-  { id: 5, name: 'Content Creation (e.g. video, copywriting)' },
-  { id: 6, name: 'Counseling & Therapy' },
-  { id: 7, name: 'Data Analysis' },
-  { id: 8, name: 'DevOps' },
-  { id: 9, name: 'Finance' },
-  { id: 10, name: 'Fundraising' },
-  { id: 11, name: 'Graphic Design' },
-  { id: 12, name: 'Legal' },
-  { id: 13, name: 'Manufacturing' },
-  { id: 14, name: 'Marketing' },
-  { id: 15, name: 'Policy' },
-  { id: 16, name: 'Product Management' },
-  { id: 17, name: 'Project Management' },
-  { id: 18, name: 'Public Relations' },
-  { id: 19, name: 'Research' },
-  { id: 20, name: 'Sales' },
-  { id: 21, name: 'Software Development (Backend)' },
-  { id: 22, name: 'Software Development (Frontend)' },
-  { id: 23, name: 'UI/UX Design' },
-  { id: 24, name: 'Other' },
+  { id: '1', name: 'Accounting' },
+  { id: '2', name: 'Artificial Intelligence & Machine Learning' },
+  { id: '3', name: 'Biotechnology' },
+  { id: '4', name: 'Business' },
+  { id: '5', name: 'Content Creation (e.g. video, copywriting)' },
+  { id: '6', name: 'Counseling & Therapy' },
+  { id: '7', name: 'Data Analysis' },
+  { id: '8', name: 'DevOps' },
+  { id: '9', name: 'Finance' },
+  { id: '10', name: 'Fundraising' },
+  { id: '11', name: 'Graphic Design' },
+  { id: '12', name: 'Legal' },
+  { id: '13', name: 'Manufacturing' },
+  { id: '14', name: 'Marketing' },
+  { id: '15', name: 'Policy' },
+  { id: '16', name: 'Product Management' },
+  { id: '17', name: 'Project Management' },
+  { id: '18', name: 'Public Relations' },
+  { id: '19', name: 'Research' },
+  { id: '20', name: 'Sales' },
+  { id: '21', name: 'Software Development (Backend)' },
+  { id: '22', name: 'Software Development (Frontend)' },
+  { id: '23', name: 'UI/UX Design' },
+  { id: '24', name: 'Other' },
 ];
 
 export default function ProjectSkillsScreen() {
-  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
+  const { user } = useAuth();
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<SupabaseSkill[]>(PROJECT_SKILLS);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [flowInitialized, setFlowInitialized] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  
+  // Enhanced onboarding services
+  const stepManager = OnboardingStepManager.getInstance();
+  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
+  const errorRecovery = new OnboardingErrorRecovery();
   
   // Get the goalId from URL params and convert to number
   const goalId = params.goalId ? Number(params.goalId) : 2; // Default to 2 if not provided
@@ -72,6 +91,80 @@ export default function ProjectSkillsScreen() {
   // Animation values
   const logoScale = useRef(new RNAnimated.Value(0.8)).current;
   const formOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  // Initialize onboarding flow and load data
+  useEffect(() => {
+    const initializeScreen = async () => {
+      try {
+        setLoading(true);
+        
+        // Initialize flow coordinator
+        const flowReady = await flowCoordinator.initializeFlow();
+        if (!flowReady) {
+          const recovered = await errorRecovery.attemptRecovery();
+          if (!recovered) {
+            Alert.alert('Setup Error', 'Unable to initialize onboarding. Please try again.');
+            router.replace('/welcome/signin');
+            return;
+          }
+        }
+        
+        setFlowInitialized(true);
+        
+        // Try to load skills from Supabase and restore user selections
+        await Promise.all([
+          loadAvailableSkills(),
+          restoreUserSkills()
+        ]);
+        
+      } catch (error) {
+        console.error('Failed to initialize project skills screen:', error);
+        const showRecovery = await errorRecovery.showRecoveryDialog();
+        if (!showRecovery) {
+          router.replace('/welcome/signin');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user && user.id) {
+      initializeScreen();
+    }
+  }, [user]);
+
+  const loadAvailableSkills = async () => {
+    try {
+      // Try to load skills from Supabase
+      const supabaseSkills = await stepManager.getAvailableSkills();
+      
+      if (supabaseSkills && supabaseSkills.length > 0) {
+        setAvailableSkills(supabaseSkills);
+        console.log(`Loaded ${supabaseSkills.length} skills from Supabase`);
+      } else {
+        // Keep using fallback skills
+        console.log('Using fallback skills - Supabase skills not available');
+      }
+    } catch (error) {
+      console.error('Failed to load skills from Supabase:', error);
+      // Continue with fallback skills - not critical
+    }
+  };
+
+  const restoreUserSkills = async () => {
+    try {
+      // Try to restore existing user skills
+      const userSkills = await stepManager.getUserSkills();
+      if (userSkills && userSkills.length > 0) {
+        const skillIds = userSkills.map(skill => skill.skillId || skill.id);
+        setSelectedSkills(skillIds);
+        console.log('Restored user skills:', skillIds);
+      }
+    } catch (error) {
+      console.error('Failed to restore user skills:', error);
+      // Continue without restoring - not critical
+    }
+  };
 
   // Get subtitle text based on the goalId
   const getSubtitleText = () => {
@@ -105,7 +198,7 @@ export default function ProjectSkillsScreen() {
   };
 
   useEffect(() => {
-    console.log('Rendering ProjectSkillsScreen with goalId:', goalId);
+    console.log('Rendering ProjectSkillsScreen with enhanced Supabase integration');
     
     // Animate logo and form on screen load
     RNAnimated.parallel([
@@ -123,19 +216,24 @@ export default function ProjectSkillsScreen() {
     ]).start();
   }, []);
 
-  const toggleSkill = (id: number) => {
+  const toggleSkill = (skillId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedSkills(prevSelected => {
-      if (prevSelected.includes(id)) {
-        return prevSelected.filter(itemId => itemId !== id);
+      if (prevSelected.includes(skillId)) {
+        return prevSelected.filter(id => id !== skillId);
       } else {
-        return [...prevSelected, id];
+        return [...prevSelected, skillId];
       }
     });
   };
 
   const handleContinue = async () => {
+    if (!flowInitialized || !user) {
+      Alert.alert('Error', 'System not ready. Please try again.');
+      return;
+    }
+
     if (selectedSkills.length === 0) {
       Alert.alert('Skills Required', 'Please select at least one skill to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -146,29 +244,78 @@ export default function ProjectSkillsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Selected skills:', selectedSkills.map(id => PROJECT_SKILLS.find(item => item.id === id)?.name));
+      console.log('Saving skills to Supabase...');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare skills data for Supabase
+      const isOffering = goalId === 3; // If goal is "contribute skills", user is offering
+      const skillsData = {
+        skills: selectedSkills.map(skillId => ({
+          skillId: skillId,
+          isOffering: isOffering,
+          proficiency: 'intermediate' as const
+        }))
+      };
       
-      // Navigate to main app
-      router.replace('/(tabs)' as any);
+      const success = await stepManager.saveSkillsStep(skillsData);
+      
+      if (success) {
+        console.log('Skills saved successfully');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
+        // Get next step route from flow coordinator
+        const nextRoute = await stepManager.getNextStepRoute('skills');
+        if (nextRoute) {
+          router.replace(nextRoute as any);
+        } else {
+          // Complete onboarding - navigate to main app
+          router.replace('/(tabs)');
+        }
+      } else {
+        throw new Error('Failed to save skills');
+      }
       
     } catch (error) {
-      console.error('Error saving project skills:', error);
-      Alert.alert('Error', 'There was a problem saving your project skills. Please try again.');
+      console.error('Error saving skills:', error);
+      
+      // Use error recovery for better UX
+      const canRecover = await errorRecovery.recoverFromError(error as Error, 'skills_save');
+      if (!canRecover) {
+        Alert.alert('Error', 'There was a problem saving your skills. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(tabs)' as any);
+  const handleSkip = async () => {
+    if (!flowInitialized) {
+      Alert.alert('Error', 'System not ready. Please try again.');
+      return;
+    }
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Skip step using step manager
+      await stepManager.skipStep('skills', 'User chose to skip skills selection');
+      
+      // Get next step route
+      const nextRoute = await stepManager.getNextStepRoute('skills');
+      if (nextRoute) {
+        router.replace(nextRoute as any);
+      } else {
+        // Complete onboarding
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      console.error('Error skipping step:', error);
+      // Fallback navigation
+      router.replace('/(tabs)');
+    }
   };
 
   // Render skill item
-  const renderSkillItem = ({ item }: { item: { id: number; name: string } }) => (
+  const renderSkillItem = ({ item }: { item: SupabaseSkill }) => (
     <TouchableOpacity
       style={[
         styles.skillItem,
@@ -192,11 +339,26 @@ export default function ProjectSkillsScreen() {
     </TouchableOpacity>
   );
 
+  // Show loading screen while initializing
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FF6B35" />
+        <Text style={[styles.subtitle, { marginTop: 16, textAlign: 'center' }]}>
+          Loading skills...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
       
+      {/* Add OnboardingProgress component */}
+      <OnboardingProgress userId={user?.id || ''} />
+
       {/* Background elements */}
       <View style={styles.backgroundShapesContainer}>
         <LinearGradient
@@ -238,9 +400,9 @@ export default function ProjectSkillsScreen() {
             {/* Skills grid */}
             <View style={styles.skillsContainer}>
               <FlatList
-                data={PROJECT_SKILLS}
+                data={availableSkills}
                 renderItem={renderSkillItem}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id}
                 numColumns={2}
                 scrollEnabled={false} // The parent ScrollView handles scrolling
                 contentContainerStyle={styles.skillsList}
