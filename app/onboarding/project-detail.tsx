@@ -52,6 +52,50 @@ export default function OnboardingProjectDetailScreen() {
   const formOpacity = useSharedValue(0);
   const buttonsOpacity = useSharedValue(0);
 
+  // Initialize onboarding flow and restore project data
+  useEffect(() => {
+    const initializeScreen = async () => {
+      try {
+        setLoading(true);
+        
+        // Initialize flow coordinator
+        const flowReady = await flowCoordinator.initializeFlow();
+        if (!flowReady) {
+          const recovered = await errorRecovery.attemptRecovery();
+          if (!recovered) {
+            Alert.alert('Setup Error', 'Unable to initialize onboarding. Please try again.');
+            router.replace('/welcome/signin');
+            return;
+          }
+        }
+        
+        setFlowInitialized(true);
+        
+        // Try to restore existing project data
+        const existingProjects = await stepManager.getUserProjects();
+        if (existingProjects && existingProjects.length > 0) {
+          const lastProject = existingProjects[existingProjects.length - 1];
+          setProjectName(lastProject.name || '');
+          setProjectDescription(lastProject.description || '');
+          console.log('Restored project data:', lastProject);
+        }
+        
+      } catch (error) {
+        console.error('Failed to initialize project detail screen:', error);
+        const showRecovery = await errorRecovery.showRecoveryDialog();
+        if (!showRecovery) {
+          router.replace('/welcome/signin');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user && user.id) {
+      initializeScreen();
+    }
+  }, [user]);
+
   useEffect(() => {
     console.log('Rendering OnboardingProjectDetailScreen');
     
@@ -81,6 +125,11 @@ export default function OnboardingProjectDetailScreen() {
   });
 
   const handleContinue = async () => {
+    if (!flowInitialized || !user) {
+      Alert.alert('Error', 'System not ready. Please try again.');
+      return;
+    }
+
     if (!projectName.trim()) {
       Alert.alert('Project Name Required', 'Please enter a name for your project to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -97,37 +146,91 @@ export default function OnboardingProjectDetailScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Project details:', { projectName, projectDescription });
+      console.log('Saving project details to Supabase...');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save project details using OnboardingStepManager
+      const projectData = {
+        name: projectName.trim(),
+        description: projectDescription.trim(),
+        tags: [] // Could be extended later
+      };
       
-      // Navigate to project skills screen with goal ID
-      router.replace({
-        pathname: '/onboarding/project-skills',
-        params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
-      } as any);
+      const success = await stepManager.saveProjectDetailsStep(projectData);
+      
+      if (success) {
+        console.log('Project details saved successfully');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
+        // Get next step route from flow coordinator
+        const nextRoute = await stepManager.getNextStepRoute('project_details');
+        if (nextRoute) {
+          router.replace(nextRoute as any);
+        } else {
+          // Default to project skills
+          router.replace('/onboarding/project-skills');
+        }
+      } else {
+        throw new Error('Failed to save project details');
+      }
       
     } catch (error) {
       console.error('Error saving project details:', error);
-      Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+      
+      // Use error recovery for better UX
+      const canRecover = await errorRecovery.recoverFromError(error as Error, 'project_details_save');
+      if (!canRecover) {
+        Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace({
-      pathname: '/onboarding/project-skills',
-      params: { goalId: 2 } // Default to "Find collaborators" (ID: 2)
-    } as any);
+  const handleSkip = async () => {
+    if (!flowInitialized) {
+      Alert.alert('Error', 'System not ready. Please try again.');
+      return;
+    }
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Skip step using step manager
+      await stepManager.skipStep('project_details', 'User chose to skip project details');
+      
+      // Get next step route
+      const nextRoute = await stepManager.getNextStepRoute('project_details');
+      if (nextRoute) {
+        router.replace(nextRoute as any);
+      } else {
+        router.replace('/onboarding/project-skills');
+      }
+    } catch (error) {
+      console.error('Error skipping step:', error);
+      // Fallback navigation
+      router.replace('/onboarding/project-skills');
+    }
   };
+
+  // Show loading screen while initializing
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FF6B35" />
+        <Text style={[styles.subtitle, { marginTop: 16, textAlign: 'center' }]}>
+          Loading project details...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
+      
+      {/* Add OnboardingProgress component */}
+      <OnboardingProgress userId={user?.id || ''} />
       
       {/* Background elements from other onboarding screens */}
       <View style={styles.backgroundShapesContainer}>
