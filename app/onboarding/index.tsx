@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery, ConnectionTestService } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 // Get screen dimensions like in register.tsx
@@ -70,10 +70,22 @@ export default function OnboardingScreen() {
   useEffect(() => {
     const initializeOnboarding = async () => {
       try {
+        // Run connection diagnostics first
+        console.log('🏥 Running connection diagnostics...');
+        const connectionService = ConnectionTestService.getInstance();
+        await connectionService.performDiagnostics();
+        
+        // Test Supabase connection
+        const connectionResult = await connectionService.testSupabaseConnection();
+        if (!connectionResult.connected) {
+          console.warn('⚠️ Supabase connection issues detected:', connectionResult.error);
+          // Continue with offline mode instead of failing
+        }
+
         const flowReady = await flowCoordinator.initializeFlow();
         if (flowReady) {
           setFlowInitialized(true);
-          console.log('Onboarding flow initialized successfully');
+          console.log('✅ Onboarding flow initialized successfully');
         } else {
           // Try recovery
           const recovered = await errorRecovery.attemptRecovery();
@@ -88,7 +100,7 @@ export default function OnboardingScreen() {
           }
         }
       } catch (error) {
-        console.error('Failed to initialize onboarding:', error);
+        console.error('❌ Failed to initialize onboarding:', error);
         const showRecovery = await errorRecovery.showRecoveryDialog();
         if (!showRecovery) {
           router.replace('/welcome/signin');
