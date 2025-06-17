@@ -12,6 +12,7 @@ export { OnboardingFlowCoordinator } from './OnboardingFlowCoordinator';
 export { OnboardingStepManager } from './OnboardingStepManager';
 export { OnboardingAnalytics } from './OnboardingAnalytics';
 export { UserProfileService } from './UserProfileService';
+export { ConnectionTestService } from './ConnectionTestService';
 
 // Configuration
 export * from '../config/onboardingConfig';
