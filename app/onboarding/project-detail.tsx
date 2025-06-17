@@ -160,7 +160,7 @@ export default function OnboardingProjectDetailScreen() {
       if (success) {
         console.log('Project details saved successfully');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
+      
         // Get next step route from flow coordinator
         const nextRoute = await stepManager.getNextStepRoute('project_details');
         if (nextRoute) {
@@ -179,7 +179,7 @@ export default function OnboardingProjectDetailScreen() {
       // Use error recovery for better UX
       const canRecover = await errorRecovery.recoverFromError(error as Error, 'project_details_save');
       if (!canRecover) {
-        Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
+      Alert.alert('Error', 'There was a problem saving your project details. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -193,7 +193,7 @@ export default function OnboardingProjectDetailScreen() {
     }
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       // Skip step using step manager
       await stepManager.skipStep('project_details', 'User chose to skip project details');

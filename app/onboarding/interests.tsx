@@ -186,7 +186,7 @@ export default function OnboardingInterestsScreen() {
       if (nextRoute) {
         router.replace(nextRoute as any);
       } else {
-        router.replace('/onboarding/goals');
+      router.replace('/onboarding/goals');
       }
       
     } catch (error) {
@@ -197,14 +197,14 @@ export default function OnboardingInterestsScreen() {
       if (!recovered) {
         Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
       }
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };
   
   const handleSkip = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       console.log('Skipping interests step');
       
       if (flowInitialized) {
@@ -222,7 +222,7 @@ export default function OnboardingInterestsScreen() {
       router.replace('/onboarding/goals');
     } catch (error) {
       console.error('Error skipping interests step:', error);
-      router.replace('/onboarding/goals');
+    router.replace('/onboarding/goals');
     }
   };
 

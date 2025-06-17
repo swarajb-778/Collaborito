@@ -1,17 +1,29 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import * as SecureStore from 'expo-secure-store';
 
-// Fix environment variable loading - try both expo config and process.env
-const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || 
-                     Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
-                     process.env.EXPO_PUBLIC_SUPABASE_URL || 
-                     'https://ekydublgvsoaaepdhtzc.supabase.co';
+const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
+
+export interface MockSession {
+  access_token: string;
+  user: {
+    id: string;
+    email: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  expires_at: number;
+  token_type: 'bearer';
+  mock: true;
+}
 
 export class SessionManager {
   private static instance: SessionManager;
   private currentSession: any = null;
   private onboardingState: any = null;
+  private isMockUser: boolean = false;
 
   static getInstance(): SessionManager {
     if (!SessionManager.instance) {
@@ -20,49 +32,44 @@ export class SessionManager {
     return SessionManager.instance;
   }
 
+  /**
+   * Enhanced session initialization that handles both mock and real Supabase users
+   */
   async initializeSession(): Promise<boolean> {
     try {
-      console.log('🔄 Initializing session...');
-      // Check for existing session - first try Supabase Auth
+      // First try to get existing session from Supabase
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error('❌ Supabase session initialization error:', error);
-        
-        // Try to initialize with local user data as fallback
-        const fallbackSuccess = await this.initializeFromLocalData();
-        if (fallbackSuccess) {
-          console.log('✅ Session initialized from local data');
-          return true;
-        }
-        
-        throw error;
-      }
-      
-      if (session) {
-        console.log('✅ Supabase session found, loading onboarding state...');
+      if (!error && session) {
+        console.log('✅ Real Supabase session found');
         this.currentSession = session;
+        this.isMockUser = false;
         await this.loadOnboardingState();
         return true;
-      } else {
-        console.log('⚠️ No Supabase session found, trying local fallback...');
-        // Try to initialize from local user data
-        const fallbackSuccess = await this.initializeFromLocalData();
-        if (fallbackSuccess) {
-          console.log('✅ Session initialized from local data');
-          return true;
-        }
       }
       
-      console.log('⚠️ No session found');
+      // If no Supabase session, check for mock user from AuthContext
+      const mockUser = await this.getMockUserFromAuthContext();
+      if (mockUser) {
+        console.log('🔧 Mock user detected, creating fallback session');
+        this.currentSession = await this.createMockSession(mockUser);
+        this.isMockUser = true;
+        await this.loadOnboardingState();
+        return true;
+      }
+      
+      console.log('❌ No session found');
       return false;
     } catch (error) {
-      console.error('❌ Session initialization failed:', error);
+      console.error('Session initialization failed:', error);
       
-      // Try local fallback as last resort
-      const fallbackSuccess = await this.initializeFromLocalData();
-      if (fallbackSuccess) {
-        console.log('✅ Session initialized from local data (fallback)');
+      // Try fallback with mock user
+      const mockUser = await this.getMockUserFromAuthContext();
+      if (mockUser) {
+        console.log('🔧 Falling back to mock session after error');
+        this.currentSession = await this.createMockSession(mockUser);
+        this.isMockUser = true;
+        await this.loadOnboardingState();
         return true;
       }
       
@@ -71,59 +78,56 @@ export class SessionManager {
   }
 
   /**
-   * Initialize session from local storage when Supabase session is not available
+   * Get mock user data from AuthContext storage
    */
-  private async initializeFromLocalData(): Promise<boolean> {
+  private async getMockUserFromAuthContext(): Promise<any> {
     try {
-      console.log('🔄 Attempting to initialize from local data...');
-      
-      // Try to get user data from SecureStore (AuthContext)
-      const { getItemAsync } = await import('expo-secure-store');
-      const userJson = await getItemAsync('user');
-      const userSession = await getItemAsync('userSession');
-      
-      if (userJson && userSession === 'active') {
+      const userJson = await SecureStore.getItemAsync('user');
+      if (userJson) {
         const userData = JSON.parse(userJson);
-        console.log('✅ Found local user data:', userData.id);
-        
-        // Create a pseudo session object for our services to work with
-        this.currentSession = {
-          access_token: `local_token_${userData.id}`,
-          user: {
-            id: userData.id,
-            email: userData.email
-          }
-        };
-        
-        // Set default onboarding state for local users
-        this.onboardingState = {
-          currentStep: 'profile',
-          completed: false,
-          profile: userData.firstName && userData.lastName ? {
-            firstName: userData.firstName,
-            lastName: userData.lastName
-          } : null,
-          interests: null,
-          goals: null,
-          projects: null,
-          skills: null
-        };
-        
-        console.log('✅ Local session initialized with default state');
-        return true;
+        // Check if this is a mock user (has id starting with 'new' or similar pattern)
+        if (userData.id && (userData.id.startsWith('new') || userData.id.includes('mock') || userData.oauthProvider === 'email')) {
+          return userData;
+        }
       }
-      
-      console.log('⚠️ No valid local user data found');
-      return false;
+      return null;
     } catch (error) {
-      console.error('❌ Failed to initialize from local data:', error);
-      return false;
+      console.error('Error getting mock user:', error);
+      return null;
     }
   }
 
+  /**
+   * Create a mock session for development/mock users
+   */
+  private async createMockSession(userData: any): Promise<MockSession> {
+    return {
+      access_token: `mock_token_${userData.id}_${Date.now()}`,
+      user: {
+        id: userData.id,
+        email: userData.email,
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+      },
+      expires_at: Date.now() + (24 * 60 * 60 * 1000), // 24 hours from now
+      token_type: 'bearer',
+      mock: true,
+    };
+  }
+
+  /**
+   * Enhanced onboarding state loading with fallback for mock users
+   */
   async loadOnboardingState(): Promise<void> {
     try {
-      console.log('🔄 Loading onboarding state from Edge Function...');
+      if (this.isMockUser) {
+        // For mock users, load from local storage or create default state
+        await this.loadMockOnboardingState();
+        return;
+      }
+
+      // For real users, try to load from Supabase Edge Function
       const response = await fetch(`${SUPABASE_URL}/functions/v1/onboarding-status`, {
         method: 'POST',
         headers: {
@@ -135,141 +139,143 @@ export class SessionManager {
 
       if (response.ok) {
         this.onboardingState = await response.json();
-        console.log('✅ Onboarding state loaded:', this.onboardingState);
-        
-        // Cache locally for offline access
-        await AsyncStorage.setItem('onboarding_state', JSON.stringify(this.onboardingState));
       } else {
-        console.log('⚠️ Edge Function response not OK, using cached or default state');
-        throw new Error(`Edge Function returned ${response.status}`);
+        throw new Error('Failed to load onboarding state from server');
       }
+      
+      // Cache locally for offline access
+      await AsyncStorage.setItem('onboarding_state', JSON.stringify(this.onboardingState));
     } catch (error) {
-      console.log('🔄 Loading from cache due to error:', (error as Error).message);
+      console.warn('Failed to load onboarding state from server, using fallback:', error);
       // Load from cache if network fails
       const cached = await AsyncStorage.getItem('onboarding_state');
       if (cached) {
         this.onboardingState = JSON.parse(cached);
-        console.log('✅ Using cached onboarding state');
       } else {
-        // Set default state for new users
-        this.onboardingState = {
-          currentStep: 'profile',
-          completed: false,
-          profile: null,
-          interests: null,
-          goals: null,
-          projects: null,
-          skills: null
-        };
-        console.log('✅ Using default onboarding state for new user');
+        // Create default state for new users
+        await this.createDefaultOnboardingState();
       }
-    }
-  }
-
-  async saveOnboardingStep(step: string, data: any): Promise<boolean> {
-    try {
-      console.log('🔄 Saving onboarding step:', step, 'with data:', data);
-      
-      // Check if we have a valid session
-      if (!this.currentSession?.access_token) {
-        console.error('❌ No session available for saving step');
-        return false;
-      }
-      
-      // If this is a local session (not Supabase), save locally
-      if (this.currentSession.access_token.startsWith('local_token_')) {
-        console.log('💾 Saving step locally (no Edge Function available)');
-        return await this.saveStepLocally(step, data);
-      }
-      
-      // Try to save via Edge Function first
-      try {
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/validate-onboarding`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.currentSession?.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ step, data })
-        });
-
-        const result = await response.json();
-        
-        if (response.ok) {
-          console.log('✅ Step saved via Edge Function');
-          await this.loadOnboardingState(); // Refresh state
-          return true;
-        }
-        
-        console.warn('⚠️ Edge Function returned error:', result.error);
-        throw new Error(result.error);
-      } catch (edgeFunctionError) {
-        console.warn('⚠️ Edge Function failed, falling back to local save:', (edgeFunctionError as Error).message);
-        
-        // Fallback to local save
-        return await this.saveStepLocally(step, data);
-      }
-    } catch (error) {
-      console.error('❌ Failed to save onboarding step:', error);
-      return false;
     }
   }
 
   /**
-   * Save onboarding step locally when Edge Functions are not available
+   * Load onboarding state for mock users from local storage
    */
-  private async saveStepLocally(step: string, data: any): Promise<boolean> {
+  private async loadMockOnboardingState(): Promise<void> {
     try {
-      console.log('💾 Saving step locally:', step);
+      const userId = this.currentSession?.user?.id;
+      const cacheKey = `mock_onboarding_${userId}`;
       
-      // Update the onboarding state based on the step
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        this.onboardingState = JSON.parse(cached);
+      } else {
+        await this.createDefaultOnboardingState();
+        // Save the default state
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(this.onboardingState));
+      }
+    } catch (error) {
+      console.error('Error loading mock onboarding state:', error);
+      await this.createDefaultOnboardingState();
+    }
+  }
+
+  /**
+   * Create default onboarding state for new users
+   */
+  private async createDefaultOnboardingState(): Promise<void> {
+    this.onboardingState = {
+      completed: false,
+      currentStep: 'profile',
+      steps: {
+        profile: { completed: false, data: null },
+        interests: { completed: false, data: null },
+        goals: { completed: false, data: null },
+        project_details: { completed: false, data: null },
+        skills: { completed: false, data: null }
+      },
+      progress: 0,
+      user_id: this.currentSession?.user?.id || 'unknown',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Enhanced step saving with mock user support
+   */
+  async saveOnboardingStep(step: string, data: any): Promise<boolean> {
+    try {
+      if (this.isMockUser) {
+        return await this.saveMockOnboardingStep(step, data);
+      }
+
+      // For real users, save to Supabase Edge Function
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/validate-onboarding`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.currentSession?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ step, data })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        await this.loadOnboardingState(); // Refresh state
+        return true;
+      }
+      
+      throw new Error(result.error || 'Failed to save step');
+    } catch (error) {
+      console.warn('Failed to save to server, saving locally:', error);
+      return await this.saveMockOnboardingStep(step, data);
+    }
+  }
+
+  /**
+   * Save onboarding step for mock users locally
+   */
+  private async saveMockOnboardingStep(step: string, data: any): Promise<boolean> {
+    try {
+      const userId = this.currentSession?.user?.id;
+      const cacheKey = `mock_onboarding_${userId}`;
+      
+      // Update the onboarding state
       if (!this.onboardingState) {
-        this.onboardingState = {
-          currentStep: 'profile',
-          completed: false,
-          profile: null,
-          interests: null,
-          goals: null,
-          projects: null,
-          skills: null
-        };
+        await this.createDefaultOnboardingState();
       }
-      
-      // Update state based on step type
-      switch (step) {
-        case 'profile':
-          this.onboardingState.profile = data;
-          this.onboardingState.currentStep = 'interests';
-          break;
-        case 'interests':
-          this.onboardingState.interests = data.interestIds || data;
-          this.onboardingState.currentStep = 'goals';
-          break;
-        case 'goals':
-          this.onboardingState.goals = data;
-          this.onboardingState.currentStep = 'project_details';
-          break;
-        case 'project_details':
-          this.onboardingState.projects = data;
-          this.onboardingState.currentStep = 'skills';
-          break;
-        case 'skills':
-          this.onboardingState.skills = data;
-          this.onboardingState.currentStep = 'completed';
-          break;
-        case 'complete':
-          this.onboardingState.completed = true;
-          this.onboardingState.currentStep = 'completed';
-          break;
+
+      this.onboardingState.steps[step] = {
+        completed: true,
+        data: data,
+        completed_at: new Date().toISOString()
+      };
+
+      // Update current step to next step
+      const stepOrder = ['profile', 'interests', 'goals', 'project_details', 'skills'];
+      const currentIndex = stepOrder.indexOf(step);
+      if (currentIndex < stepOrder.length - 1) {
+        this.onboardingState.currentStep = stepOrder[currentIndex + 1];
+      } else {
+        this.onboardingState.completed = true;
+        this.onboardingState.currentStep = 'completed';
       }
-      
+
+      // Update progress
+      const completedSteps = Object.values(this.onboardingState.steps).filter((s: any) => s.completed).length;
+      this.onboardingState.progress = (completedSteps / stepOrder.length) * 100;
+      this.onboardingState.updated_at = new Date().toISOString();
+
       // Save to local storage
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(this.onboardingState));
       await AsyncStorage.setItem('onboarding_state', JSON.stringify(this.onboardingState));
-      console.log('✅ Step saved locally with updated state:', this.onboardingState);
       
+      console.log(`✅ Mock onboarding step '${step}' saved locally`);
       return true;
     } catch (error) {
-      console.error('❌ Failed to save step locally:', error);
+      console.error('Error saving mock onboarding step:', error);
       return false;
     }
   }
@@ -290,50 +296,43 @@ export class SessionManager {
     return this.currentSession;
   }
 
+  isMockSession(): boolean {
+    return this.isMockUser;
+  }
+
+  /**
+   * Enhanced session verification with mock support
+   */
   async verifySession(): Promise<boolean> {
     try {
-      console.log('🔄 Verifying session...');
-      
-      // If we have a local session, verify it exists in SecureStore
-      if (this.currentSession?.access_token?.startsWith('local_token_')) {
-        console.log('🔍 Verifying local session...');
-        try {
-          const { getItemAsync } = await import('expo-secure-store');
-          const userSession = await getItemAsync('userSession');
-          const userJson = await getItemAsync('user');
-          
-          if (userSession === 'active' && userJson) {
-            console.log('✅ Local session verified');
+      if (this.isMockUser) {
+        // For mock users, just check if session exists and isn't expired
+        if (this.currentSession && this.currentSession.expires_at > Date.now()) {
+          return true;
+        } else {
+          // Try to recreate mock session
+          const mockUser = await this.getMockUserFromAuthContext();
+          if (mockUser) {
+            this.currentSession = await this.createMockSession(mockUser);
             return true;
-          } else {
-            console.log('❌ Local session invalid');
-            this.clearSession();
-            return false;
           }
-        } catch (error) {
-          console.error('❌ Error verifying local session:', error);
           return false;
         }
       }
-      
-      // For Supabase sessions, verify with Supabase
+
+      // For real users, verify with Supabase
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error('❌ Session verification error:', error);
-        return false;
-      }
+      if (error) throw error;
       
       if (session && session.access_token) {
-        console.log('✅ Supabase session verified');
         this.currentSession = session;
         return true;
       }
       
-      console.log('❌ No valid session found');
       return false;
     } catch (error) {
-      console.error('❌ Session verification failed:', error);
+      console.error('Session verification failed:', error);
       return false;
     }
   }
@@ -345,6 +344,21 @@ export class SessionManager {
   clearSession(): void {
     this.currentSession = null;
     this.onboardingState = null;
+    this.isMockUser = false;
     AsyncStorage.removeItem('onboarding_state');
+  }
+
+  /**
+   * Get user ID from current session
+   */
+  getUserId(): string | null {
+    return this.currentSession?.user?.id || null;
+  }
+
+  /**
+   * Get user email from current session
+   */
+  getUserEmail(): string | null {
+    return this.currentSession?.user?.email || null;
   }
 } 

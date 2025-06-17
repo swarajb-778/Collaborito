@@ -261,7 +261,7 @@ export default function ProjectSkillsScreen() {
       if (success) {
         console.log('Skills saved successfully');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
+      
         // Get next step route from flow coordinator
         const nextRoute = await stepManager.getNextStepRoute('skills');
         if (nextRoute) {
@@ -294,7 +294,7 @@ export default function ProjectSkillsScreen() {
     }
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       // Skip step using step manager
       await stepManager.skipStep('skills', 'User chose to skip skills selection');
@@ -358,7 +358,7 @@ export default function ProjectSkillsScreen() {
       
       {/* Add OnboardingProgress component */}
       <OnboardingProgress userId={user?.id || ''} />
-
+      
       {/* Background elements */}
       <View style={styles.backgroundShapesContainer}>
         <LinearGradient
