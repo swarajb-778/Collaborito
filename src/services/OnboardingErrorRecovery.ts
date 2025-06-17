@@ -80,6 +80,15 @@ export class OnboardingErrorRecovery {
   async recoverFromError(error: any, context: string): Promise<boolean> {
     console.error(`Error in ${context}:`, error);
 
+    // Check if this is a mock user - be more lenient with errors
+    const session = this.sessionManager.getSession();
+    const isMockUser = session && (session as any).mock;
+    
+    if (isMockUser) {
+      console.log('🔧 Mock user detected, applying lenient error recovery');
+      return this.handleMockUserError(error, context);
+    }
+
     // Check if it's a network error
     if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
       return this.handleNetworkError();
@@ -97,6 +106,33 @@ export class OnboardingErrorRecovery {
 
     // Generic error handling
     return this.handleGenericError(error);
+  }
+
+  /**
+   * Handle errors for mock users with more lenient approach
+   */
+  private async handleMockUserError(error: any, context: string): Promise<boolean> {
+    console.log(`🔧 Handling mock user error in ${context}:`, error.message || error);
+    
+    // For mock users, most errors are recoverable
+    if (context.includes('initializeFlow') || context.includes('session')) {
+      console.log('✅ Mock user session/flow error - allowing graceful continuation');
+      return true;
+    }
+    
+    if (context.includes('executeStep')) {
+      console.log('✅ Mock user step execution error - allowing local storage fallback');
+      return true;
+    }
+    
+    if (context.includes('network') || context.includes('supabase')) {
+      console.log('✅ Mock user network/supabase error - using local fallback');
+      return true;
+    }
+    
+    // For any other mock user errors, allow continuation with warning
+    console.warn(`Mock user error in ${context}, but allowing continuation:`, error);
+    return true;
   }
 
   private async handleNetworkError(): Promise<boolean> {
