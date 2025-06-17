@@ -23,6 +23,8 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 // Get screen dimensions like in register.tsx
 const { width, height } = Dimensions.get('window');
@@ -32,7 +34,13 @@ export default function OnboardingScreen() {
   const { user, updateUser, loading } = useAuth(); // Get loading state from context
   const [savingProfile, setSavingProfile] = useState(false);
   const [userDataReady, setUserDataReady] = useState(false);
+  const [flowInitialized, setFlowInitialized] = useState(false);
   const insets = useSafeAreaInsets();
+
+  // Enhanced onboarding services
+  const stepManager = OnboardingStepManager.getInstance();
+  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
+  const errorRecovery = new OnboardingErrorRecovery();
 
   // Animation values like in register.tsx
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -57,6 +65,41 @@ export default function OnboardingScreen() {
       }),
     ]).start();
   }, []);
+
+  // Initialize onboarding flow
+  useEffect(() => {
+    const initializeOnboarding = async () => {
+      try {
+        const flowReady = await flowCoordinator.initializeFlow();
+        if (flowReady) {
+          setFlowInitialized(true);
+          console.log('Onboarding flow initialized successfully');
+        } else {
+          // Try recovery
+          const recovered = await errorRecovery.attemptRecovery();
+          if (!recovered) {
+            Alert.alert(
+              'Setup Error',
+              'Unable to initialize onboarding. Please sign in again.',
+              [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
+            );
+          } else {
+            setFlowInitialized(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize onboarding:', error);
+        const showRecovery = await errorRecovery.showRecoveryDialog();
+        if (!showRecovery) {
+          router.replace('/welcome/signin');
+        }
+      }
+    };
+
+    if (!loading && user && user.id) {
+      initializeOnboarding();
+    }
+  }, [user, loading]);
 
   // Monitor user data availability
   useEffect(() => {
@@ -134,11 +177,11 @@ export default function OnboardingScreen() {
     return true;
   };
 
-  // Enhanced completion logic with better error handling
+  // Enhanced completion logic with Supabase integration
   const handleComplete = async () => {
-    // Check if user data is available before proceeding
-    if (!userDataReady || !user) {
-      Alert.alert('Error', 'User session not ready. Please try again.');
+    // Check if user data and flow are ready
+    if (!userDataReady || !user || !flowInitialized) {
+      Alert.alert('Error', 'System not ready. Please try again.');
       return;
     }
 
@@ -148,52 +191,90 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Attempting to update user profile...');
+      console.log('Attempting to save profile step...');
       console.log('Current user ID:', user.id);
-      console.log('Update data:', { firstName, lastName, location, jobTitle });
+      console.log('Profile data:', { firstName, lastName, location, jobTitle });
       
-      // Update user profile with entered data
-      const userProfileUpdate = {
-        firstName,
-        lastName,
-        // You could add these to the User type and save them too
-        // location,
-        // jobTitle,
+      // Save profile step using step manager (saves to Supabase)
+      const profileData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        location: location.trim(),
+        jobTitle: jobTitle.trim()
       };
       
-      // Save user profile data with additional validation
-      const updateSuccess = await updateUser(userProfileUpdate);
+      const success = await stepManager.saveProfileStep(profileData);
       
-      if (!updateSuccess) {
-        throw new Error('Failed to update user profile');
+      if (!success) {
+        throw new Error('Failed to save profile data');
       }
       
-      console.log('Profile updated successfully with:', { firstName, lastName, location, jobTitle });
+      // Also update local auth context for immediate UI updates
+      const userProfileUpdate = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      };
       
-      // Navigate to the interests screen
-      router.replace('/onboarding/interests' as any);
+      await updateUser(userProfileUpdate);
+      
+      console.log('Profile step saved successfully');
+      
+      // Get next step route from step manager
+      const nextRoute = await stepManager.getNextStepRoute('profile');
+      if (nextRoute) {
+        router.replace(nextRoute as any);
+      } else {
+        router.replace('/onboarding/interests' as any);
+      }
+      
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'There was a problem updating your profile. Please try again.');
+      console.error('Error saving profile step:', error);
+      
+      // Use error recovery to handle the error gracefully
+      const recovered = await errorRecovery.recoverFromError(error, 'saveProfileStep');
+      if (!recovered) {
+        Alert.alert('Error', 'There was a problem saving your profile. Please try again.');
+      }
     } finally {
       setSavingProfile(false);
     }
   };
 
-  const handleSkip = () => {
-    // Allow skipping even if user data is not ready
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log('Skipping onboarding, navigating to interests screen');
-    router.replace('/onboarding/interests' as any);
+  const handleSkip = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      console.log('Skipping profile step');
+      
+      if (flowInitialized) {
+        // Skip through step manager for proper tracking
+        await stepManager.skipStep('profile', 'User chose to skip');
+        
+        const nextRoute = await stepManager.getNextStepRoute('profile');
+        if (nextRoute) {
+          router.replace(nextRoute as any);
+          return;
+        }
+      }
+      
+      // Fallback navigation
+      router.replace('/onboarding/interests' as any);
+    } catch (error) {
+      console.error('Error skipping profile step:', error);
+      router.replace('/onboarding/interests' as any);
+    }
   };
 
-  // Show loading spinner while auth is loading or user data is not ready
-  if (loading || !userDataReady) {
+  // Show loading spinner while auth is loading or flow is not ready
+  if (loading || !userDataReady || !flowInitialized) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <StatusBar style="dark" />
         <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loadingText}>Setting up your profile...</Text>
+        <Text style={styles.loadingText}>
+          {loading ? 'Loading user data...' : 
+           !userDataReady ? 'Setting up session...' : 
+           'Initializing onboarding...'}
+        </Text>
       </View>
     );
   }
@@ -247,6 +328,16 @@ export default function OnboardingScreen() {
               <Text style={styles.subtitle}>
                 Tell us a bit more about yourself to get started.
               </Text>
+
+              {/* Onboarding Progress Component */}
+              {user && (
+                <OnboardingProgress 
+                  userId={user.id}
+                  onProgressChange={(progress) => {
+                    console.log('Progress updated:', progress);
+                  }}
+                />
+              )}
 
               {/* Use Input Wrapper style from register.tsx */}
               <View style={styles.inputWrapper}>
