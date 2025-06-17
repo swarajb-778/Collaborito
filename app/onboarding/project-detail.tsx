@@ -26,15 +26,26 @@ import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingProjectDetailScreen() {
+  const { user } = useAuth();
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [flowInitialized, setFlowInitialized] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Enhanced onboarding services
+  const stepManager = OnboardingStepManager.getInstance();
+  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
+  const errorRecovery = new OnboardingErrorRecovery();
   
   // Reanimated shared values for animations
   const headerOpacity = useSharedValue(0);
