@@ -26,6 +26,9 @@ import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,10 +65,18 @@ const GOALS = [
 ];
 
 export default function OnboardingGoalsScreen() {
+  const { user } = useAuth();
   const [selectedGoal, setSelectedGoal] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [flowInitialized, setFlowInitialized] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Enhanced onboarding services
+  const stepManager = OnboardingStepManager.getInstance();
+  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
+  const errorRecovery = new OnboardingErrorRecovery();
   
   // Reanimated shared values for animations
   const headerOpacity = useSharedValue(0);
@@ -78,6 +89,50 @@ export default function OnboardingGoalsScreen() {
     listOpacity.value = withDelay(250, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
     buttonsOpacity.value = withDelay(400, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
   }, []);
+
+  // Initialize onboarding flow
+  useEffect(() => {
+    const initializeScreen = async () => {
+      try {
+        // Initialize flow
+        const flowReady = await flowCoordinator.initializeFlow();
+        if (flowReady) {
+          setFlowInitialized(true);
+        }
+
+        // Load user's selected goal if it exists
+        const userGoal = await stepManager.getUserGoals();
+        if (userGoal && userGoal.type) {
+          // Map goal type back to ID
+          const goalTypeMapping = {
+            'find_cofounder': 1,
+            'find_collaborators': 2,
+            'contribute_skills': 3,
+            'explore_ideas': 4
+          };
+          const goalId = goalTypeMapping[userGoal.type as keyof typeof goalTypeMapping];
+          if (goalId) {
+            setSelectedGoal(goalId);
+          }
+        }
+
+      } catch (error) {
+        console.error('Failed to initialize goals screen:', error);
+        
+        // Try recovery
+        const recovered = await errorRecovery.recoverFromError(error, 'initializeGoalsScreen');
+        if (recovered) {
+          setFlowInitialized(true);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user && user.id) {
+      initializeScreen();
+    }
+  }, [user]);
 
   // Animated styles
   const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -117,33 +172,92 @@ export default function OnboardingGoalsScreen() {
       const selectedGoalName = GOALS.find(item => item.id === selectedGoal)?.name;
       console.log('Selected goal:', selectedGoalName);
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Map goal ID to type
+      const goalTypeMapping = {
+        1: 'find_cofounder',
+        2: 'find_collaborators',
+        3: 'contribute_skills',
+        4: 'explore_ideas'
+      };
       
-      // Redirect based on selected goal
-      if (selectedGoal === 1 || selectedGoal === 2) { // Find a co-founder or Find collaborators
-        router.replace('/onboarding/project-detail' as any);
-      } else if (selectedGoal === 3 || selectedGoal === 4) { // Contribute skills or Explore ideas
-        router.replace({
-          pathname: '/onboarding/project-skills',
-          params: { goalId: selectedGoal }
-        } as any);
+      const goalType = goalTypeMapping[selectedGoal as keyof typeof goalTypeMapping];
+      
+      // Save goal using step manager (saves to Supabase)
+      const goalsData = {
+        goalType: goalType as 'find_cofounder' | 'find_collaborators' | 'contribute_skills' | 'explore_ideas',
+        details: { selectedGoalId: selectedGoal, selectedGoalName }
+      };
+      
+      const success = await stepManager.saveGoalsStep(goalsData);
+      
+      if (!success) {
+        throw new Error('Failed to save goals');
+      }
+      
+      console.log('Goals step saved successfully');
+      
+      // Get next step route from step manager
+      const nextRoute = await stepManager.getNextStepRoute('goals');
+      if (nextRoute) {
+        router.replace(nextRoute as any);
       } else {
-        // Fallback - go directly to the main app
-        router.replace('/(tabs)');
+        // Fallback routing based on goal type
+        if (selectedGoal === 1 || selectedGoal === 2) {
+          router.replace('/onboarding/project-detail' as any);
+        } else {
+          router.replace('/onboarding/project-skills' as any);
+        }
       }
       
     } catch (error) {
-      console.error('Error saving goal:', error);
-      Alert.alert('Error', 'There was a problem saving your goal. Please try again.');
+      console.error('Error saving goals step:', error);
+      
+      // Use error recovery to handle the error gracefully
+      const recovered = await errorRecovery.recoverFromError(error, 'saveGoalsStep');
+      if (!recovered) {
+        Alert.alert('Error', 'There was a problem saving your goal. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(tabs)');
+  const handleSkip = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      console.log('Skipping goals step');
+      
+      if (flowInitialized) {
+        // Skip through step manager for proper tracking
+        await stepManager.skipStep('goals', 'User chose to skip');
+        
+        const nextRoute = await stepManager.getNextStepRoute('goals');
+        if (nextRoute) {
+          router.replace(nextRoute as any);
+          return;
+        }
+      }
+      
+      // Fallback navigation
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Error skipping goals step:', error);
+      router.replace('/(tabs)');
+    }
   };
+
+  // Show loading spinner while data is loading
+  if (loading || !flowInitialized) {
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loadingText}>
+          {loading ? 'Loading goals...' : 'Initializing...'}
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -165,6 +279,16 @@ export default function OnboardingGoalsScreen() {
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <Text style={styles.title}>What brings you here?</Text>
         <Text style={styles.subtitle}>Choose your primary goal for joining Collaborito.</Text>
+        
+        {/* Onboarding Progress Component */}
+        {user && (
+          <OnboardingProgress 
+            userId={user.id}
+            onProgressChange={(progress) => {
+              console.log('Goals progress updated:', progress);
+            }}
+          />
+        )}
       </Animated.View>
       
       <ScrollView 
@@ -458,5 +582,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     fontFamily: 'System',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4A5568',
+    marginTop: 16,
+    fontWeight: '500',
   },
 }); 
