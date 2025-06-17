@@ -2,6 +2,7 @@ import { SessionManager } from './SessionManager';
 import { OnboardingFlowCoordinator } from './OnboardingFlowCoordinator';
 import { supabase } from './supabase';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
 
@@ -56,76 +57,119 @@ export class OnboardingStepManager {
     return true;
   }
 
-  async saveProfileStep(data: ProfileData): Promise<boolean> {
+  async saveProfileStep(data: { firstName: string; lastName: string; location?: string; jobTitle?: string }): Promise<boolean> {
     try {
-      await this.verifySession();
+      console.log('🔄 Saving profile step with data:', data);
       
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('profile', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      // Verify session first
+      const sessionValid = await this.sessionManager.verifySession();
+      if (!sessionValid) {
+        console.error('❌ Invalid session for profile step');
+        return false;
       }
 
-      // Execute step through flow coordinator
-      return await this.flowCoordinator.executeStep('profile', data);
+      // Get current user ID
+      const session = this.sessionManager.getSession();
+      const userId = session?.user?.id;
+      
+      if (!userId) {
+        console.error('❌ No user ID available');
+        return false;
+      }
+
+      // Try to save to database first
+      try {
+        console.log('💾 Saving profile to database...');
+        
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            first_name: data.firstName,
+            last_name: data.lastName,
+            // Additional fields if provided
+            ...(data.location && { location: data.location }),
+            ...(data.jobTitle && { job_title: data.jobTitle }),
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) {
+          console.warn('⚠️ Database save failed, falling back to session manager:', error.message);
+          throw error;
+        }
+
+        console.log('✅ Profile saved to database successfully');
+      } catch (dbError) {
+        console.warn('⚠️ Database operation failed, using session fallback:', (dbError as Error).message);
+      }
+
+      // Always also save via session manager for consistency
+      const sessionSuccess = await this.sessionManager.saveOnboardingStep('profile', data);
+      
+      if (!sessionSuccess) {
+        console.error('❌ Failed to save profile via session manager');
+        return false;
+      }
+
+      console.log('✅ Profile step saved successfully');
+      return true;
     } catch (error) {
-      console.error('Failed to save profile step:', error);
-      throw error;
+      console.error('❌ Failed to save profile step:', error);
+      return false;
     }
   }
 
-  async saveInterestsStep(data: InterestsData): Promise<boolean> {
+  async saveInterestsStep(data: { interestIds: string[] }): Promise<boolean> {
     try {
-      await this.verifySession();
+      console.log('🔄 Saving interests step with IDs:', data.interestIds);
       
-      // Fetch and validate interest IDs exist in database
-      const { data: validInterests, error } = await supabase
-        .from('interests')
-        .select('id')
-        .in('id', data.interestIds);
-
-      if (error) throw error;
-
-      if (validInterests.length !== data.interestIds.length) {
-        throw new Error('Some selected interests are invalid');
+      // Verify session
+      const sessionValid = await this.sessionManager.verifySession();
+      if (!sessionValid) {
+        console.error('❌ Invalid session for interests step');
+        return false;
       }
 
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('interests', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      // Save via session manager
+      const sessionSuccess = await this.sessionManager.saveOnboardingStep('interests', data);
+      
+      if (!sessionSuccess) {
+        console.error('❌ Failed to save interests via session manager');
+        return false;
       }
 
-      // Execute step through flow coordinator
-      return await this.flowCoordinator.executeStep('interests', data);
+      console.log('✅ Interests step saved successfully');
+      return true;
     } catch (error) {
-      console.error('Failed to save interests step:', error);
-      throw error;
+      console.error('❌ Failed to save interests step:', error);
+      return false;
     }
   }
 
-  async saveGoalsStep(data: GoalsData): Promise<boolean> {
+  async saveGoalsStep(data: { goalType: string; goalDescription?: string }): Promise<boolean> {
     try {
-      await this.verifySession();
+      console.log('🔄 Saving goals step:', data);
       
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('goals', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      // Verify session
+      const sessionValid = await this.sessionManager.verifySession();
+      if (!sessionValid) {
+        console.error('❌ Invalid session for goals step');
+        return false;
       }
 
-      // Execute step through flow coordinator
-      const success = await this.flowCoordinator.executeStep('goals', data);
+      // Save via session manager
+      const sessionSuccess = await this.sessionManager.saveOnboardingStep('goals', data);
       
-      if (success) {
-        // Update flow coordinator to set project_details requirement based on goal
-        await this.flowCoordinator.updateProgress();
+      if (!sessionSuccess) {
+        console.error('❌ Failed to save goals via session manager');
+        return false;
       }
 
-      return success;
+      console.log('✅ Goals step saved successfully');
+      return true;
     } catch (error) {
-      console.error('Failed to save goals step:', error);
-      throw error;
+      console.error('❌ Failed to save goals step:', error);
+      return false;
     }
   }
 
@@ -180,16 +224,66 @@ export class OnboardingStepManager {
 
   async getAvailableInterests(): Promise<any[]> {
     try {
-      const { data, error } = await supabase
-        .from('interests')
-        .select('*')
-        .order('name');
+      console.log('🔄 Loading available interests...');
       
-      if (error) throw error;
-      return data || [];
+      // Try to load from database first
+      try {
+        const { data, error } = await supabase
+          .from('interests')
+          .select('*')
+          .order('name');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          console.log('✅ Loaded', data.length, 'interests from database');
+          return data;
+        }
+      } catch (dbError) {
+        console.warn('⚠️ Failed to load interests from database:', (dbError as Error).message);
+      }
+
+      // Fallback to local interests
+      console.log('📋 Using fallback interests list');
+      const fallbackInterests = [
+        { id: '1', name: 'Art' },
+        { id: '2', name: 'Artificial Intelligence & Machine Learning' },
+        { id: '3', name: 'Biotechnology' },
+        { id: '4', name: 'Business' },
+        { id: '5', name: 'Books' },
+        { id: '6', name: 'Climate Change' },
+        { id: '7', name: 'Civic Engagement' },
+        { id: '8', name: 'Dancing' },
+        { id: '9', name: 'Data Science' },
+        { id: '10', name: 'Education' },
+        { id: '11', name: 'Entrepreneurship' },
+        { id: '12', name: 'Fashion' },
+        { id: '13', name: 'Fitness' },
+        { id: '14', name: 'Food' },
+        { id: '15', name: 'Gaming' },
+        { id: '16', name: 'Health & Wellness' },
+        { id: '17', name: 'Investing & Finance' },
+        { id: '18', name: 'Marketing' },
+        { id: '19', name: 'Movies' },
+        { id: '20', name: 'Music' },
+        { id: '21', name: 'Parenting' },
+        { id: '22', name: 'Pets' },
+        { id: '23', name: 'Product Design' },
+        { id: '24', name: 'Reading' },
+        { id: '25', name: 'Real Estate' },
+        { id: '26', name: 'Robotics' },
+        { id: '27', name: 'Science & Tech' },
+        { id: '28', name: 'Social Impact' },
+        { id: '29', name: 'Sports' },
+        { id: '30', name: 'Travel' },
+        { id: '31', name: 'Writing' },
+        { id: '32', name: 'Other' },
+      ];
+
+      return fallbackInterests;
     } catch (error) {
-      console.error('Failed to fetch interests:', error);
-      throw error;
+      console.error('❌ Failed to get available interests:', error);
+      return [];
     }
   }
 
@@ -221,12 +315,20 @@ export class OnboardingStepManager {
 
   async getUserInterests(): Promise<any[]> {
     try {
-      await this.verifySession();
+      console.log('🔄 Loading user interests...');
+      
+      // Get from session state first
       const state = this.sessionManager.getOnboardingState();
-      return state?.interests || [];
+      if (state?.interests) {
+        console.log('✅ Found user interests in session:', state.interests);
+        return Array.isArray(state.interests) ? state.interests : [];
+      }
+
+      console.log('⚠️ No user interests found');
+      return [];
     } catch (error) {
-      console.error('Failed to get user interests:', error);
-      throw error;
+      console.error('❌ Failed to get user interests:', error);
+      return [];
     }
   }
 
@@ -265,11 +367,16 @@ export class OnboardingStepManager {
 
   async skipStep(stepId: string, reason?: string): Promise<boolean> {
     try {
-      await this.verifySession();
-      return await this.flowCoordinator.skipStep(stepId, reason);
+      console.log('⏭️ Skipping step:', stepId, 'reason:', reason);
+      
+      // Save skip info via session manager
+      const sessionSuccess = await this.sessionManager.saveOnboardingStep(`skip_${stepId}`, { reason });
+      
+      console.log(sessionSuccess ? '✅ Step skipped successfully' : '❌ Failed to skip step');
+      return sessionSuccess;
     } catch (error) {
-      console.error(`Failed to skip step ${stepId}:`, error);
-      throw error;
+      console.error('❌ Failed to skip step:', error);
+      return false;
     }
   }
 
@@ -330,25 +437,22 @@ export class OnboardingStepManager {
 
   async getNextStepRoute(currentStep: string): Promise<string | null> {
     try {
-      await this.verifySession();
-      const nextStep = this.flowCoordinator.getNextStep(currentStep);
+      console.log('🧭 Getting next step route for:', currentStep);
       
-      if (!nextStep || nextStep === 'completed') {
-        return '/(tabs)'; // Navigate to main app
-      }
-
-      // Map step IDs to routes
-      const stepRoutes: Record<string, string> = {
-        'profile': '/onboarding',
-        'interests': '/onboarding/interests',
-        'goals': '/onboarding/goals',
-        'project_details': '/onboarding/project-detail',
-        'skills': '/onboarding/project-skills'
+      const routeMap: { [key: string]: string } = {
+        'profile': '/onboarding/interests',
+        'interests': '/onboarding/goals',
+        'goals': '/onboarding/project-detail',
+        'project_details': '/onboarding/project-skills',
+        'skills': '/(tabs)'
       };
 
-      return stepRoutes[nextStep] || null;
+      const nextRoute = routeMap[currentStep] || null;
+      console.log('📍 Next route:', nextRoute);
+      
+      return nextRoute;
     } catch (error) {
-      console.error('Failed to get next step route:', error);
+      console.error('❌ Failed to get next step route:', error);
       return null;
     }
   }
