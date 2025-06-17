@@ -40,22 +40,52 @@ export class OnboardingFlowCoordinator {
 
   async initializeFlow(): Promise<boolean> {
     try {
-      // Initialize session
+      console.log('🔄 Initializing onboarding flow...');
+      
+      // Initialize session with better error handling
+      console.log('🔑 Initializing session...');
       const sessionInitialized = await this.sessionManager.initializeSession();
       
       if (!sessionInitialized) {
+        console.warn('⚠️ Session initialization failed, attempting recovery...');
         const recovered = await this.errorRecovery.attemptRecovery();
         if (!recovered) {
+          console.error('❌ Recovery failed, onboarding flow cannot be initialized');
           return false;
         }
+        console.log('✅ Session recovered successfully');
+      } else {
+        console.log('✅ Session initialized successfully');
       }
 
-      // Load current progress
-      await this.updateProgress();
+      // Load current progress with error handling
+      console.log('📊 Loading onboarding progress...');
+      try {
+        await this.updateProgress();
+        console.log('✅ Progress loaded successfully');
+      } catch (progressError) {
+        console.warn('⚠️ Failed to load progress, continuing with defaults:', progressError);
+        // Don't fail initialization for progress loading issues
+      }
+      
+      console.log('🎉 Onboarding flow initialization completed successfully');
       return true;
     } catch (error) {
-      console.error('Failed to initialize onboarding flow:', error);
-      return this.errorRecovery.recoverFromError(error, 'initializeFlow');
+      console.error('❌ Failed to initialize onboarding flow:', error);
+      
+      // Try one more recovery attempt
+      try {
+        console.log('🔧 Attempting final recovery...');
+        const finalRecovery = await this.errorRecovery.recoverFromError(error, 'initializeFlow');
+        if (finalRecovery) {
+          console.log('✅ Final recovery successful');
+          return true;
+        }
+      } catch (recoveryError) {
+        console.error('❌ Final recovery failed:', recoveryError);
+      }
+      
+      return false;
     }
   }
 
