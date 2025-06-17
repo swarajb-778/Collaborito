@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking';
 // For the development mock server
 import { startServer } from '../utils/mockAuthServer';
 import { constants } from '../constants';
+import { UserProfileService } from '../services/UserProfileService';
 
 // Define User type
 export type User = {
@@ -329,7 +330,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, username?: string) => {
     try {
       setLoading(true);
-      console.log('Signing up with email:', email, 'username:', username);
+      console.log('🚀 Starting signup process with username:', username);
+      console.log('📧 Signing up with email:', email, 'username:', username);
       
       // Validate inputs
       if (!email || !validateEmail(email)) {
@@ -372,19 +374,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         oauthProvider: 'email'
       };
       
-      console.log('Creating user with data:', userData);
+      console.log('👤 Creating user with data:', userData);
       
-      // Store user data and update state
+      // Store user data locally first
       const storeSuccess = await storeUserData(userData);
       
       if (!storeSuccess) {
         throw new Error('Failed to save account data. Please try again.');
       }
       
-      console.log('Sign up successful, user data stored');
+      console.log('💾 Sign up successful, user data stored');
+      
+      // Create profile in Supabase
+      console.log('🗄️ Creating profile in Supabase...');
+      const profileService = UserProfileService.getInstance();
+      const profileResult = await profileService.createOrUpdateProfile({
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        username: userData.username,
+        profileImage: userData.profileImage,
+        oauthProvider: userData.oauthProvider
+      });
+      
+      if (!profileResult.success) {
+        console.warn('⚠️ Failed to create profile in Supabase:', profileResult.error);
+        // Don't fail signup for profile creation issues - can be retried later
+      } else {
+        console.log('✅ Profile created in Supabase successfully');
+      }
+      
+      console.log('🎉 Sign up successful, waiting for user data to be set...');
       return true;
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('❌ Sign up error:', error);
       // Now throw the error so calling components can catch it and show proper messages
       throw error;
     } finally {
