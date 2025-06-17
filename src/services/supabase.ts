@@ -13,12 +13,24 @@ import { DevConfig } from '@/src/config/development';
 // Types for project members and roles
 import { Project, ProjectMember, Profile } from '../types/supabase';
 
-// Initialize Supabase with environment variables
-const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY || '';
+// Fix environment variable loading - try both expo config and process.env
+const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || 
+                     Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
+                     process.env.EXPO_PUBLIC_SUPABASE_URL || 
+                     'https://ekydublgvsoaaepdhtzc.supabase.co';
+
+const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY || 
+                          Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+                          process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
+                          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVreWR1YmxndnNvYWFlcGRodHpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MTA0NTUsImV4cCI6MjA1OTA4NjQ1NX0.CSN4WGqUDaOeTB-Mz9SEJvKM6_wx_ReH3lZIQRkGAzA';
+
+// Log configuration for debugging
+console.log('🔧 Supabase Configuration:');
+console.log('📍 URL:', SUPABASE_URL);
+console.log('🔑 Anon Key:', SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 20)}...` : 'MISSING');
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('Missing Supabase URL or Anon Key. Please set up your environment variables.');
+  console.warn('⚠️ Missing Supabase URL or Anon Key. Please set up your environment variables.');
 }
 
 // Get the base URL for the app based on the scheme

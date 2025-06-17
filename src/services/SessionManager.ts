@@ -2,7 +2,11 @@ import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
+// Fix environment variable loading - try both expo config and process.env
+const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || 
+                     Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
+                     process.env.EXPO_PUBLIC_SUPABASE_URL || 
+                     'https://ekydublgvsoaaepdhtzc.supabase.co';
 
 export class SessionManager {
   private static instance: SessionManager;
@@ -18,26 +22,33 @@ export class SessionManager {
 
   async initializeSession(): Promise<boolean> {
     try {
+      console.log('🔄 Initializing session...');
       // Check for existing session
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Session initialization error:', error);
+        throw error;
+      }
       
       if (session) {
+        console.log('✅ Session found, loading onboarding state...');
         this.currentSession = session;
         await this.loadOnboardingState();
         return true;
       }
       
+      console.log('⚠️ No session found');
       return false;
     } catch (error) {
-      console.error('Session initialization failed:', error);
+      console.error('❌ Session initialization failed:', error);
       return false;
     }
   }
 
   async loadOnboardingState(): Promise<void> {
     try {
+      console.log('🔄 Loading onboarding state from Edge Function...');
       const response = await fetch(`${SUPABASE_URL}/functions/v1/onboarding-status`, {
         method: 'POST',
         headers: {
@@ -47,15 +58,35 @@ export class SessionManager {
         body: JSON.stringify({ action: 'get_status' })
       });
 
-      this.onboardingState = await response.json();
-      
-      // Cache locally for offline access
-      await AsyncStorage.setItem('onboarding_state', JSON.stringify(this.onboardingState));
+      if (response.ok) {
+        this.onboardingState = await response.json();
+        console.log('✅ Onboarding state loaded:', this.onboardingState);
+        
+        // Cache locally for offline access
+        await AsyncStorage.setItem('onboarding_state', JSON.stringify(this.onboardingState));
+      } else {
+        console.log('⚠️ Edge Function response not OK, using cached or default state');
+        throw new Error(`Edge Function returned ${response.status}`);
+      }
     } catch (error) {
+      console.log('🔄 Loading from cache due to error:', (error as Error).message);
       // Load from cache if network fails
       const cached = await AsyncStorage.getItem('onboarding_state');
       if (cached) {
         this.onboardingState = JSON.parse(cached);
+        console.log('✅ Using cached onboarding state');
+      } else {
+        // Set default state for new users
+        this.onboardingState = {
+          currentStep: 'profile',
+          completed: false,
+          profile: null,
+          interests: null,
+          goals: null,
+          projects: null,
+          skills: null
+        };
+        console.log('✅ Using default onboarding state for new user');
       }
     }
   }
