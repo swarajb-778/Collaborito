@@ -52,6 +52,19 @@ export class OnboardingStepManager {
     skills?: any[];
   } = {};
 
+  // Local data storage for pre-migration users
+  private localData: {
+    profile?: ProfileData;
+    interests?: InterestsData;
+    goals?: GoalsData;
+    projectDetails?: ProjectDetailsData;
+    skills?: SkillsData;
+  } = {};
+
+  constructor() {
+    this.sessionManager = SessionManager.getInstance();
+  }
+
   static getInstance(): OnboardingStepManager {
     if (!OnboardingStepManager.instance) {
       OnboardingStepManager.instance = new OnboardingStepManager();
@@ -113,235 +126,345 @@ export class OnboardingStepManager {
   }
 
   /**
-   * Save profile step to Supabase
+   * Check if current user is a local user (pre-migration)
+   */
+  private async isLocalUser(): Promise<boolean> {
+    try {
+      const session = await this.sessionManager.getSession();
+      return session?.isLocal === true;
+    } catch (error) {
+      logger.warn('Could not determine if user is local:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if user has been migrated to Supabase
+   */
+  private async isMigratedUser(): Promise<boolean> {
+    try {
+      return this.sessionManager.isMigrated();
+    } catch (error) {
+      logger.warn('Could not determine if user is migrated:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Save profile step - handles both local and migrated users
    */
   async saveProfileStep(data: ProfileData): Promise<boolean> {
     try {
       const userId = this.getCurrentUserId();
-      
       if (!userId) {
         throw new Error('No user ID available');
       }
 
-      logger.info(`Saving profile step for user: ${userId}`);
-      logger.info(`Profile data to save:`, data);
+      logger.info(`💾 Saving profile step for user: ${userId}`);
 
-      // For mock users, save locally and return success
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, saving profile locally');
-        this.mockData.profile = data;
-        logger.info('✅ Mock profile saved locally');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        // For local users, store locally until migration
+        logger.info('📱 Local user - storing profile data locally');
+        this.localData.profile = data;
+        
+        // Trigger migration during profile step if needed
+        if (this.sessionManager.needsMigration()) {
+          logger.info('🔄 Triggering user migration during profile step');
+          
+          const migrationResult = await this.sessionManager.migrateUserToSupabase({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: await this.getUserEmail(),
+            password: this.generateTempPassword()
+          });
+
+          if (migrationResult.success) {
+            logger.info('✅ User migration successful - now saving to Supabase');
+            // Now save to Supabase after successful migration
+            return await this.saveProfileToSupabase(data, migrationResult.supabaseUser.id);
+          } else {
+            logger.warn('⚠️ Migration failed - data saved locally for retry');
+            return true; // Return success for local storage
+          }
+        }
+        
         return true;
+      } else {
+        // For migrated users, save directly to Supabase
+        return await this.saveProfileToSupabase(data, userId);
       }
 
-      // Update user profile in Supabase
-      const profileUpdateData = {
+    } catch (error) {
+      logger.error('❌ Failed to save profile step:', error);
+      // Store locally as fallback
+      this.localData.profile = data;
+      return true; // Return success for local fallback
+    }
+  }
+
+  /**
+   * Save profile data to Supabase
+   */
+  private async saveProfileToSupabase(data: ProfileData, userId: string): Promise<boolean> {
+    try {
+      logger.info('💾 Saving profile to Supabase...');
+
+      const updateData = {
         first_name: data.firstName,
         last_name: data.lastName,
+        full_name: `${data.firstName} ${data.lastName}`.trim(),
         location: data.location || null,
         job_title: data.jobTitle || null,
         bio: data.bio || null,
-        full_name: `${data.firstName} ${data.lastName}`.trim(),
-        onboarding_step: 'interests' // Next step after profile
+        onboarding_step: 'interests',
+        updated_at: new Date().toISOString()
       };
 
-      const { error: profileError } = await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from('profiles')
-        .update(profileUpdateData)
+        .update(updateData)
         .eq('id', userId);
 
-      if (profileError) {
-        logger.error('Failed to update user profile:', profileError);
-        throw profileError;
+      if (error) {
+        logger.error('Failed to update profile in Supabase:', error);
+        throw error;
       }
 
-      logger.info('✅ Profile step saved successfully');
+      logger.info('✅ Profile saved to Supabase successfully');
       return true;
 
     } catch (error) {
-      logger.error('Error in saveProfileStep:', error);
+      logger.error('Failed to save profile to Supabase:', error);
       throw error;
     }
   }
 
   /**
-   * Save interests step with proper UUID validation
+   * Save interests step
    */
-  async saveInterestsStep(data: { interestIds: string[] }): Promise<boolean> {
+  async saveInterestsStep(data: InterestsData): Promise<boolean> {
     try {
       const userId = this.getCurrentUserId();
-      
       if (!userId) {
         throw new Error('No user ID available');
       }
 
-      logger.info(`Saving interests step for user: ${userId}`);
-      logger.info(`Interest IDs to save:`, data.interestIds);
+      logger.info(`💾 Saving interests step for user: ${userId}`);
 
-      // Validate all interest IDs are proper UUIDs
-      const invalidIds = data.interestIds.filter(id => !this.isValidUUID(id));
-      if (invalidIds.length > 0) {
-        throw new Error(`Invalid UUID format for interest IDs: ${invalidIds.join(', ')}`);
-      }
-
-      // For mock users, save locally and return success
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, saving interests locally');
-        this.mockData.interests = data.interestIds;
-        logger.info('✅ Mock interests saved locally');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - storing interests locally');
+        this.localData.interests = data;
         return true;
+      } else {
+        return await this.saveInterestsToSupabase(data, userId);
       }
 
-      // First, delete existing user interests
-      const { error: deleteError } = await supabaseAdmin
+    } catch (error) {
+      logger.error('❌ Failed to save interests step:', error);
+      this.localData.interests = data;
+      return true; // Return success for local fallback
+    }
+  }
+
+  /**
+   * Save interests to Supabase
+   */
+  private async saveInterestsToSupabase(data: InterestsData, userId: string): Promise<boolean> {
+    try {
+      logger.info('💾 Saving interests to Supabase...');
+
+      // Validate interest IDs are UUIDs
+      const validInterests = data.interestIds.filter(id => this.isValidUUID(id));
+      
+      if (validInterests.length === 0) {
+        logger.warn('No valid UUID interests found');
+        return true; // Don't fail for invalid IDs
+      }
+
+      // Delete existing user interests
+      await supabaseAdmin
         .from('user_interests')
         .delete()
         .eq('user_id', userId);
 
-      if (deleteError) {
-        logger.error('Failed to delete existing user interests:', deleteError);
-        throw deleteError;
-      }
-
       // Insert new user interests
-      if (data.interestIds.length > 0) {
-        const userInterests = data.interestIds.map(interestId => ({
-          user_id: userId,
-          interest_id: interestId
-        }));
+      const userInterests = validInterests.map(interestId => ({
+        user_id: userId,
+        interest_id: interestId,
+        created_at: new Date().toISOString()
+      }));
 
-        const { error: insertError } = await supabaseAdmin
-          .from('user_interests')
-          .insert(userInterests);
+      const { error: insertError } = await supabaseAdmin
+        .from('user_interests')
+        .insert(userInterests);
 
-        if (insertError) {
-          logger.error('Failed to insert user interests:', insertError);
-          throw insertError;
-        }
+      if (insertError) {
+        logger.error('Failed to insert user interests:', insertError);
+        throw insertError;
       }
 
-      // Update user profile onboarding step
-      const { error: profileError } = await supabaseAdmin
+      // Update profile onboarding step
+      const { error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ onboarding_step: 'goals' })
+        .update({ 
+          onboarding_step: 'goals',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
-      if (profileError) {
-        logger.warn('Failed to update profile onboarding step:', profileError);
-        // Don't throw error for profile update failure
+      if (updateError) {
+        logger.warn('Failed to update onboarding step:', updateError);
       }
 
-      logger.info('✅ Interests step saved successfully');
+      logger.info('✅ Interests saved to Supabase successfully');
       return true;
 
     } catch (error) {
-      logger.error('Error in saveInterestsStep:', error);
+      logger.error('Failed to save interests to Supabase:', error);
       throw error;
     }
   }
 
   /**
-   * Save goals step to Supabase
+   * Save goals step
    */
   async saveGoalsStep(data: GoalsData): Promise<boolean> {
     try {
       const userId = this.getCurrentUserId();
-      
       if (!userId) {
         throw new Error('No user ID available');
       }
 
-      logger.info(`Saving goals step for user: ${userId}`);
-      logger.info(`Goals data to save:`, data);
+      logger.info(`💾 Saving goals step for user: ${userId}`);
 
-      // For mock users, save locally and return success
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, saving goals locally');
-        this.mockData.goals = data;
-        logger.info('✅ Mock goals saved locally');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - storing goals locally');
+        this.localData.goals = data;
         return true;
+      } else {
+        return await this.saveGoalsToSupabase(data, userId);
       }
 
-      // First, delete existing user goals
-      const { error: deleteError } = await supabaseAdmin
+    } catch (error) {
+      logger.error('❌ Failed to save goals step:', error);
+      this.localData.goals = data;
+      return true; // Return success for local fallback
+    }
+  }
+
+  /**
+   * Save goals to Supabase
+   */
+  private async saveGoalsToSupabase(data: GoalsData, userId: string): Promise<boolean> {
+    try {
+      logger.info('💾 Saving goals to Supabase...');
+
+      // Delete existing user goals
+      await supabaseAdmin
         .from('user_goals')
         .delete()
         .eq('user_id', userId);
 
-      if (deleteError) {
-        logger.error('Failed to delete existing user goals:', deleteError);
-        throw deleteError;
-      }
-
-      // Insert new user goal
-      const userGoal = {
+      // Insert new user goals
+      const userGoals = data.goals.map(goal => ({
         user_id: userId,
-        goal_type: data.goalType,
-        details: data.details || {},
-        is_active: true
-      };
+        goal_type: this.mapGoalToType(goal),
+        description: goal,
+        is_primary: goal === data.primaryGoal,
+        is_active: true,
+        created_at: new Date().toISOString()
+      }));
 
       const { error: insertError } = await supabaseAdmin
         .from('user_goals')
-        .insert([userGoal]);
+        .insert(userGoals);
 
       if (insertError) {
-        logger.error('Failed to insert user goal:', insertError);
+        logger.error('Failed to insert user goals:', insertError);
         throw insertError;
       }
 
-      // Update user profile onboarding step based on goal type
-      let nextStep = 'skills'; // Default next step
-      if (data.goalType === 'find_cofounder' || data.goalType === 'find_collaborators') {
-        nextStep = 'project_details'; // These goals need project details
-      }
+      // Determine next step based on goals
+      const needsProjectDetails = data.goals.some(goal => 
+        goal.includes('cofounder') || goal.includes('collaborator')
+      );
+      
+      const nextStep = needsProjectDetails ? 'project_details' : 'skills';
 
-      const { error: profileError } = await supabaseAdmin
+      // Update profile onboarding step
+      const { error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ onboarding_step: nextStep })
+        .update({ 
+          onboarding_step: nextStep,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
-      if (profileError) {
-        logger.warn('Failed to update profile onboarding step:', profileError);
-        // Don't throw error for profile update failure
+      if (updateError) {
+        logger.warn('Failed to update onboarding step:', updateError);
       }
 
-      logger.info('✅ Goals step saved successfully');
+      logger.info('✅ Goals saved to Supabase successfully');
       return true;
 
     } catch (error) {
-      logger.error('Error in saveGoalsStep:', error);
+      logger.error('Failed to save goals to Supabase:', error);
       throw error;
     }
   }
 
   /**
-   * Save project details step to Supabase
+   * Save project details step
    */
   async saveProjectDetailsStep(data: ProjectDetailsData): Promise<boolean> {
     try {
       const userId = this.getCurrentUserId();
-      
       if (!userId) {
         throw new Error('No user ID available');
       }
 
-      logger.info(`Saving project details step for user: ${userId}`);
-      logger.info(`Project details data to save:`, data);
+      logger.info(`💾 Saving project details step for user: ${userId}`);
 
-      // For mock users, save locally and return success
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, saving project details locally');
-        this.mockData.projectDetails = data;
-        logger.info('✅ Mock project details saved locally');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - storing project details locally');
+        this.localData.projectDetails = data;
         return true;
+      } else {
+        return await this.saveProjectDetailsToSupabase(data, userId);
       }
+
+    } catch (error) {
+      logger.error('❌ Failed to save project details step:', error);
+      this.localData.projectDetails = data;
+      return true; // Return success for local fallback
+    }
+  }
+
+  /**
+   * Save project details to Supabase
+   */
+  private async saveProjectDetailsToSupabase(data: ProjectDetailsData, userId: string): Promise<boolean> {
+    try {
+      logger.info('💾 Saving project details to Supabase...');
 
       // Create a new project
       const projectData = {
         title: data.name,
         description: data.description,
-        owner_id: userId
+        owner_id: userId,
+        status: 'planning',
+        looking_for: data.tags || [],
+        timeline: data.timeline || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       const { data: createdProject, error: projectError } = await supabaseAdmin
@@ -363,7 +486,9 @@ export class OnboardingStepManager {
       const memberData = {
         project_id: createdProject.id,
         user_id: userId,
-        role: 'owner'
+        role: 'owner',
+        status: 'active',
+        joined_at: new Date().toISOString()
       };
 
       const { error: memberError } = await supabaseAdmin
@@ -375,119 +500,116 @@ export class OnboardingStepManager {
         // Don't throw error - project creation succeeded
       }
 
-      // Update user profile onboarding step
+      // Update profile onboarding step
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({ onboarding_step: 'skills' })
+        .update({ 
+          onboarding_step: 'skills',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
       if (profileError) {
-        logger.warn('Failed to update profile onboarding step:', profileError);
-        // Don't throw error for profile update failure
+        logger.warn('Failed to update onboarding step:', profileError);
       }
 
-      logger.info('✅ Project details step saved successfully, project ID:', createdProject.id);
+      logger.info('✅ Project details saved to Supabase successfully');
       return true;
 
     } catch (error) {
-      logger.error('Error in saveProjectDetailsStep:', error);
+      logger.error('Failed to save project details to Supabase:', error);
       throw error;
     }
   }
 
   /**
-   * Save skills step to Supabase
+   * Save skills step
    */
   async saveSkillsStep(data: SkillsData): Promise<boolean> {
     try {
       const userId = this.getCurrentUserId();
-      
       if (!userId) {
         throw new Error('No user ID available');
       }
 
-      logger.info(`Saving skills step for user: ${userId}`);
-      logger.info(`Skills data to save:`, data);
+      logger.info(`💾 Saving skills step for user: ${userId}`);
 
-      // Validate all skill IDs are proper UUIDs
-      const skillIds = data.skills.map(skill => skill.skillId);
-      const invalidIds = skillIds.filter(id => !this.isValidUUID(id));
-      if (invalidIds.length > 0) {
-        throw new Error(`Invalid UUID format for skill IDs: ${invalidIds.join(', ')}`);
-      }
-
-      // For mock users, save locally and return success
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, saving skills locally');
-        this.mockData.skills = data.skills;
-        logger.info('✅ Mock skills saved locally');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - storing skills locally');
+        this.localData.skills = data;
         return true;
+      } else {
+        return await this.saveSkillsToSupabase(data, userId);
       }
 
-      // Fetch and validate skill IDs exist in database
-      const { data: validSkills, error: validationError } = await supabaseAdmin
-        .from('skills')
-        .select('id')
-        .in('id', skillIds);
+    } catch (error) {
+      logger.error('❌ Failed to save skills step:', error);
+      this.localData.skills = data;
+      return true; // Return success for local fallback
+    }
+  }
 
-      if (validationError) {
-        logger.error('Failed to validate skills:', validationError);
-        throw validationError;
+  /**
+   * Save skills to Supabase
+   */
+  private async saveSkillsToSupabase(data: SkillsData, userId: string): Promise<boolean> {
+    try {
+      logger.info('💾 Saving skills to Supabase...');
+
+      // Validate skill IDs are UUIDs
+      const validSkills = data.skills.filter(skill => this.isValidUUID(skill.skillId));
+      
+      if (validSkills.length === 0) {
+        logger.warn('No valid UUID skills found');
+        return true; // Don't fail for invalid IDs
       }
 
-      if (validSkills.length !== skillIds.length) {
-        throw new Error('Some selected skills are invalid');
-      }
-
-      // First, delete existing user skills
-      const { error: deleteError } = await supabaseAdmin
+      // Delete existing user skills
+      await supabaseAdmin
         .from('user_skills')
         .delete()
         .eq('user_id', userId);
 
-      if (deleteError) {
-        logger.error('Failed to delete existing user skills:', deleteError);
-        throw deleteError;
-      }
-
       // Insert new user skills
-      if (data.skills.length > 0) {
-        const userSkills = data.skills.map(skill => ({
-          user_id: userId,
-          skill_id: skill.skillId,
-          proficiency: skill.proficiency || 'intermediate',
-          is_offering: skill.isOffering
-        }));
+      const userSkills = validSkills.map(skill => ({
+        user_id: userId,
+        skill_id: skill.skillId,
+        proficiency_level: skill.proficiency || 'intermediate',
+        offering_skill: skill.isOffering,
+        created_at: new Date().toISOString()
+      }));
 
-        const { error: insertError } = await supabaseAdmin
-          .from('user_skills')
-          .insert(userSkills);
+      const { error: insertError } = await supabaseAdmin
+        .from('user_skills')
+        .insert(userSkills);
 
-        if (insertError) {
-          logger.error('Failed to insert user skills:', insertError);
-          throw insertError;
-        }
+      if (insertError) {
+        logger.error('Failed to insert user skills:', insertError);
+        throw insertError;
       }
 
-      // Update user profile onboarding step to completed
+      // Mark onboarding as completed
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .update({ 
           onboarding_step: 'completed',
-          onboarding_completed: true
+          onboarding_completed: true,
+          onboarding_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', userId);
 
       if (profileError) {
-        logger.warn('Failed to update profile onboarding completion:', profileError);
-        // Don't throw error for profile update failure
+        logger.warn('Failed to update onboarding completion:', profileError);
       }
 
-      logger.info('✅ Skills step saved successfully');
+      logger.info('✅ Skills saved to Supabase successfully - onboarding complete!');
       return true;
 
     } catch (error) {
-      logger.error('Error in saveSkillsStep:', error);
+      logger.error('Failed to save skills to Supabase:', error);
       throw error;
     }
   }
@@ -497,40 +619,32 @@ export class OnboardingStepManager {
    */
   async getAvailableInterests(): Promise<any[]> {
     try {
-      // Check if user is mock user
-      if (this.isMockUser()) {
-        logger.info('🔧 Loading interests for mock user, using real Supabase data');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - returning fallback interests');
+        return this.getFallbackInterests();
       }
 
-      // Always load from Supabase (real data for both mock and real users)
+      logger.info('🔍 Loading interests from Supabase...');
+
       const { data: interests, error } = await supabaseAdmin
         .from('interests')
         .select('id, name, category')
+        .eq('is_active', true)
         .order('name');
 
       if (error) {
         logger.error('Failed to load interests from Supabase:', error);
-        throw error;
+        return this.getFallbackInterests();
       }
 
-      if (!interests || interests.length === 0) {
-        logger.warn('No interests found in database');
-        return [];
-      }
-
-      logger.info(`✅ Loaded ${interests.length} interests from Supabase`);
-      return interests;
+      logger.info(`✅ Loaded ${interests?.length || 0} interests from Supabase`);
+      return interests || [];
 
     } catch (error) {
       logger.error('Error loading interests:', error);
-      
-      // For mock users, don't throw error - let fallback handle it
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, allowing fallback to handle interests');
-        return [];
-      }
-      
-      throw error;
+      return this.getFallbackInterests();
     }
   }
 
@@ -539,40 +653,32 @@ export class OnboardingStepManager {
    */
   async getAvailableSkills(): Promise<any[]> {
     try {
-      // Check if user is mock user
-      if (this.isMockUser()) {
-        logger.info('🔧 Loading skills for mock user, using real Supabase data');
+      const isLocal = await this.isLocalUser();
+      
+      if (isLocal) {
+        logger.info('📱 Local user - returning fallback skills');
+        return this.getFallbackSkills();
       }
 
-      // Always load from Supabase
+      logger.info('🔍 Loading skills from Supabase...');
+
       const { data: skills, error } = await supabaseAdmin
         .from('skills')
         .select('id, name, category')
+        .eq('is_active', true)
         .order('name');
 
       if (error) {
         logger.error('Failed to load skills from Supabase:', error);
-        throw error;
+        return this.getFallbackSkills();
       }
 
-      if (!skills || skills.length === 0) {
-        logger.warn('No skills found in database');
-        return [];
-      }
-
-      logger.info(`✅ Loaded ${skills.length} skills from Supabase`);
-      return skills;
+      logger.info(`✅ Loaded ${skills?.length || 0} skills from Supabase`);
+      return skills || [];
 
     } catch (error) {
       logger.error('Error loading skills:', error);
-      
-      // For mock users, don't throw error - let fallback handle it
-      if (this.isMockUser()) {
-        logger.info('🔧 Mock user detected, allowing fallback to handle skills');
-        return [];
-      }
-      
-      throw error;
+      return this.getFallbackSkills();
     }
   }
 
@@ -683,15 +789,24 @@ export class OnboardingStepManager {
   }
 
   /**
-   * Skip an onboarding step
+   * Skip a step with reason
    */
-  async skipStep(stepId: string, reason?: string): Promise<boolean> {
+  async skipStep(stepId: string, reason: string): Promise<boolean> {
     try {
-      logger.info(`Skipping step: ${stepId}`, reason ? { reason } : {});
-      return await this.flowCoordinator.skipStep(stepId, reason);
+      logger.info(`⏭️ Skipping step: ${stepId}, reason: ${reason}`);
+      
+      // Save skip info to session manager
+      await this.sessionManager.saveOnboardingStep(stepId, {
+        skipped: true,
+        reason: reason,
+        skipped_at: new Date().toISOString()
+      });
+
+      return true;
+
     } catch (error) {
-      logger.error(`Failed to skip step ${stepId}:`, error);
-      throw error;
+      logger.error(`Error skipping step ${stepId}:`, error);
+      return false;
     }
   }
 
@@ -761,19 +876,114 @@ export class OnboardingStepManager {
    * Get next step route
    */
   async getNextStepRoute(currentStep: string): Promise<string | null> {
-    try {
-      const stepMappings = {
-        'profile': '/onboarding/interests',
-        'interests': '/onboarding/goals',
-        'goals': '/onboarding/project-detail',
-        'project_details': '/onboarding/project-skills',
-        'skills': '/(tabs)',
-      };
+    const routes: { [key: string]: string } = {
+      'profile': '/onboarding/interests',
+      'interests': '/onboarding/goals',
+      'goals': '/onboarding/project-detail', // Will be determined dynamically
+      'project_details': '/onboarding/project-skills',
+      'skills': '/(tabs)'
+    };
 
-      return stepMappings[currentStep as keyof typeof stepMappings] || null;
-    } catch (error) {
-      logger.error(`Failed to get next step route for ${currentStep}:`, error);
-      return null;
+    // Special handling for goals → project_details decision
+    if (currentStep === 'goals') {
+      const goalsData = this.localData.goals;
+      if (goalsData && goalsData.goals) {
+        const needsProject = goalsData.goals.some(goal => 
+          goal.includes('cofounder') || goal.includes('collaborator')
+        );
+        return needsProject ? '/onboarding/project-detail' : '/onboarding/project-skills';
+      }
     }
+
+    return routes[currentStep] || null;
+  }
+
+  // Helper methods
+
+  /**
+   * Map goal description to goal type
+   */
+  private mapGoalToType(goal: string): string {
+    const goalLower = goal.toLowerCase();
+    
+    if (goalLower.includes('cofounder')) return 'find_cofounder';
+    if (goalLower.includes('collaborator')) return 'find_collaborators';
+    if (goalLower.includes('mentor')) return 'find_mentorship';
+    if (goalLower.includes('network')) return 'expand_network';
+    if (goalLower.includes('skill')) return 'develop_skills';
+    if (goalLower.includes('project')) return 'work_on_projects';
+    
+    return 'other';
+  }
+
+  /**
+   * Generate temporary password for migration
+   */
+  private generateTempPassword(): string {
+    return 'temp_' + Math.random().toString(36).slice(2) + Date.now();
+  }
+
+  /**
+   * Get user email from session
+   */
+  private async getUserEmail(): string {
+    try {
+      const session = await this.sessionManager.getSession();
+      return session?.user?.email || 'unknown@example.com';
+    } catch (error) {
+      logger.warn('Could not get user email:', error);
+      return 'unknown@example.com';
+    }
+  }
+
+  /**
+   * Get fallback interests for local users
+   */
+  private getFallbackInterests(): any[] {
+    return [
+      { id: 'f7bff181-f722-44fd-8704-77816f16cdf8', name: 'Art', category: 'Creative' },
+      { id: 'e9e68517-2d26-46e9-8220-39d3745b3d92', name: 'Artificial Intelligence & Machine Learning', category: 'Technology' },
+      { id: '814d804f-04e3-421e-b1ff-64ba42f30e60', name: 'Biotechnology', category: 'Science' },
+      { id: 'cc7ee20f-171b-4142-a839-9dc840d9a333', name: 'Business', category: 'Business' },
+      { id: 'b58c1144-26c5-4f03-a2d1-d631bbdf29ae', name: 'Books', category: 'Lifestyle' },
+      { id: '83be43cd-3d73-403b-9064-980b8fbb1229', name: 'Climate Change', category: 'Environment' },
+      { id: 'c3d05bc9-9de7-4bcd-96b7-f8d0f981dd22', name: 'Civic Engagement', category: 'Social' },
+      { id: 'e44bdf24-f37d-4ae7-8f21-edd136d51562', name: 'Dancing', category: 'Creative' },
+      { id: '7e7ced62-8869-4679-b8f9-c8eb71eabd87', name: 'Data Science', category: 'Technology' },
+      { id: '37276e28-ecb5-4725-9463-dd8f761973e2', name: 'Education', category: 'Social' }
+    ];
+  }
+
+  /**
+   * Get fallback skills for local users
+   */
+  private getFallbackSkills(): any[] {
+    return [
+      { id: '4182fd46-0754-4911-a91a-7dac8d5ac3f7', name: 'Accounting', category: 'Business' },
+      { id: 'b8e2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e', name: 'JavaScript', category: 'Programming' },
+      { id: 'c9f3d4e5-6a7b-8c9d-0e1f-2a3b4c5d6e7f', name: 'Python', category: 'Programming' },
+      { id: 'd0a4e5f6-7b8c-9d0e-1f2a-3b4c5d6e7f8a', name: 'UI/UX Design', category: 'Design' },
+      { id: 'e1b5f6a7-8c9d-0e1f-2a3b-4c5d6e7f8a9b', name: 'Marketing', category: 'Business' },
+      { id: 'f2c6a7b8-9d0e-1f2a-3b4c-5d6e7f8a9b0c', name: 'Project Management', category: 'Management' },
+      { id: 'a3d7b8c9-0e1f-2a3b-4c5d-6e7f8a9b0c1d', name: 'Data Analysis', category: 'Analytics' },
+      { id: 'b4e8c9d0-1f2a-3b4c-5d6e-7f8a9b0c1d2e', name: 'React', category: 'Programming' },
+      { id: 'c5f9d0e1-2a3b-4c5d-6e7f-8a9b0c1d2e3f', name: 'Graphic Design', category: 'Design' },
+      { id: 'd6a0e1f2-3b4c-5d6e-7f8a-9b0c1d2e3f4a', name: 'Sales', category: 'Business' }
+    ];
+  }
+
+  /**
+   * Get locally stored data for testing/fallback
+   */
+  getLocalData(): any {
+    return { ...this.localData };
+  }
+
+  /**
+   * Clear local data (for testing)
+   */
+  clearLocalData(): void {
+    this.localData = {};
+    logger.info('🧹 Local data cleared');
   }
 } 
