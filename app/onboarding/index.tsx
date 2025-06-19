@@ -17,7 +17,7 @@ import {
   Animated 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
+import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
@@ -29,12 +29,17 @@ import { OnboardingProgress } from '../../components/OnboardingProgress';
 // Get screen dimensions like in register.tsx
 const { width, height } = Dimensions.get('window');
 
+// Import image assets
+const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
+const CollaboritoTextLogo = require('../../assets/images/welcome/collaborito-text-logo.png');
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { user, updateUser, loading } = useAuth(); // Get loading state from context
   const [savingProfile, setSavingProfile] = useState(false);
   const [userDataReady, setUserDataReady] = useState(false);
   const [flowInitialized, setFlowInitialized] = useState(false);
+  const [migrationInProgress, setMigrationInProgress] = useState(false);
   const insets = useSafeAreaInsets();
 
   // Enhanced onboarding services
@@ -44,6 +49,7 @@ export default function OnboardingScreen() {
 
   // Animation values like in register.tsx
   const logoScale = useRef(new Animated.Value(0.8)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -57,10 +63,14 @@ export default function OnboardingScreen() {
         duration: 800,
         useNativeDriver: true,
       }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
       Animated.timing(formOpacity, {
         toValue: 1,
-        duration: 800,
-        delay: 300,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
@@ -76,21 +86,19 @@ export default function OnboardingScreen() {
         if (flowReady) {
           setFlowInitialized(true);
           console.log('✅ Onboarding flow initialized successfully');
+          
+          // Check flow state
+          const flowState = flowCoordinator.getFlowState();
+          console.log('📊 Flow state:', flowState);
+          
+          if (flowState.requiresMigration) {
+            console.log('🔄 User migration will be required during profile step');
+          }
+          
         } else {
           console.warn('Flow coordinator returned false, attempting recovery...');
           
-          // Check if this is a mock user - be more lenient
-          const sessionManager = SessionManager.getInstance();
-          const session = sessionManager.getSession();
-          const isMockUser = session && (session as any).mock;
-          
-          if (isMockUser) {
-            console.log('🔧 Mock user detected, allowing graceful continuation');
-            setFlowInitialized(true);
-            return;
-          }
-          
-          // Try recovery for real users
+          // Attempt error recovery
           const recovered = await errorRecovery.attemptRecovery();
           if (!recovered) {
             Alert.alert(
@@ -105,18 +113,7 @@ export default function OnboardingScreen() {
       } catch (error) {
         console.error('Failed to initialize onboarding:', error);
         
-        // Check if this is a mock user - be more lenient with errors
-        const sessionManager = SessionManager.getInstance();
-        const session = sessionManager.getSession();
-        const isMockUser = session && (session as any).mock;
-        
-        if (isMockUser) {
-          console.log('🔧 Mock user initialization error, allowing graceful degradation');
-          setFlowInitialized(true);
-          return;
-        }
-        
-        // For real users, show recovery dialog
+        // Show recovery dialog
         const showRecovery = await errorRecovery.showRecoveryDialog();
         if (!showRecovery) {
           router.replace('/welcome/signin');
@@ -138,9 +135,13 @@ export default function OnboardingScreen() {
     if (!loading && user && user.id) {
       setUserDataReady(true);
       console.log('User data is ready for onboarding');
+      
+      // Pre-fill form if user data exists
+      if (user.firstName) setFirstName(user.firstName);
+      if (user.lastName) setLastName(user.lastName);
+      
     } else if (!loading && !user) {
       console.error('No user data available after auth loading completed');
-      // Navigate back to login if no user data after loading
       Alert.alert(
         'Session Error',
         'Unable to retrieve user data. Please sign in again.',
@@ -159,14 +160,6 @@ export default function OnboardingScreen() {
   const [lastName, setLastName] = useState('');
   const [location, setLocation] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  
-  // Initialize form fields with existing user data when available
-  useEffect(() => {
-    if (user && userDataReady) {
-      setFirstName(user.firstName || '');
-      setLastName(user.lastName || '');
-    }
-  }, [user, userDataReady]);
   
   // Keep error states
   const [firstNameError, setFirstNameError] = useState('');
@@ -219,25 +212,34 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Attempting to save profile step...');
+      console.log('💾 Executing profile step with flow coordinator...');
       console.log('Current user ID:', user.id);
       console.log('Profile data:', { firstName, lastName, location, jobTitle });
       
-      // Save profile step using step manager (saves to Supabase)
-      const profileData = {
+      // Check if migration is needed
+      const needsMigration = flowCoordinator.needsMigration();
+      if (needsMigration) {
+        console.log('🔄 User migration required - this will happen during profile step');
+        setMigrationInProgress(true);
+      }
+      
+      // Execute profile step using flow coordinator (handles migration automatically)
+      const result = await flowCoordinator.executeStep('profile', {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         location: location.trim(),
-        jobTitle: jobTitle.trim()
-      };
+        jobTitle: jobTitle.trim(),
+        email: user.email, // Include email for migration
+        password: undefined // Will be auto-generated if needed
+      });
       
-      const success = await stepManager.saveProfileStep(profileData);
-      
-      if (!success) {
-        throw new Error('Failed to save profile data');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save profile data');
       }
       
-      // Also update local auth context for immediate UI updates
+      console.log('✅ Profile step executed successfully');
+      
+      // Update local auth context for immediate UI updates
       const userProfileUpdate = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -245,49 +247,53 @@ export default function OnboardingScreen() {
       
       await updateUser(userProfileUpdate);
       
-      console.log('Profile step saved successfully');
-      
-      // Get next step route from step manager
-      const nextRoute = await stepManager.getNextStepRoute('profile');
+      // Get next step route
+      const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'interests');
       if (nextRoute) {
+        console.log('📍 Navigating to next step:', nextRoute);
         router.replace(nextRoute as any);
       } else {
+        console.log('📍 Defaulting to interests screen');
         router.replace('/onboarding/interests' as any);
       }
       
     } catch (error) {
-      console.error('Error saving profile step:', error);
+      console.error('❌ Error saving profile step:', error);
       
       // Use error recovery to handle the error gracefully
       const recovered = await errorRecovery.recoverFromError(error, 'saveProfileStep');
       if (!recovered) {
-        Alert.alert('Error', 'There was a problem saving your profile. Please try again.');
+        Alert.alert(
+          'Error', 
+          error.message || 'There was a problem saving your profile. Please try again.'
+        );
       }
     } finally {
       setSavingProfile(false);
+      setMigrationInProgress(false);
     }
   };
 
   const handleSkip = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      console.log('Skipping profile step');
+      console.log('⏭️ Skipping profile step');
       
-      if (flowInitialized) {
-        // Skip through step manager for proper tracking
-        await stepManager.skipStep('profile', 'User chose to skip');
-        
-        const nextRoute = await stepManager.getNextStepRoute('profile');
+      const result = await flowCoordinator.skipStep('profile', 'User chose to skip profile setup');
+      
+      if (result.success) {
+        const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'interests');
         if (nextRoute) {
           router.replace(nextRoute as any);
-          return;
+        } else {
+          router.replace('/onboarding/interests' as any);
         }
+      } else {
+        throw new Error('Failed to skip profile step');
       }
       
-      // Fallback navigation
-      router.replace('/onboarding/interests' as any);
     } catch (error) {
-      console.error('Error skipping profile step:', error);
+      console.error('❌ Error skipping profile step:', error instanceof Error ? error.message : error);
+      // Fallback navigation
       router.replace('/onboarding/interests' as any);
     }
   };
@@ -300,8 +306,8 @@ export default function OnboardingScreen() {
         <ActivityIndicator size="large" color="#000000" />
         <Text style={styles.loadingText}>
           {loading ? 'Loading user data...' : 
-           !userDataReady ? 'Setting up session...' : 
-           'Initializing onboarding...'}
+           !userDataReady ? 'Preparing onboarding...' : 
+           'Initializing flow...'}
         </Text>
       </View>
     );
@@ -339,22 +345,22 @@ export default function OnboardingScreen() {
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
               {/* Ensure these image paths are correct */}
               <Image 
-                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
+                source={CollaboritoLogo} 
                 style={styles.logo}
                 resizeMode="contain"
               />
               <Image 
-                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
+                source={CollaboritoTextLogo} 
                 style={styles.textLogo}
                 resizeMode="contain"
               />
           </Animated.View>
 
-            {/* Form container from register.tsx */}
-            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-              <Text style={styles.title}>Complete Your Profile</Text>
+            {/* Content container from register.tsx */}
+            <Animated.View style={[styles.contentContainer, { opacity: contentOpacity }]}>
+              <Text style={styles.title}>Welcome to Collaborito</Text>
               <Text style={styles.subtitle}>
-                Tell us a bit more about yourself to get started.
+                Let's set up your profile to help you connect with the right people and projects.
               </Text>
 
               {/* Onboarding Progress Component */}
@@ -362,10 +368,26 @@ export default function OnboardingScreen() {
                 <OnboardingProgress 
                   userId={user.id}
                   onProgressChange={(progress) => {
-                    console.log('Progress updated:', progress);
+                    console.log('Profile progress updated:', progress);
                   }}
                 />
               )}
+
+              {/* Migration Progress Indicator */}
+              {migrationInProgress && (
+                <View style={styles.migrationContainer}>
+                  <ActivityIndicator size="small" color="#000000" />
+                  <Text style={styles.migrationText}>Setting up your account...</Text>
+                </View>
+              )}
+            </Animated.View>
+
+            {/* Form container from register.tsx */}
+            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
+              <Text style={styles.title}>Complete Your Profile</Text>
+              <Text style={styles.subtitle}>
+                Tell us a bit more about yourself to get started.
+              </Text>
 
               {/* Use Input Wrapper style from register.tsx */}
               <View style={styles.inputWrapper}>
@@ -445,19 +467,24 @@ export default function OnboardingScreen() {
 
               {/* Use Primary Button style from register.tsx */}
               <TouchableOpacity 
-                style={[styles.button, styles.primaryButton]}
+                style={[styles.button, styles.primaryButton, savingProfile && styles.buttonDisabled]}
                   onPress={handleComplete}
                   disabled={savingProfile}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={['#000000', '#333333']} 
+                  colors={savingProfile ? ['#ccc', '#999'] : ['#000000', '#333333']} 
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
                 >
                   {savingProfile ? (
-                    <ActivityIndicator color="#FFF" size="small" /> 
+                    <View style={styles.buttonContent}>
+                      <ActivityIndicator color="#FFF" size="small" style={styles.buttonLoader} />
+                      <Text style={[styles.buttonText, styles.primaryButtonText]}>
+                        {migrationInProgress ? 'Setting up account...' : 'Saving profile...'}
+                      </Text>
+                    </View>
                   ) : (
                     <Text style={[styles.buttonText, styles.primaryButtonText]}>Complete Setup</Text>
                   )}
@@ -561,16 +588,9 @@ const styles = StyleSheet.create({
     maxHeight: 30,
     marginTop: 10,
   },
-  formContainer: { // from register
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', 
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+  contentContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
   title: { // from register
     fontSize: 26, 
@@ -655,11 +675,21 @@ const styles = StyleSheet.create({
   primaryButton: { // from register
      overflow: 'hidden', 
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   buttonGradient: { // from register
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonLoader: {
+    marginRight: 8,
   },
   buttonText: { // from register
     fontSize: 16,
@@ -690,5 +720,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#4A5568',
     marginTop: 20,
+  },
+  migrationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  migrationText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#4A5568',
+    fontFamily: 'Nunito',
   },
 }); 
