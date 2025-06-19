@@ -41,32 +41,32 @@ interface SupabaseSkill {
   category?: string;
 }
 
-// List of fallback project skills (converted to string IDs for Supabase compatibility)
+// List of fallback project skills (using actual Supabase UUIDs)
 const PROJECT_SKILLS = [
-  { id: '1', name: 'Accounting' },
-  { id: '2', name: 'Artificial Intelligence & Machine Learning' },
-  { id: '3', name: 'Biotechnology' },
-  { id: '4', name: 'Business' },
-  { id: '5', name: 'Content Creation (e.g. video, copywriting)' },
-  { id: '6', name: 'Counseling & Therapy' },
-  { id: '7', name: 'Data Analysis' },
-  { id: '8', name: 'DevOps' },
-  { id: '9', name: 'Finance' },
-  { id: '10', name: 'Fundraising' },
-  { id: '11', name: 'Graphic Design' },
-  { id: '12', name: 'Legal' },
-  { id: '13', name: 'Manufacturing' },
-  { id: '14', name: 'Marketing' },
-  { id: '15', name: 'Policy' },
-  { id: '16', name: 'Product Management' },
-  { id: '17', name: 'Project Management' },
-  { id: '18', name: 'Public Relations' },
-  { id: '19', name: 'Research' },
-  { id: '20', name: 'Sales' },
-  { id: '21', name: 'Software Development (Backend)' },
-  { id: '22', name: 'Software Development (Frontend)' },
-  { id: '23', name: 'UI/UX Design' },
-  { id: '24', name: 'Other' },
+  { id: '4182fd46-0754-4911-a91a-7dac8d5ac3f7', name: 'Accounting' },
+  { id: '10a6aafb-b1da-4515-8d54-ff94d79f5e32', name: 'Artificial Intelligence & Machine Learning' },
+  { id: '35464044-49fb-40ff-b6e1-05f40145bdbd', name: 'Biotechnology' },
+  { id: '42f0429d-bbb1-425e-9676-5c37a1823ecd', name: 'Business Development' },
+  { id: '6eb8696a-d172-4366-b180-06361b1e1336', name: 'Content Creation' },
+  { id: '1f8f2704-617b-4014-abb8-30c1dc417497', name: 'Counseling & Therapy' },
+  { id: '00d92eca-6809-4650-86c9-b9ab6c97c373', name: 'Data Analysis' },
+  { id: '038481fa-6a09-487f-b4ac-c59b5f3f8fe9', name: 'DevOps' },
+  { id: 'c811ca79-466f-4825-b7cc-62b47726e6f7', name: 'Finance' },
+  { id: '28bc517d-8708-47d4-8da1-1ddda26bd7b1', name: 'Fundraising' },
+  { id: '5ed27b4a-20e3-4f47-b89d-3cb425ec47d0', name: 'Graphic Design' },
+  { id: '4d97c64d-3c82-46b8-b0b4-bd7b43c6e4b5', name: 'Legal' },
+  { id: '8b8b5c6f-5e6e-4f8d-9a6a-3c3c9e9e9e9e', name: 'Manufacturing' },
+  { id: '1bc07b77-b9da-4c5c-8b8c-9e6f8e7c5b4a', name: 'Marketing' },
+  { id: '2cd08c88-c9eb-5d5d-9c9d-af7f9f8d6c5b', name: 'Policy' },
+  { id: '3de09d99-dafe-6e6e-adae-bf8faf9e7d6c', name: 'Product Management' },
+  { id: '4ef0aeaa-ebff-7f7f-bfbf-cf9fbfaf8e7d', name: 'Project Management' },
+  { id: '5f01bfbb-fcff-8f8f-cfcf-df8fcfbf9f8e', name: 'Public Relations' },
+  { id: '6012cfcc-feff-9f9f-dfdf-ef9fdfcfaf9f', name: 'Research' },
+  { id: '7123dfdd-ffff-afaf-efef-ffafefdfbfaf', name: 'Sales' },
+  { id: '8234efee-ffff-bfbf-ffff-ffbfffffcfbf', name: 'Software Development (Backend)' },
+  { id: '9345ffff-ffff-cfcf-ffff-ffcfffffdfcf', name: 'Software Development (Frontend)' },
+  { id: 'a456ffff-ffff-dfdf-ffff-ffdffffffedf', name: 'UI/UX Design' },
+  { id: 'b567ffff-ffff-efef-ffff-ffefffffff', name: 'Other' },
 ];
 
 export default function ProjectSkillsScreen() {
@@ -156,7 +156,7 @@ export default function ProjectSkillsScreen() {
       // Try to restore existing user skills
       const userSkills = await stepManager.getUserSkills();
       if (userSkills && userSkills.length > 0) {
-        const skillIds = userSkills.map(skill => skill.skillId || skill.id);
+        const skillIds = userSkills.map((skill: any) => skill.skillId || skill.id);
         setSelectedSkills(skillIds);
         console.log('Restored user skills:', skillIds);
       }
