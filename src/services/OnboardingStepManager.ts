@@ -20,14 +20,15 @@ export interface InterestsData {
 }
 
 export interface GoalsData {
-  goalType: 'find_cofounder' | 'find_collaborators' | 'contribute_skills' | 'explore_ideas';
-  details?: Record<string, any>;
+  goals: string[];
+  primaryGoal?: string;
 }
 
 export interface ProjectDetailsData {
   name: string;
   description: string;
-  tags?: string[];
+  lookingFor: string[];
+  timeline?: string;
 }
 
 export interface SkillsData {
