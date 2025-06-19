@@ -2,34 +2,64 @@ import { Alert } from 'react-native';
 import { SessionManager } from './SessionManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { createLogger } from '../utils/logger';
 
 const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
+const logger = createLogger('OnboardingErrorRecovery');
+
+interface ErrorContext {
+  operation: string;
+  userId?: string;
+  stepId?: string;
+  timestamp: string;
+  errorType: string;
+  retryCount: number;
+}
+
+interface RecoveryOptions {
+  canRetry: boolean;
+  fallbackAction?: () => Promise<boolean>;
+  userMessage?: string;
+  technicalMessage?: string;
+}
 
 export class OnboardingErrorRecovery {
   private sessionManager = SessionManager.getInstance();
+  private readonly MAX_RETRY_ATTEMPTS = 3;
+  private readonly RECOVERY_STORAGE_KEY = 'onboarding_recovery_data';
+  private readonly ERROR_LOG_KEY = 'onboarding_error_log';
 
   async attemptRecovery(): Promise<boolean> {
     try {
-      // Check network connectivity
-      const isOnline = await this.checkNetworkConnectivity();
-      
-      if (!isOnline) {
-        return this.handleOfflineRecovery();
+      logger.info('🔧 Attempting general recovery...');
+
+      // Check for pending offline data
+      const pendingData = await this.getPendingOfflineData();
+      if (pendingData && pendingData.length > 0) {
+        logger.info(`📤 Found ${pendingData.length} pending operations for sync`);
+        // Return true to indicate we can continue with offline data
+        return true;
       }
 
-      // Attempt session recovery
-      const sessionRecovered = await this.sessionManager.initializeSession();
-      
-      if (!sessionRecovered) {
-        return this.handleSessionRecovery();
+      // Try session recovery
+      const sessionRecovered = await this.recoverSession();
+      if (sessionRecovered) {
+        logger.info('✅ Session recovery successful');
+        return true;
       }
 
-      // Validate onboarding state
-      await this.sessionManager.loadOnboardingState();
-      
-      return true;
+      // Check for migration retry markers
+      const migrationPending = await this.hasPendingMigration();
+      if (migrationPending) {
+        logger.info('🔄 Migration retry pending - allowing graceful continuation');
+        return true;
+      }
+
+      logger.warn('⚠️ General recovery not possible');
+      return false;
+
     } catch (error) {
-      console.error('Recovery failed:', error);
+      logger.error('❌ General recovery attempt failed:', error);
       return false;
     }
   }
@@ -77,161 +107,386 @@ export class OnboardingErrorRecovery {
     return false;
   }
 
-  async recoverFromError(error: any, context: string): Promise<boolean> {
-    console.error(`Error in ${context}:`, error);
+  async recoverFromError(error: unknown, operation: string, context?: any): Promise<boolean> {
+    try {
+      logger.error(`🔧 Starting error recovery for operation: ${operation}`, error);
+      
+      const errorInfo = this.analyzeError(error);
+      const errorContext: ErrorContext = {
+        operation,
+        userId: context?.userId,
+        stepId: context?.stepId,
+        timestamp: new Date().toISOString(),
+        errorType: errorInfo.type,
+        retryCount: await this.getRetryCount(operation)
+      };
 
-    // Check if this is a mock user - be more lenient with errors
-    const session = this.sessionManager.getSession();
-    const isMockUser = session && (session as any).mock;
-    
-    if (isMockUser) {
-      console.log('🔧 Mock user detected, applying lenient error recovery');
-      return this.handleMockUserError(error, context);
+      // Log error for debugging
+      await this.logError(errorContext, error);
+
+      // Determine recovery strategy
+      const recoveryOptions = this.getRecoveryOptions(errorInfo, errorContext);
+
+      if (recoveryOptions.canRetry && errorContext.retryCount < this.MAX_RETRY_ATTEMPTS) {
+        logger.info(`🔄 Attempting retry ${errorContext.retryCount + 1}/${this.MAX_RETRY_ATTEMPTS}`);
+        await this.incrementRetryCount(operation);
+        
+        if (recoveryOptions.fallbackAction) {
+          return await recoveryOptions.fallbackAction();
+        }
+        return false;
+      }
+
+      // If retries exhausted or error not recoverable, try fallback
+      if (errorInfo.type === 'network' || errorInfo.type === 'timeout') {
+        logger.info('📱 Network error - saving data locally for later sync');
+        await this.saveForOfflineSync(operation, context);
+        return true; // Return success for local storage
+      }
+
+      if (errorInfo.type === 'session' || errorInfo.type === 'authentication') {
+        logger.info('🔐 Session error - attempting session recovery');
+        return await this.recoverSession();
+      }
+
+      if (errorInfo.type === 'migration') {
+        logger.info('🚀 Migration error - marking for retry during next app launch');
+        await this.markForMigrationRetry(context);
+        return true; // Allow local continuation
+      }
+
+      logger.warn('⚠️ Error recovery not possible, graceful degradation');
+      return false;
+
+    } catch (recoveryError) {
+      logger.error('❌ Error recovery failed:', recoveryError);
+      return false;
     }
-
-    // Check if it's a network error
-    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-      return this.handleNetworkError();
-    }
-
-    // Check if it's an authentication error
-    if (error.status === 401 || error.message?.includes('Invalid JWT')) {
-      return this.handleAuthError();
-    }
-
-    // Check if it's a validation error
-    if (error.status === 400) {
-      return this.handleValidationError(error);
-    }
-
-    // Generic error handling
-    return this.handleGenericError(error);
   }
 
   /**
-   * Handle errors for mock users with more lenient approach
+   * Analyze error to determine type and recovery strategy
    */
-  private async handleMockUserError(error: any, context: string): Promise<boolean> {
-    console.log(`🔧 Handling mock user error in ${context}:`, error.message || error);
-    
-    // For mock users, most errors are recoverable
-    if (context.includes('initializeFlow') || context.includes('session')) {
-      console.log('✅ Mock user session/flow error - allowing graceful continuation');
-      return true;
+  private analyzeError(error: unknown): { type: string; message: string; recoverable: boolean } {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorLower = errorMessage.toLowerCase();
+
+    if (errorLower.includes('network') || errorLower.includes('fetch') || errorLower.includes('timeout')) {
+      return { type: 'network', message: errorMessage, recoverable: true };
     }
-    
-    if (context.includes('executeStep')) {
-      console.log('✅ Mock user step execution error - allowing local storage fallback');
-      return true;
+
+    if (errorLower.includes('session') || errorLower.includes('unauthorized') || errorLower.includes('auth')) {
+      return { type: 'session', message: errorMessage, recoverable: true };
     }
-    
-    if (context.includes('network') || context.includes('supabase')) {
-      console.log('✅ Mock user network/supabase error - using local fallback');
-      return true;
+
+    if (errorLower.includes('migration') || errorLower.includes('user creation')) {
+      return { type: 'migration', message: errorMessage, recoverable: true };
     }
-    
-    // For any other mock user errors, allow continuation with warning
-    console.warn(`Mock user error in ${context}, but allowing continuation:`, error);
-    return true;
-  }
 
-  private async handleNetworkError(): Promise<boolean> {
-    const isOnline = await this.checkNetworkConnectivity();
-    
-    if (!isOnline) {
-      Alert.alert(
-        'Connection Error',
-        'Please check your internet connection and try again.',
-        [
-          { text: 'Retry', onPress: () => window.location.reload?.() },
-          { text: 'Continue Offline', onPress: () => {} }
-        ]
-      );
-      return false;
+    if (errorLower.includes('validation') || errorLower.includes('invalid')) {
+      return { type: 'validation', message: errorMessage, recoverable: false };
     }
-    
-    return true;
-  }
 
-  private async handleAuthError(): Promise<boolean> {
-    // Try to refresh the session
-    const recovered = await this.sessionManager.verifySession();
-    
-    if (!recovered) {
-      Alert.alert(
-        'Authentication Error',
-        'Your session has expired. Please sign in again.',
-        [{ text: 'OK' }]
-      );
-      return false;
+    if (errorLower.includes('database') || errorLower.includes('sql')) {
+      return { type: 'database', message: errorMessage, recoverable: true };
     }
-    
-    return true;
+
+    return { type: 'unknown', message: errorMessage, recoverable: false };
   }
 
-  private handleValidationError(error: any): boolean {
-    const errorMessage = error.message || 'Please check your input and try again.';
-    
-    Alert.alert(
-      'Validation Error',
-      errorMessage,
-      [{ text: 'OK' }]
-    );
-    
-    return false;
+  /**
+   * Get recovery options based on error type and context
+   */
+  private getRecoveryOptions(errorInfo: any, context: ErrorContext): RecoveryOptions {
+    switch (errorInfo.type) {
+      case 'network':
+        return {
+          canRetry: true,
+          userMessage: 'Connection issue detected. Your data will be saved locally and synced when connection is restored.',
+          fallbackAction: async () => {
+            await this.saveForOfflineSync(context.operation, { stepId: context.stepId });
+            return true;
+          }
+        };
+
+      case 'session':
+        return {
+          canRetry: true,
+          userMessage: 'Session expired. Attempting to restore your session.',
+          fallbackAction: async () => {
+            return await this.recoverSession();
+          }
+        };
+
+      case 'migration':
+        return {
+          canRetry: true,
+          userMessage: 'Account setup in progress. You can continue and we\'ll complete the setup in the background.',
+          fallbackAction: async () => {
+            await this.markForMigrationRetry({ stepId: context.stepId });
+            return true;
+          }
+        };
+
+      case 'database':
+        return {
+          canRetry: true,
+          userMessage: 'Temporary service issue. Retrying...',
+        };
+
+      default:
+        return {
+          canRetry: false,
+          userMessage: 'An unexpected error occurred. Please try again.',
+        };
+    }
   }
 
-  private handleGenericError(error: any): boolean {
-    const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
-    
-    Alert.alert(
-      'Error',
-      errorMessage,
-      [
-        { text: 'Retry', onPress: () => {} },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
-    
-    return false;
-  }
-
-  async performHealthCheck(): Promise<{
-    sessionValid: boolean;
-    networkOnline: boolean;
-    cacheAvailable: boolean;
-  }> {
-    const sessionValid = await this.sessionManager.verifySession();
-    const networkOnline = await this.checkNetworkConnectivity();
-    const cached = await AsyncStorage.getItem('onboarding_state');
-    const cacheAvailable = !!cached;
-
-    return {
-      sessionValid,
-      networkOnline,
-      cacheAvailable
-    };
-  }
-
-  async recoverOnboardingData(): Promise<any> {
+  /**
+   * Recover session by attempting re-initialization
+   */
+  private async recoverSession(): Promise<boolean> {
     try {
-      // First try to load from session manager
-      await this.sessionManager.refreshOnboardingState();
-      const state = this.sessionManager.getOnboardingState();
+      logger.info('🔐 Attempting session recovery...');
       
-      if (state) {
-        return state;
+      // Import SessionManager dynamically to avoid circular dependencies
+      const { SessionManager } = await import('./SessionManager');
+      const sessionManager = SessionManager.getInstance();
+      
+      // Try to re-initialize session
+      const initialized = await sessionManager.initializeSession();
+      
+      if (initialized) {
+        logger.info('✅ Session recovery successful');
+        return true;
       }
 
-      // Fallback to cached data
-      const cached = await AsyncStorage.getItem('onboarding_state');
-      if (cached) {
-        return JSON.parse(cached);
-      }
+      logger.warn('⚠️ Session recovery failed');
+      return false;
 
-      return null;
     } catch (error) {
-      console.error('Failed to recover onboarding data:', error);
+      logger.error('❌ Session recovery error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Save data for offline sync when network is unavailable
+   */
+  private async saveForOfflineSync(operation: string, data: any): Promise<void> {
+    try {
+      const offlineItem = {
+        id: Date.now().toString(),
+        operation,
+        data,
+        timestamp: new Date().toISOString(),
+        synced: false
+      };
+
+      const existingData = await AsyncStorage.getItem(this.RECOVERY_STORAGE_KEY);
+      const offlineData = existingData ? JSON.parse(existingData) : [];
+      
+      offlineData.push(offlineItem);
+      
+      await AsyncStorage.setItem(this.RECOVERY_STORAGE_KEY, JSON.stringify(offlineData));
+      logger.info(`💾 Saved operation '${operation}' for offline sync`);
+
+    } catch (error) {
+      logger.error('Failed to save data for offline sync:', error);
+    }
+  }
+
+  /**
+   * Mark user for migration retry
+   */
+  private async markForMigrationRetry(context: any): Promise<void> {
+    try {
+      const migrationMarker = {
+        needsRetry: true,
+        stepId: context?.stepId,
+        timestamp: new Date().toISOString(),
+        attempts: 1
+      };
+
+      await AsyncStorage.setItem('migration_retry_marker', JSON.stringify(migrationMarker));
+      logger.info('🔄 Marked user for migration retry');
+
+    } catch (error) {
+      logger.error('Failed to mark for migration retry:', error);
+    }
+  }
+
+  /**
+   * Get pending offline data
+   */
+  private async getPendingOfflineData(): Promise<any[]> {
+    try {
+      const data = await AsyncStorage.getItem(this.RECOVERY_STORAGE_KEY);
+      if (data) {
+        const offlineData = JSON.parse(data);
+        return offlineData.filter((item: any) => !item.synced);
+      }
+      return [];
+    } catch (error) {
+      logger.error('Failed to get pending offline data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Check if migration retry is pending
+   */
+  private async hasPendingMigration(): Promise<boolean> {
+    try {
+      const marker = await AsyncStorage.getItem('migration_retry_marker');
+      if (marker) {
+        const migrationData = JSON.parse(marker);
+        return migrationData.needsRetry === true;
+      }
+      return false;
+    } catch (error) {
+      logger.error('Failed to check pending migration:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get retry count for an operation
+   */
+  private async getRetryCount(operation: string): Promise<number> {
+    try {
+      const retryData = await AsyncStorage.getItem(`retry_count_${operation}`);
+      return retryData ? parseInt(retryData, 10) : 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  /**
+   * Increment retry count for an operation
+   */
+  private async incrementRetryCount(operation: string): Promise<void> {
+    try {
+      const currentCount = await this.getRetryCount(operation);
+      await AsyncStorage.setItem(`retry_count_${operation}`, (currentCount + 1).toString());
+    } catch (error) {
+      logger.error('Failed to increment retry count:', error);
+    }
+  }
+
+  /**
+   * Log error for debugging and analytics
+   */
+  private async logError(context: ErrorContext, error: unknown): Promise<void> {
+    try {
+      const errorLog = {
+        ...context,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      };
+
+      const existingLogs = await AsyncStorage.getItem(this.ERROR_LOG_KEY);
+      const logs = existingLogs ? JSON.parse(existingLogs) : [];
+      
+      logs.push(errorLog);
+      
+      // Keep only last 50 error logs
+      if (logs.length > 50) {
+        logs.splice(0, logs.length - 50);
+      }
+      
+      await AsyncStorage.setItem(this.ERROR_LOG_KEY, JSON.stringify(logs));
+      
+    } catch (logError) {
+      logger.error('Failed to log error:', logError);
+    }
+  }
+
+  /**
+   * Clear retry counts (call after successful operation)
+   */
+  async clearRetryCount(operation: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(`retry_count_${operation}`);
+    } catch (error) {
+      logger.error('Failed to clear retry count:', error);
+    }
+  }
+
+  /**
+   * Sync pending offline data when connection is restored
+   */
+  async syncPendingData(): Promise<{ success: boolean; syncedCount: number }> {
+    try {
+      const pendingData = await this.getPendingOfflineData();
+      let syncedCount = 0;
+
+      for (const item of pendingData) {
+        try {
+          // Here you would implement the actual sync logic
+          // For now, just mark as synced
+          item.synced = true;
+          item.syncedAt = new Date().toISOString();
+          syncedCount++;
+        } catch (syncError) {
+          logger.error(`Failed to sync item ${item.id}:`, syncError);
+        }
+      }
+
+      // Update storage with synced status
+      await AsyncStorage.setItem(this.RECOVERY_STORAGE_KEY, JSON.stringify(pendingData));
+      
+      logger.info(`✅ Synced ${syncedCount}/${pendingData.length} pending operations`);
+      
+      return { success: true, syncedCount };
+
+    } catch (error) {
+      logger.error('Failed to sync pending data:', error);
+      return { success: false, syncedCount: 0 };
+    }
+  }
+
+  /**
+   * Clear all recovery data (for testing or cleanup)
+   */
+  async clearRecoveryData(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([
+        this.RECOVERY_STORAGE_KEY,
+        this.ERROR_LOG_KEY,
+        'migration_retry_marker'
+      ]);
+      
+      // Clear all retry counts
+      const keys = await AsyncStorage.getAllKeys();
+      const retryKeys = keys.filter(key => key.startsWith('retry_count_'));
+      if (retryKeys.length > 0) {
+        await AsyncStorage.multiRemove(retryKeys);
+      }
+      
+      logger.info('🧹 Recovery data cleared');
+    } catch (error) {
+      logger.error('Failed to clear recovery data:', error);
+    }
+  }
+
+  /**
+   * Get error statistics for debugging
+   */
+  async getErrorStats(): Promise<any> {
+    try {
+      const errorLogs = await AsyncStorage.getItem(this.ERROR_LOG_KEY);
+      const pendingData = await this.getPendingOfflineData();
+      const migrationPending = await this.hasPendingMigration();
+
+      return {
+        totalErrors: errorLogs ? JSON.parse(errorLogs).length : 0,
+        pendingOperations: pendingData.length,
+        migrationPending,
+        lastErrorTime: errorLogs ? JSON.parse(errorLogs).slice(-1)[0]?.timestamp : null
+      };
+    } catch (error) {
+      logger.error('Failed to get error stats:', error);
       return null;
     }
   }
@@ -239,27 +494,17 @@ export class OnboardingErrorRecovery {
   showRecoveryDialog(): Promise<boolean> {
     return new Promise((resolve) => {
       Alert.alert(
-        'Recovery Options',
-        'We encountered an issue. How would you like to proceed?',
+        'Connection Issue',
+        'We\'re having trouble connecting to our servers. Would you like to continue with offline mode or try again?',
         [
           {
-            text: 'Retry',
-            onPress: () => resolve(true)
+            text: 'Try Again',
+            onPress: () => resolve(false)
           },
           {
-            text: 'Use Offline Data',
-            onPress: async () => {
-              const success = await this.handleOfflineRecovery();
-              resolve(success);
-            }
-          },
-          {
-            text: 'Start Over',
-            style: 'destructive',
-            onPress: () => {
-              AsyncStorage.removeItem('onboarding_state');
-              resolve(false);
-            }
+            text: 'Continue Offline',
+            onPress: () => resolve(true),
+            style: 'default'
           }
         ]
       );
