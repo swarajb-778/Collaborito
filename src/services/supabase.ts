@@ -351,4 +351,19 @@ export interface Task {
   description?: string;
   status: 'todo' | 'in_progress' | 'done';
   assigned_to?: string;
-} 
+}
+
+// For administrative operations, create a separate client with service role
+const SUPABASE_SERVICE_ROLE_KEY = Constants.expoConfig?.extra?.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Admin client for server-side operations (if service role key is available)
+export const supabaseAdmin = createClient(
+  supabaseConfig.url, 
+  SUPABASE_SERVICE_ROLE_KEY || supabaseConfig.anonKey, // Fallback to anon key if no service role
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+); 

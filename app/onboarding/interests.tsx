@@ -34,38 +34,38 @@ const { width, height } = Dimensions.get('window');
 
 // Default interests list for fallback (will be replaced by Supabase data)
 const FALLBACK_INTERESTS = [
-  { id: '1', name: 'Art' },
-  { id: '2', name: 'Artificial Intelligence & Machine Learning' },
-  { id: '3', name: 'Biotechnology' },
-  { id: '4', name: 'Business' },
-  { id: '5', name: 'Books' },
-  { id: '6', name: 'Climate Change' },
-  { id: '7', name: 'Civic Engagement' },
-  { id: '8', name: 'Dancing' },
-  { id: '9', name: 'Data Science' },
-  { id: '10', name: 'Education' },
-  { id: '11', name: 'Entrepreneurship' },
-  { id: '12', name: 'Fashion' },
-  { id: '13', name: 'Fitness' },
-  { id: '14', name: 'Food' },
-  { id: '15', name: 'Gaming' },
-  { id: '16', name: 'Health & Wellness' },
-  { id: '17', name: 'Investing & Finance' },
-  { id: '18', name: 'Marketing' },
-  { id: '19', name: 'Movies' },
-  { id: '20', name: 'Music' },
-  { id: '21', name: 'Parenting' },
-  { id: '22', name: 'Pets' },
-  { id: '23', name: 'Product Design' },
-  { id: '24', name: 'Reading' },
-  { id: '25', name: 'Real Estate' },
-  { id: '26', name: 'Robotics' },
-  { id: '27', name: 'Science & Tech' },
-  { id: '28', name: 'Social Impact' },
-  { id: '29', name: 'Sports' },
-  { id: '30', name: 'Travel' },
-  { id: '31', name: 'Writing' },
-  { id: '32', name: 'Other' },
+  { id: 'f7bff181-f722-44fd-8704-77816f16cdf8', name: 'Art' },
+  { id: 'e9e68517-2d26-46e9-8220-39d3745b3d92', name: 'Artificial Intelligence & Machine Learning' },
+  { id: '814d804f-04e3-421e-b1ff-64ba42f30e60', name: 'Biotechnology' },
+  { id: 'cc7ee20f-171b-4142-a839-9dc840d9a333', name: 'Business' },
+  { id: 'b58c1144-26c5-4f03-a2d1-d631bbdf29ae', name: 'Books' },
+  { id: '83be43cd-3d73-403b-9064-980b8fbb1229', name: 'Climate Change' },
+  { id: 'c3d05bc9-9de7-4bcd-96b7-f8d0f981dd22', name: 'Civic Engagement' },
+  { id: 'e44bdf24-f37d-4ae7-8f21-edd136d51562', name: 'Dancing' },
+  { id: '7e7ced62-8869-4679-b8f9-c8eb71eabd87', name: 'Data Science' },
+  { id: '37276e28-ecb5-4725-9463-dd8f761973e2', name: 'Education' },
+  { id: '3dc59a14-192b-4ed6-9870-51cdaf096c3c', name: 'Entrepreneurship' },
+  { id: 'a8107a20-5b9b-4ce8-89df-921386e5ea8f', name: 'Fashion' },
+  { id: 'd8c696c3-5201-49eb-afef-3d0b72bc20df', name: 'Fitness' },
+  { id: '6cd728f6-8ef3-44de-8da9-c850b057ed86', name: 'Food' },
+  { id: '45381efc-cf19-4b85-8cde-ca9f6feb5959', name: 'Gaming' },
+  { id: '87956f0e-0645-419d-bf42-4474912af027', name: 'Health & Wellness' },
+  { id: 'f89c0306-7e4a-4c70-bc5a-22a6be7e6c9c', name: 'Investing & Finance' },
+  { id: '1757bd6e-68fe-43ea-8791-3295852b1247', name: 'Marketing' },
+  { id: 'e96d075a-ef2a-4e9c-864b-83ff4cb8d71a', name: 'Movies' },
+  { id: 'b76bf249-a009-4a3d-b783-dc4bd255dc12', name: 'Music' },
+  { id: '8666b6be-a116-41f0-8ca6-649d75125045', name: 'Parenting' },
+  { id: 'b1336a3b-6618-4f94-821c-bb0da99a10be', name: 'Pets' },
+  { id: 'e2f41cb9-6639-4694-864c-037258766628', name: 'Product Design' },
+  { id: '2115f283-f75e-4ae7-bd76-153b3b171bf7', name: 'Reading' },
+  { id: '1ec9804e-9fca-48c6-972a-ddc0ff0612f6', name: 'Real Estate' },
+  { id: '556ddf1c-ccac-4d51-be85-299a10934300', name: 'Robotics' },
+  { id: '59e5ba19-d150-4321-b0c0-263b6918bfa2', name: 'Science & Tech' },
+  { id: '3b726657-705f-4e1a-901b-a1babcdd3cbb', name: 'Social Impact' },
+  { id: '6d52af64-2369-4de0-a5d1-54706c4b7616', name: 'Sports' },
+  { id: 'b87107cc-2ac3-4402-8ce6-52e2a1b52be8', name: 'Travel' },
+  { id: 'dd6970ec-6ed2-4eaa-9098-e56cc1065069', name: 'Writing' },
+  { id: '7f3f0d72-5952-4a47-a9fa-25ed02f77053', name: 'Other' },
 ];
 
 export default function OnboardingInterestsScreen() {
@@ -103,36 +103,56 @@ export default function OnboardingInterestsScreen() {
     ]).start();
   }, []);
 
-  // Initialize onboarding flow and load interests
+  // Initialize onboarding flow and load interests with enhanced error handling
   useEffect(() => {
     const initializeScreen = async () => {
       try {
-        // Initialize flow
+        console.log('🚀 Initializing interests screen...');
+        
+        // Initialize flow (handles mock vs real users)
         const flowReady = await flowCoordinator.initializeFlow();
         if (flowReady) {
           setFlowInitialized(true);
+          console.log('✅ Flow initialized for interests screen');
+        } else {
+          console.warn('Flow initialization failed, but allowing graceful continuation');
+          setFlowInitialized(true); // Allow graceful degradation
         }
 
-        // Load interests from Supabase
+        // Load interests (stepManager now handles mock fallback automatically)
+        console.log('🔍 Loading available interests...');
         const availableInterests = await stepManager.getAvailableInterests();
-        setInterests(availableInterests);
+        console.log('✅ Loaded interests:', availableInterests.length, 'items');
+        
+        if (availableInterests.length === 0) {
+          console.log('🔧 No interests loaded, using fallback data');
+          setInterests(FALLBACK_INTERESTS);
+        } else {
+          setInterests(availableInterests);
+        }
 
-        // Load user's selected interests if they exist
-        const userInterests = await stepManager.getUserInterests();
-        if (userInterests && userInterests.length > 0) {
-          setSelectedInterests(userInterests.map((interest: any) => interest.id));
+        // Try to load user's previously selected interests
+        try {
+          const userInterests = await stepManager.getUserInterests();
+          if (userInterests && userInterests.length > 0) {
+            console.log('✅ Loaded user interests:', userInterests.length, 'items');
+            setSelectedInterests(userInterests.map((interest: any) => interest.id.toString()));
+          }
+        } catch (userInterestsError) {
+          console.warn('Could not load user interests (okay for new users):', userInterestsError);
         }
 
       } catch (error) {
         console.error('Failed to initialize interests screen:', error);
-        // Use fallback interests
+        
+        // Always use fallback interests for graceful degradation
+        console.log('🔧 Using fallback interests for graceful degradation');
         setInterests(FALLBACK_INTERESTS);
         
-        // Try recovery
+        // Try recovery but always allow continuation
         const recovered = await errorRecovery.recoverFromError(error, 'initializeInterestsScreen');
-        if (recovered) {
-          setFlowInitialized(true);
-        }
+        setFlowInitialized(true); // Always allow continuation for interests screen
+        
       } finally {
         setLoading(false);
       }
