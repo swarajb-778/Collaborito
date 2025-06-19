@@ -1,34 +1,70 @@
 import { SessionManager } from './SessionManager';
-import { OnboardingErrorRecovery } from './OnboardingErrorRecovery';
-import { Alert } from 'react-native';
+import { supabase } from './supabase';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('OnboardingFlowCoordinator');
 
 export interface OnboardingStep {
   id: string;
   name: string;
+  route: string;
   required: boolean;
   completed: boolean;
-  validationRules?: any;
+  dependencies?: string[];
 }
 
-export interface OnboardingProgress {
-  currentStep: string;
-  completedSteps: string[];
-  totalSteps: number;
-  completionPercentage: number;
-  canProceed: boolean;
+export interface FlowValidation {
+  valid: boolean;
+  errors: string[];
+  nextStep?: string;
 }
 
 export class OnboardingFlowCoordinator {
   private static instance: OnboardingFlowCoordinator;
   private sessionManager = SessionManager.getInstance();
-  private errorRecovery = new OnboardingErrorRecovery();
+  private flowInitialized = false;
   
+  // Define the onboarding steps flow
   private readonly steps: OnboardingStep[] = [
-    { id: 'profile', name: 'Profile Setup', required: true, completed: false },
-    { id: 'interests', name: 'Interests Selection', required: true, completed: false },
-    { id: 'goals', name: 'Goals Definition', required: true, completed: false },
-    { id: 'project_details', name: 'Project Details', required: false, completed: false },
-    { id: 'skills', name: 'Skills Selection', required: true, completed: false }
+    {
+      id: 'profile',
+      name: 'Profile Setup',
+      route: '/onboarding',
+      required: true,
+      completed: false
+    },
+    {
+      id: 'interests',
+      name: 'Interests Selection',
+      route: '/onboarding/interests',
+      required: true,
+      completed: false,
+      dependencies: ['profile']
+    },
+    {
+      id: 'goals',
+      name: 'Goals Selection',
+      route: '/onboarding/goals',
+      required: true,
+      completed: false,
+      dependencies: ['interests']
+    },
+    {
+      id: 'project_details',
+      name: 'Project Details',
+      route: '/onboarding/project-detail',
+      required: false, // Conditional based on goals
+      completed: false,
+      dependencies: ['goals']
+    },
+    {
+      id: 'skills',
+      name: 'Skills Selection',
+      route: '/onboarding/project-skills',
+      required: true,
+      completed: false,
+      dependencies: ['goals'] // Can skip project_details
+    }
   ];
 
   static getInstance(): OnboardingFlowCoordinator {
@@ -38,290 +74,249 @@ export class OnboardingFlowCoordinator {
     return OnboardingFlowCoordinator.instance;
   }
 
+  /**
+   * Initialize the onboarding flow
+   */
   async initializeFlow(): Promise<boolean> {
     try {
-      console.log('🚀 Initializing onboarding flow...');
+      logger.info('Initializing onboarding flow...');
       
-      // Initialize session (handles both mock and real users)
-      const sessionInitialized = await this.sessionManager.initializeSession();
-      
-      if (!sessionInitialized) {
-        console.warn('Session initialization failed, attempting recovery...');
-        const recovered = await this.errorRecovery.attemptRecovery();
-        if (!recovered) {
-          console.warn('Recovery failed, but allowing graceful degradation for mock users');
-          // Don't return false immediately - allow mock users to continue
-        }
+      // Verify session is valid
+      const session = await this.sessionManager.getSession();
+      if (!session) {
+        logger.error('No valid session for flow initialization');
+        return false;
       }
 
-      // Load current progress
-      await this.updateProgress();
-      console.log('✅ Onboarding flow initialized successfully');
+      // Update step completion status from user profile
+      await this.refreshStepStatus();
+      
+      this.flowInitialized = true;
+      logger.info('✅ Onboarding flow initialized successfully');
       return true;
+
     } catch (error) {
-      console.error('Failed to initialize onboarding flow:', error);
-      // For mock users, provide graceful degradation
-      console.log('🔧 Attempting graceful degradation for mock users');
-      try {
-        // Try to initialize session again
-        await this.sessionManager.initializeSession();
-        return true;
-      } catch (fallbackError) {
-        console.error('All initialization attempts failed:', fallbackError);
-        return this.errorRecovery.recoverFromError(error, 'initializeFlow');
-      }
+      logger.error('Failed to initialize onboarding flow:', error);
+      return false;
     }
   }
 
-    async executeStep(stepId: string, data: any): Promise<boolean> {
+  /**
+   * Refresh step completion status from database
+   */
+  async refreshStepStatus(): Promise<void> {
     try {
-      console.log(`Executing step: ${stepId}`);
+      const session = await this.sessionManager.getSession();
+      if (!session?.user?.id) return;
+
+      // Get user profile to check current onboarding status
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('onboarding_step, onboarding_completed, first_name, last_name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        logger.warn('Failed to fetch user profile:', error);
+        return;
+      }
+
+      // Update step completion based on profile data
+      const currentStep = profile?.onboarding_step || 'profile';
       
-      // Try to validate session, but don't fail for mock users
-      try {
-        const sessionValid = await this.sessionManager.verifySession();
-        if (!sessionValid) {
-          console.warn('Session validation failed, but continuing for mock users');
+      // Mark steps as completed based on current step
+      this.steps.forEach(step => {
+        if (step.id === 'profile') {
+          step.completed = !!(profile?.first_name && profile?.last_name);
+        } else if (step.id === currentStep) {
+          step.completed = false; // Current step is not yet completed
+        } else {
+          // Check if this step comes before current step in flow
+          step.completed = this.isStepBefore(step.id, currentStep);
         }
-      } catch (sessionError) {
-        console.warn('Session validation error, continuing for mock users:', sessionError);
-      }
+      });
 
-      // Save step data (SessionManager handles mock vs real users)
-      const success = await this.sessionManager.saveOnboardingStep(stepId, data);
-      
-      if (success) {
-        await this.updateProgress();
-        console.log(`✅ Step ${stepId} executed successfully`);
-        return true;
-      }
+      // Check for conditional requirements
+      await this.updateConditionalRequirements(session.user.id);
 
-      console.warn(`Failed to save step ${stepId}, attempting error recovery`);
-      return this.errorRecovery.recoverFromError(new Error('Failed to save step data'), `executeStep:${stepId}`);
     } catch (error) {
-      console.error(`Failed to execute step ${stepId}:`, error);
-      return this.errorRecovery.recoverFromError(error, `executeStep:${stepId}`);
+      logger.error('Failed to refresh step status:', error);
     }
   }
 
-  async updateProgress(): Promise<void> {
+  /**
+   * Check if stepA comes before stepB in the flow
+   */
+  private isStepBefore(stepA: string, stepB: string): boolean {
+    const stepOrder = ['profile', 'interests', 'goals', 'project_details', 'skills'];
+    const indexA = stepOrder.indexOf(stepA);
+    const indexB = stepOrder.indexOf(stepB);
+    return indexA !== -1 && indexB !== -1 && indexA < indexB;
+  }
+
+  /**
+   * Update conditional requirements based on user goals
+   */
+  private async updateConditionalRequirements(userId: string): Promise<void> {
     try {
-      await this.sessionManager.refreshOnboardingState();
-      const state = this.sessionManager.getOnboardingState();
-      
-      if (state) {
-        this.updateStepCompletionStatus(state);
+      // Check if user has goals that require project details
+      const { data: userGoals } = await supabase
+        .from('user_goals')
+        .select('goal_type')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      const needsProjectDetails = userGoals?.some(
+        goal => goal.goal_type === 'find_cofounder' || goal.goal_type === 'find_collaborators'
+      );
+
+      // Update project_details step requirement
+      const projectDetailsStep = this.steps.find(step => step.id === 'project_details');
+      if (projectDetailsStep) {
+        projectDetailsStep.required = needsProjectDetails || false;
       }
+
     } catch (error) {
-      console.error('Failed to update progress:', error);
+      logger.warn('Failed to update conditional requirements:', error);
     }
   }
 
-  private updateStepCompletionStatus(state: any): void {
-    // Update step completion based on state
-    this.steps.forEach(step => {
-      switch (step.id) {
-        case 'profile':
-          step.completed = !!(state.profile?.firstName && state.profile?.lastName);
-          break;
-        case 'interests':
-          step.completed = !!(state.interests && state.interests.length > 0);
-          break;
-        case 'goals':
-          step.completed = !!state.goal;
-          break;
-        case 'project_details':
-          step.completed = !!(state.projects && state.projects.length > 0);
-          // This step is only required if goal is find_cofounder or find_collaborators
-          step.required = state.goal?.type === 'find_cofounder' || state.goal?.type === 'find_collaborators';
-          break;
-        case 'skills':
-          step.completed = !!(state.skills && state.skills.length > 0);
-          break;
+  /**
+   * Get the next step in the onboarding flow
+   */
+  async getNextStep(currentStepId: string): Promise<string | null> {
+    try {
+      await this.refreshStepStatus();
+      
+      const currentIndex = this.steps.findIndex(step => step.id === currentStepId);
+      if (currentIndex === -1) {
+        logger.warn(`Unknown step: ${currentStepId}`);
+        return null;
       }
-    });
-  }
 
-  getProgress(): OnboardingProgress {
-    const completedSteps = this.steps.filter(step => step.completed).map(step => step.id);
-    const requiredSteps = this.steps.filter(step => step.required);
-    const completedRequiredSteps = requiredSteps.filter(step => step.completed);
-    
-    const completionPercentage = requiredSteps.length > 0 
-      ? Math.floor((completedRequiredSteps.length / requiredSteps.length) * 100)
-      : 0;
+      // Find next required step that's not completed
+      for (let i = currentIndex + 1; i < this.steps.length; i++) {
+        const step = this.steps[i];
+        if (step.required && !step.completed) {
+          // Check dependencies are met
+          if (await this.areDependenciesMet(step)) {
+            return step.id;
+          }
+        }
+      }
 
-    const currentStep = this.getCurrentStep();
-    const canProceed = this.canProceedToNextStep(currentStep);
+      // If all steps are completed
+      return 'completed';
 
-    return {
-      currentStep,
-      completedSteps,
-      totalSteps: requiredSteps.length,
-      completionPercentage,
-      canProceed
-    };
-  }
-
-  getCurrentStep(): string {
-    // Find the first incomplete required step
-    const incompleteRequiredStep = this.steps.find(step => step.required && !step.completed);
-    
-    if (incompleteRequiredStep) {
-      return incompleteRequiredStep.id;
-    }
-
-    // If all required steps are complete, check optional steps
-    const incompleteOptionalStep = this.steps.find(step => !step.required && !step.completed);
-    
-    if (incompleteOptionalStep) {
-      return incompleteOptionalStep.id;
-    }
-
-    // All steps complete
-    return 'completed';
-  }
-
-  getNextStep(currentStepId: string): string | null {
-    const currentIndex = this.steps.findIndex(step => step.id === currentStepId);
-    
-    if (currentIndex === -1 || currentIndex === this.steps.length - 1) {
+    } catch (error) {
+      logger.error('Failed to get next step:', error);
       return null;
     }
-
-    // Find next required step or first incomplete step
-    for (let i = currentIndex + 1; i < this.steps.length; i++) {
-      const step = this.steps[i];
-      if (step.required && !step.completed) {
-        return step.id;
-      }
-    }
-
-    // If no required steps left, find first incomplete optional step
-    for (let i = currentIndex + 1; i < this.steps.length; i++) {
-      const step = this.steps[i];
-      if (!step.completed) {
-        return step.id;
-      }
-    }
-
-    return 'completed';
   }
 
-  canProceedToNextStep(currentStepId: string): boolean {
-    const step = this.steps.find(s => s.id === currentStepId);
-    return step ? step.completed : false;
-  }
-
-  async validateStepData(stepId: string, data: any): Promise<{ valid: boolean; errors: string[] }> {
-    const errors: string[] = [];
-
-    switch (stepId) {
-      case 'profile':
-        if (!data.firstName?.trim()) errors.push('First name is required');
-        if (!data.lastName?.trim()) errors.push('Last name is required');
-        break;
-      
-      case 'interests':
-        if (!data.interestIds || data.interestIds.length === 0) {
-          errors.push('At least one interest must be selected');
-        }
-        break;
-      
-      case 'goals':
-        if (!data.goalType) {
-          errors.push('A goal must be selected');
-        }
-        break;
-      
-      case 'project_details':
-        if (!data.name?.trim()) errors.push('Project name is required');
-        if (!data.description?.trim()) errors.push('Project description is required');
-        break;
-      
-      case 'skills':
-        if (!data.skills || data.skills.length === 0) {
-          errors.push('At least one skill must be selected');
-        }
-        break;
+  /**
+   * Check if step dependencies are met
+   */
+  private async areDependenciesMet(step: OnboardingStep): Promise<boolean> {
+    if (!step.dependencies || step.dependencies.length === 0) {
+      return true;
     }
 
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  }
-
-  async completeOnboarding(): Promise<boolean> {
-    try {
-      const progress = this.getProgress();
-      
-      if (progress.completionPercentage < 100) {
-        Alert.alert(
-          'Incomplete Onboarding',
-          `Please complete all required steps before finishing. (${progress.completionPercentage}% complete)`,
-          [{ text: 'OK' }]
-        );
+    // Check all dependencies are completed
+    for (const depId of step.dependencies) {
+      const depStep = this.steps.find(s => s.id === depId);
+      if (!depStep || !depStep.completed) {
         return false;
       }
-
-      // Mark onboarding as complete
-      const success = await this.sessionManager.saveOnboardingStep('complete', {});
-      
-      if (success) {
-        await this.updateProgress();
-        return true;
-      }
-
-      throw new Error('Failed to complete onboarding');
-    } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-      return this.errorRecovery.recoverFromError(error, 'completeOnboarding');
     }
+
+    return true;
   }
 
-  isOnboardingComplete(): boolean {
-    return this.sessionManager.isOnboardingComplete();
+  /**
+   * Get route for next step
+   */
+  async getNextStepRoute(currentStepId: string): Promise<string | null> {
+    const nextStepId = await this.getNextStep(currentStepId);
+    if (!nextStepId || nextStepId === 'completed') {
+      return '/(tabs)'; // Navigate to main app
+    }
+
+    const nextStep = this.steps.find(step => step.id === nextStepId);
+    return nextStep?.route || null;
   }
 
-  async skipStep(stepId: string, reason?: string): Promise<boolean> {
+  /**
+   * Check if user can proceed to next step
+   */
+  async canProceedToNextStep(currentStepId: string): Promise<boolean> {
     try {
-      const step = this.steps.find(s => s.id === stepId);
-      
-      if (step?.required) {
-        Alert.alert(
-          'Required Step',
-          'This step is required and cannot be skipped.',
-          [{ text: 'OK' }]
-        );
-        return false;
-      }
-
-      // Mark step as skipped
-      const success = await this.sessionManager.saveOnboardingStep(`skip_${stepId}`, { reason });
-      
-      if (success) {
-        await this.updateProgress();
-        return true;
-      }
-
-      return false;
+      const nextStep = await this.getNextStep(currentStepId);
+      return nextStep !== null;
     } catch (error) {
-      console.error(`Failed to skip step ${stepId}:`, error);
+      logger.error('Failed to check if can proceed:', error);
       return false;
     }
   }
 
-  getStepInfo(stepId: string): OnboardingStep | null {
-    return this.steps.find(step => step.id === stepId) || null;
+  /**
+   * Get current onboarding progress (0-1)
+   */
+  getProgress(): number {
+    const totalRequiredSteps = this.steps.filter(step => step.required).length;
+    const completedRequiredSteps = this.steps.filter(step => step.required && step.completed).length;
+    
+    return totalRequiredSteps > 0 ? completedRequiredSteps / totalRequiredSteps : 0;
   }
 
-  async performHealthCheck(): Promise<any> {
-    return this.errorRecovery.performHealthCheck();
+  /**
+   * Get all onboarding steps with status
+   */
+  getSteps(): OnboardingStep[] {
+    return [...this.steps];
   }
 
-  async resetFlow(): Promise<void> {
-    this.sessionManager.clearSession();
-    this.steps.forEach(step => step.completed = false);
+  /**
+   * Update progress after step completion
+   */
+  async updateProgress(): Promise<void> {
+    try {
+      await this.refreshStepStatus();
+      logger.info(`Onboarding progress: ${Math.round(this.getProgress() * 100)}%`);
+    } catch (error) {
+      logger.error('Failed to update progress:', error);
+    }
+  }
+
+  /**
+   * Mark step as completed
+   */
+  markStepCompleted(stepId: string): void {
+    const step = this.steps.find(s => s.id === stepId);
+    if (step) {
+      step.completed = true;
+      logger.info(`✅ Step '${stepId}' marked as completed`);
+    }
+  }
+
+  /**
+   * Check if onboarding flow is initialized
+   */
+  isInitialized(): boolean {
+    return this.flowInitialized;
+  }
+
+  /**
+   * Reset the flow coordinator (for testing/development)
+   */
+  reset(): void {
+    this.flowInitialized = false;
+    this.steps.forEach(step => {
+      step.completed = false;
+      if (step.id === 'project_details') {
+        step.required = false;
+      }
+    });
+    logger.info('🔄 Flow coordinator reset');
   }
 } 
