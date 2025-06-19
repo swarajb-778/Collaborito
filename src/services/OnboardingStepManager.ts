@@ -113,22 +113,53 @@ export class OnboardingStepManager {
   }
 
   /**
-   * Save profile step
+   * Save profile step to Supabase
    */
   async saveProfileStep(data: ProfileData): Promise<boolean> {
     try {
-      await this.verifySession();
+      const userId = this.getCurrentUserId();
       
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('profile', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      if (!userId) {
+        throw new Error('No user ID available');
       }
 
-      // Execute step through flow coordinator
-      return await this.flowCoordinator.executeStep('profile', data);
+      logger.info(`Saving profile step for user: ${userId}`);
+      logger.info(`Profile data to save:`, data);
+
+      // For mock users, save locally and return success
+      if (this.isMockUser()) {
+        logger.info('🔧 Mock user detected, saving profile locally');
+        this.mockData.profile = data;
+        logger.info('✅ Mock profile saved locally');
+        return true;
+      }
+
+      // Update user profile in Supabase
+      const profileUpdateData = {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        location: data.location || null,
+        job_title: data.jobTitle || null,
+        bio: data.bio || null,
+        full_name: `${data.firstName} ${data.lastName}`.trim(),
+        onboarding_step: 'interests' // Next step after profile
+      };
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update(profileUpdateData)
+        .eq('id', userId);
+
+      if (profileError) {
+        logger.error('Failed to update user profile:', profileError);
+        throw profileError;
+      }
+
+      logger.info('✅ Profile step saved successfully');
+      return true;
+
     } catch (error) {
-      console.error('Failed to save profile step:', error);
+      logger.error('Error in saveProfileStep:', error);
       throw error;
     }
   }
@@ -210,84 +241,253 @@ export class OnboardingStepManager {
   }
 
   /**
-   * Save goals step
+   * Save goals step to Supabase
    */
   async saveGoalsStep(data: GoalsData): Promise<boolean> {
     try {
-      await this.verifySession();
+      const userId = this.getCurrentUserId();
       
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('goals', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      if (!userId) {
+        throw new Error('No user ID available');
       }
 
-      // Execute step through flow coordinator
-      const success = await this.flowCoordinator.executeStep('goals', data);
-      
-      if (success) {
-        // Update flow coordinator to set project_details requirement based on goal
-        await this.flowCoordinator.updateProgress();
+      logger.info(`Saving goals step for user: ${userId}`);
+      logger.info(`Goals data to save:`, data);
+
+      // For mock users, save locally and return success
+      if (this.isMockUser()) {
+        logger.info('🔧 Mock user detected, saving goals locally');
+        this.mockData.goals = data;
+        logger.info('✅ Mock goals saved locally');
+        return true;
       }
 
-      return success;
+      // First, delete existing user goals
+      const { error: deleteError } = await supabaseAdmin
+        .from('user_goals')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        logger.error('Failed to delete existing user goals:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert new user goal
+      const userGoal = {
+        user_id: userId,
+        goal_type: data.goalType,
+        details: data.details || {},
+        is_active: true
+      };
+
+      const { error: insertError } = await supabaseAdmin
+        .from('user_goals')
+        .insert([userGoal]);
+
+      if (insertError) {
+        logger.error('Failed to insert user goal:', insertError);
+        throw insertError;
+      }
+
+      // Update user profile onboarding step based on goal type
+      let nextStep = 'skills'; // Default next step
+      if (data.goalType === 'find_cofounder' || data.goalType === 'find_collaborators') {
+        nextStep = 'project_details'; // These goals need project details
+      }
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update({ onboarding_step: nextStep })
+        .eq('id', userId);
+
+      if (profileError) {
+        logger.warn('Failed to update profile onboarding step:', profileError);
+        // Don't throw error for profile update failure
+      }
+
+      logger.info('✅ Goals step saved successfully');
+      return true;
+
     } catch (error) {
-      console.error('Failed to save goals step:', error);
+      logger.error('Error in saveGoalsStep:', error);
       throw error;
     }
   }
 
   /**
-   * Save project details step
+   * Save project details step to Supabase
    */
   async saveProjectDetailsStep(data: ProjectDetailsData): Promise<boolean> {
     try {
-      await this.verifySession();
+      const userId = this.getCurrentUserId();
       
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('project_details', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      if (!userId) {
+        throw new Error('No user ID available');
       }
 
-      // Execute step through flow coordinator
-      return await this.flowCoordinator.executeStep('project_details', data);
+      logger.info(`Saving project details step for user: ${userId}`);
+      logger.info(`Project details data to save:`, data);
+
+      // For mock users, save locally and return success
+      if (this.isMockUser()) {
+        logger.info('🔧 Mock user detected, saving project details locally');
+        this.mockData.projectDetails = data;
+        logger.info('✅ Mock project details saved locally');
+        return true;
+      }
+
+      // Create a new project
+      const projectData = {
+        title: data.name,
+        description: data.description,
+        owner_id: userId
+      };
+
+      const { data: createdProject, error: projectError } = await supabaseAdmin
+        .from('projects')
+        .insert([projectData])
+        .select('id')
+        .single();
+
+      if (projectError) {
+        logger.error('Failed to create project:', projectError);
+        throw projectError;
+      }
+
+      if (!createdProject?.id) {
+        throw new Error('Project creation failed - no ID returned');
+      }
+
+      // Add the user as the project owner in project_members
+      const memberData = {
+        project_id: createdProject.id,
+        user_id: userId,
+        role: 'owner'
+      };
+
+      const { error: memberError } = await supabaseAdmin
+        .from('project_members')
+        .insert([memberData]);
+
+      if (memberError) {
+        logger.error('Failed to add user as project member:', memberError);
+        // Don't throw error - project creation succeeded
+      }
+
+      // Update user profile onboarding step
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update({ onboarding_step: 'skills' })
+        .eq('id', userId);
+
+      if (profileError) {
+        logger.warn('Failed to update profile onboarding step:', profileError);
+        // Don't throw error for profile update failure
+      }
+
+      logger.info('✅ Project details step saved successfully, project ID:', createdProject.id);
+      return true;
+
     } catch (error) {
-      console.error('Failed to save project details step:', error);
+      logger.error('Error in saveProjectDetailsStep:', error);
       throw error;
     }
   }
 
   /**
-   * Save skills step
+   * Save skills step to Supabase
    */
   async saveSkillsStep(data: SkillsData): Promise<boolean> {
     try {
-      await this.verifySession();
+      const userId = this.getCurrentUserId();
       
-      // Fetch and validate skill IDs exist in database
+      if (!userId) {
+        throw new Error('No user ID available');
+      }
+
+      logger.info(`Saving skills step for user: ${userId}`);
+      logger.info(`Skills data to save:`, data);
+
+      // Validate all skill IDs are proper UUIDs
       const skillIds = data.skills.map(skill => skill.skillId);
-      const { data: validSkills, error } = await supabase
+      const invalidIds = skillIds.filter(id => !this.isValidUUID(id));
+      if (invalidIds.length > 0) {
+        throw new Error(`Invalid UUID format for skill IDs: ${invalidIds.join(', ')}`);
+      }
+
+      // For mock users, save locally and return success
+      if (this.isMockUser()) {
+        logger.info('🔧 Mock user detected, saving skills locally');
+        this.mockData.skills = data.skills;
+        logger.info('✅ Mock skills saved locally');
+        return true;
+      }
+
+      // Fetch and validate skill IDs exist in database
+      const { data: validSkills, error: validationError } = await supabaseAdmin
         .from('skills')
         .select('id')
         .in('id', skillIds);
 
-      if (error) throw error;
+      if (validationError) {
+        logger.error('Failed to validate skills:', validationError);
+        throw validationError;
+      }
 
       if (validSkills.length !== skillIds.length) {
         throw new Error('Some selected skills are invalid');
       }
 
-      // Validate data
-      const validation = await this.flowCoordinator.validateStepData('skills', data);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      // First, delete existing user skills
+      const { error: deleteError } = await supabaseAdmin
+        .from('user_skills')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        logger.error('Failed to delete existing user skills:', deleteError);
+        throw deleteError;
       }
 
-      // Execute step through flow coordinator
-      return await this.flowCoordinator.executeStep('skills', data);
+      // Insert new user skills
+      if (data.skills.length > 0) {
+        const userSkills = data.skills.map(skill => ({
+          user_id: userId,
+          skill_id: skill.skillId,
+          proficiency: skill.proficiency || 'intermediate',
+          is_offering: skill.isOffering
+        }));
+
+        const { error: insertError } = await supabaseAdmin
+          .from('user_skills')
+          .insert(userSkills);
+
+        if (insertError) {
+          logger.error('Failed to insert user skills:', insertError);
+          throw insertError;
+        }
+      }
+
+      // Update user profile onboarding step to completed
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          onboarding_step: 'completed',
+          onboarding_completed: true
+        })
+        .eq('id', userId);
+
+      if (profileError) {
+        logger.warn('Failed to update profile onboarding completion:', profileError);
+        // Don't throw error for profile update failure
+      }
+
+      logger.info('✅ Skills step saved successfully');
+      return true;
+
     } catch (error) {
-      console.error('Failed to save skills step:', error);
+      logger.error('Error in saveSkillsStep:', error);
       throw error;
     }
   }
