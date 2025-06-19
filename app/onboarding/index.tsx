@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery, SessionManager } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 // Get screen dimensions like in register.tsx
@@ -70,12 +70,27 @@ export default function OnboardingScreen() {
   useEffect(() => {
     const initializeOnboarding = async () => {
       try {
+        console.log('🚀 Initializing onboarding flow...');
         const flowReady = await flowCoordinator.initializeFlow();
+        
         if (flowReady) {
           setFlowInitialized(true);
-          console.log('Onboarding flow initialized successfully');
+          console.log('✅ Onboarding flow initialized successfully');
         } else {
-          // Try recovery
+          console.warn('Flow coordinator returned false, attempting recovery...');
+          
+          // Check if this is a mock user - be more lenient
+          const sessionManager = SessionManager.getInstance();
+          const session = sessionManager.getSession();
+          const isMockUser = session && (session as any).mock;
+          
+          if (isMockUser) {
+            console.log('🔧 Mock user detected, allowing graceful continuation');
+            setFlowInitialized(true);
+            return;
+          }
+          
+          // Try recovery for real users
           const recovered = await errorRecovery.attemptRecovery();
           if (!recovered) {
             Alert.alert(
@@ -89,6 +104,19 @@ export default function OnboardingScreen() {
         }
       } catch (error) {
         console.error('Failed to initialize onboarding:', error);
+        
+        // Check if this is a mock user - be more lenient with errors
+        const sessionManager = SessionManager.getInstance();
+        const session = sessionManager.getSession();
+        const isMockUser = session && (session as any).mock;
+        
+        if (isMockUser) {
+          console.log('🔧 Mock user initialization error, allowing graceful degradation');
+          setFlowInitialized(true);
+          return;
+        }
+        
+        // For real users, show recovery dialog
         const showRecovery = await errorRecovery.showRecoveryDialog();
         if (!showRecovery) {
           router.replace('/welcome/signin');
