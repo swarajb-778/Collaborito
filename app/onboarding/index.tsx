@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery, SessionManager } from '../../src/services';
+import { getSimpleOnboardingManager } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 // Get screen dimensions like in register.tsx
@@ -43,9 +43,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
 
   // Enhanced onboarding services
-  const stepManager = OnboardingStepManager.getInstance();
-  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
-  const errorRecovery = new OnboardingErrorRecovery();
+  const onboardingManager = getSimpleOnboardingManager();
 
   // Animation values like in register.tsx
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -81,43 +79,31 @@ export default function OnboardingScreen() {
     const initializeOnboarding = async () => {
       try {
         console.log('🚀 Initializing onboarding flow...');
-        const flowReady = await flowCoordinator.initializeFlow();
+        const initialized = await onboardingManager.initialize();
         
-        if (flowReady) {
+        if (initialized) {
           setFlowInitialized(true);
           console.log('✅ Onboarding flow initialized successfully');
           
-          // Check flow state
-          const flowState = flowCoordinator.getFlowState();
-          console.log('📊 Flow state:', flowState);
-          
-          if (flowState.requiresMigration) {
-            console.log('🔄 User migration will be required during profile step');
-          }
+          // Get current progress
+          const progress = await onboardingManager.getCurrentProgress();
+          console.log('📊 Current progress:', progress);
           
         } else {
-          console.warn('Flow coordinator returned false, attempting recovery...');
-          
-          // Attempt error recovery
-          const recovered = await errorRecovery.attemptRecovery();
-          if (!recovered) {
-            Alert.alert(
-              'Setup Error',
-              'Unable to initialize onboarding. Please sign in again.',
-              [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
-            );
-          } else {
-            setFlowInitialized(true);
-          }
+          console.warn('Onboarding manager initialization failed');
+          Alert.alert(
+            'Setup Error',
+            'Unable to initialize onboarding. Please try again.',
+            [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
+          );
         }
       } catch (error) {
-        console.error('Failed to initialize onboarding:', error);
-        
-        // Show recovery dialog
-        const showRecovery = await errorRecovery.showRecoveryDialog();
-        if (!showRecovery) {
-          router.replace('/welcome/signin');
-        }
+        console.error('Failed to initialize onboarding:', (error as Error).message);
+        Alert.alert(
+          'Error',
+          'Failed to initialize onboarding system.',
+          [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
+        );
       }
     };
 
