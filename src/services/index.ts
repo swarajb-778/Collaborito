@@ -11,6 +11,7 @@ export { OnboardingErrorRecovery } from './OnboardingErrorRecovery';
 export { OnboardingFlowCoordinator } from './OnboardingFlowCoordinator';
 export { OnboardingStepManager } from './OnboardingStepManager';
 export { OnboardingAnalytics } from './OnboardingAnalytics';
+export { OnboardingManager, getOnboardingManager } from './OnboardingManager';
 
 // Configuration
 export * from '../config/onboardingConfig';
