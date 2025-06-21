@@ -12,6 +12,9 @@ export { OnboardingFlowCoordinator } from './OnboardingFlowCoordinator';
 export { OnboardingStepManager } from './OnboardingStepManager';
 export { OnboardingAnalytics } from './OnboardingAnalytics';
 export { OnboardingManager, getOnboardingManager } from './OnboardingManager';
+export { SimpleOnboardingManager, getSimpleOnboardingManager } from './SimpleOnboardingManager';
+export { OnboardingSupabaseService, getOnboardingSupabaseService } from './OnboardingSupabaseService';
+export { ServiceContainer, getServiceContainer } from './ServiceContainer';
 
 // Configuration
 export * from '../config/onboardingConfig';
