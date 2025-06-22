@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml/badge.svg)](https://github.com/swarajb-778/Collaborito/actions/workflows/ci.yml)
 
-An AI-powered community platform that helps entrepreneurs match with collaborators and book workspaces for their events - unlike inefficient networking communities.
+An AI-powered modern community platform that helps entrepreneurs match with collaborators and book workspaces for their events - unlike inefficient networking communities.
 
 ## Project Overview
 
