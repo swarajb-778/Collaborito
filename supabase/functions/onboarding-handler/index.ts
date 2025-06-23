@@ -1,3 +1,4 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 interface ProfileData {
@@ -31,7 +32,7 @@ interface SkillsData {
   }>;
 }
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -65,7 +66,7 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const { createClient } = await import('jsr:@supabase/supabase-js@2');
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let result: any = { success: false };
