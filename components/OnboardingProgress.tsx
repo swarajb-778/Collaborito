@@ -1,12 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/src/services/supabase';
-import { SessionManager } from '@/src/services/SessionManager';
-import { OnboardingFlowCoordinator } from '@/src/services/OnboardingFlowCoordinator';
-import Constants from 'expo-constants';
-
-const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL || '';
 
 interface OnboardingProgressProps {
   userId: string;
@@ -21,8 +16,65 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const sessionManager = SessionManager.getInstance();
-  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
+  const fetchOnboardingStatus = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Use simple Supabase query instead of edge function to avoid auth issues
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('onboarding_step, onboarding_completed, first_name, last_name')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      // Calculate simple progress
+      const steps = ['profile', 'interests', 'goals', 'skills'];
+      const currentStepIndex = steps.indexOf(profile.onboarding_step || 'profile');
+      const completionPercentage = profile.onboarding_completed 
+        ? 100 
+        : Math.floor(((currentStepIndex + 1) / steps.length) * 100);
+
+      const progressData = {
+        success: true,
+        currentStep: profile.onboarding_step || 'profile',
+        completed: profile.onboarding_completed || false,
+        completionPercentage,
+        profile: {
+          firstName: profile.first_name,
+          lastName: profile.last_name
+        }
+      };
+
+      setStatus(progressData);
+      
+      // Call progress change callback
+      if (onProgressChange) {
+        onProgressChange(progressData);
+      }
+    } catch (error) {
+      console.error('Error fetching onboarding status:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      
+      // Set fallback data
+      setStatus({
+        currentStep: 'profile',
+        completed: false,
+        completionPercentage: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, onProgressChange]);
 
   useEffect(() => {
     fetchOnboardingStatus();
@@ -49,60 +101,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
     return () => {
       subscription.unsubscribe();
     };
-  }, [userId]);
-
-  const fetchOnboardingStatus = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get session first
-      const session = sessionManager.getSession();
-      if (!session) {
-        throw new Error('No valid session');
-      }
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/onboarding-status`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'get_status' })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setStatus(result);
-        
-        // Update flow coordinator with latest status
-        await flowCoordinator.updateProgress();
-        
-        // Call progress change callback
-        if (onProgressChange) {
-          onProgressChange(result);
-        }
-      } else {
-        throw new Error(result.error || 'Failed to fetch status');
-      }
-    } catch (error) {
-      console.error('Error fetching onboarding status:', error);
-      setError(error instanceof Error ? error.message : 'Unknown error');
-      
-      // Try to load cached data as fallback
-      const cachedState = sessionManager.getOnboardingState();
-      if (cachedState) {
-        setStatus(cachedState);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchOnboardingStatus, userId]);
 
   const getStepDisplayName = (step: string): string => {
     const stepNames: Record<string, string> = {

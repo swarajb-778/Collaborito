@@ -194,6 +194,66 @@ export class SimpleOnboardingManager extends EventEmitter {
   }
 
   /**
+   * Skip a specific onboarding step
+   */
+  async skipStep(stepId: string): Promise<{ success: boolean; nextStep?: string; error?: string }> {
+    try {
+      if (!this.initialized) {
+        await this.initialize();
+      }
+
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated');
+      }
+
+      logger.info(`⏭️ Skipping step: ${stepId}`);
+
+      // Get current progress to determine next step
+      const progress = await this.getCurrentProgress();
+      const currentStepIndex = this.ONBOARDING_STEPS.indexOf(stepId);
+      const nextStepIndex = currentStepIndex + 1;
+      const nextStep = nextStepIndex < this.ONBOARDING_STEPS.length 
+        ? this.ONBOARDING_STEPS[nextStepIndex] 
+        : 'completed';
+
+      // Update onboarding step in database
+      await supabase
+        .from('profiles')
+        .update({ 
+          onboarding_step: nextStep,
+          ...(nextStep === 'completed' ? { onboarding_completed: true } : {})
+        })
+        .eq('id', this.currentUserId);
+
+      // Emit events
+      this.emit('step-skipped', stepId);
+      this.emit('progress-updated', await this.getCurrentProgress());
+
+      logger.info(`✅ Step ${stepId} skipped successfully`);
+      return { 
+        success: true, 
+        nextStep: nextStep === 'completed' ? undefined : nextStep
+      };
+
+    } catch (error) {
+      logger.error(`❌ Error skipping step ${stepId}:`, error);
+      
+      this.emitError({
+        type: 'database',
+        message: error instanceof Error ? error.message : 'Step skip failed',
+        step: stepId,
+        retryable: true,
+        details: error
+      });
+
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Step skip failed' 
+      };
+    }
+  }
+
+  /**
    * Get current onboarding progress
    */
   async getCurrentProgress(): Promise<OnboardingProgress> {

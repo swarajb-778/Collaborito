@@ -15,6 +15,7 @@
     "**/*.jsx",
     ".expo/types/**/*.ts",
     "types/global.d.ts",
+    "types/deno.d.ts",
     "expo-env.d.ts"
   ],
   "exclude": [

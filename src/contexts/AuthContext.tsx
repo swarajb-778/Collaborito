@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking';
 // For the development mock server
 import { startServer } from '../utils/mockAuthServer';
 import { constants } from '../constants';
+import { supabase } from '../services/supabase';
 
 // Define User type
 export type User = {
@@ -261,21 +262,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid characters detected in email or password');
       }
       
-      // Simulate API call for email/password authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Actually sign in with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
       
-      // In a real app, this would be a call to your auth API
-      if (email !== 'user@example.com' || password !== 'password') {
-        throw new Error('Invalid email or password');
+      if (authError) {
+        console.error('Supabase signin error:', authError);
+        throw new Error(authError.message || 'Invalid email or password');
       }
       
-      // Create user data
+      if (!authData.user) {
+        throw new Error('Sign in failed');
+      }
+      
+      console.log('Supabase user signed in:', authData.user.id);
+      
+      // Create user data from Supabase user
       const userData: User = {
-        id: 'user123',
-        email: email,
-        firstName: 'Demo',
-        lastName: 'User',
-        profileImage: null,
+        id: authData.user.id, // Use Supabase user ID
+        email: authData.user.email || email,
+        firstName: authData.user.user_metadata?.firstName || '',
+        lastName: authData.user.user_metadata?.lastName || '',
+        username: authData.user.user_metadata?.username || '',
+        profileImage: authData.user.user_metadata?.avatar_url || null,
         oauthProvider: 'email'
       };
       
@@ -353,17 +364,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid characters detected in email or password');
       }
       
-      // Simulate API call for registration
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Actually create user in Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            username: username || '',
+            firstName: '',
+            lastName: ''
+          }
+        }
+      });
       
-      // In a real app, this would be a call to your registration API
-      if (email === 'user@example.com') {
-        throw new Error('An account with this email already exists');
+      if (authError) {
+        console.error('Supabase signup error:', authError);
+        throw new Error(authError.message || 'Failed to create account');
       }
       
-      // Create user data for the new account
+      if (!authData.user) {
+        throw new Error('Account creation failed');
+      }
+      
+      console.log('Supabase user created:', authData.user.id);
+      
+      // Create user data for local storage
       const userData: User = {
-        id: 'new' + Date.now(),
+        id: authData.user.id, // Use Supabase user ID
         email: email,
         firstName: '', // Leave empty, will be filled during onboarding
         lastName: '',   // Leave empty, will be filled during onboarding
@@ -394,9 +421,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear local storage
       await SecureStore.deleteItemAsync('user');
       await SecureStore.deleteItemAsync('userSession');
       setUser(null);
+      setLoggedIn(false);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Sign out error:', errorMessage);

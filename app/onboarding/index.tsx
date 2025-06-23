@@ -202,15 +202,8 @@ export default function OnboardingScreen() {
       console.log('Current user ID:', user.id);
       console.log('Profile data:', { firstName, lastName, location, jobTitle });
       
-      // Check if migration is needed
-      const needsMigration = flowCoordinator.needsMigration();
-      if (needsMigration) {
-        console.log('🔄 User migration required - this will happen during profile step');
-        setMigrationInProgress(true);
-      }
-      
-      // Execute profile step using flow coordinator (handles migration automatically)
-      const result = await flowCoordinator.executeStep('profile', {
+      // Execute profile step using onboarding manager
+      const result = await onboardingManager.executeStep('profile', {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         location: location.trim(),
@@ -233,27 +226,17 @@ export default function OnboardingScreen() {
       
       await updateUser(userProfileUpdate);
       
-      // Get next step route
-      const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'interests');
-      if (nextRoute) {
-        console.log('📍 Navigating to next step:', nextRoute);
-        router.replace(nextRoute as any);
-      } else {
-        console.log('📍 Defaulting to interests screen');
-        router.replace('/onboarding/interests' as any);
-      }
+      // Navigate to next step
+      const nextStep = result.nextStep || 'interests';
+      console.log('📍 Navigating to next step:', nextStep);
+      router.replace(`/onboarding/${nextStep}` as any);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error saving profile step:', error);
-      
-      // Use error recovery to handle the error gracefully
-      const recovered = await errorRecovery.recoverFromError(error, 'saveProfileStep');
-      if (!recovered) {
-        Alert.alert(
-          'Error', 
-          error.message || 'There was a problem saving your profile. Please try again.'
-        );
-      }
+      Alert.alert(
+        'Error', 
+        error?.message || 'There was a problem saving your profile. Please try again.'
+      );
     } finally {
       setSavingProfile(false);
       setMigrationInProgress(false);
@@ -264,15 +247,11 @@ export default function OnboardingScreen() {
     try {
       console.log('⏭️ Skipping profile step');
       
-      const result = await flowCoordinator.skipStep('profile', 'User chose to skip profile setup');
+      const result = await onboardingManager.skipStep('profile');
       
       if (result.success) {
-        const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'interests');
-        if (nextRoute) {
-          router.replace(nextRoute as any);
-        } else {
-          router.replace('/onboarding/interests' as any);
-        }
+        const nextStep = result.nextStep || 'interests';
+        router.replace(`/onboarding/${nextStep}` as any);
       } else {
         throw new Error('Failed to skip profile step');
       }
@@ -349,15 +328,15 @@ export default function OnboardingScreen() {
                 Let's set up your profile to help you connect with the right people and projects.
               </Text>
 
-              {/* Onboarding Progress Component */}
-              {user && (
+              {/* Onboarding Progress Component - Temporarily disabled */}
+              {/* {user && (
                 <OnboardingProgress 
                   userId={user.id}
                   onProgressChange={(progress) => {
                     console.log('Profile progress updated:', progress);
                   }}
                 />
-              )}
+              )} */}
 
               {/* Migration Progress Indicator */}
               {migrationInProgress && (
