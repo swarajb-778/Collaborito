@@ -1,8 +1,21 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+/**
+ * Supabase Edge Function: Onboarding Handler
+ * 
+ * This function runs in a Deno environment on Supabase Edge Functions.
+ * @ts-ignore comments are used to suppress TypeScript errors for Deno-specific
+ * imports and globals that are not recognized in the local development environment
+ * but work perfectly in the Edge Functions runtime.
+ */
 
+// @ts-ignore - Deno imports work in Edge Functions runtime
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// @ts-ignore - ESM import works in Edge Functions runtime
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+
+// @ts-ignore - Deno global available in Edge Functions runtime
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+// @ts-ignore - Deno global available in Edge Functions runtime
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 interface ProfileData {
