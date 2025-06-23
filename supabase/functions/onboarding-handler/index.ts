@@ -48,6 +48,20 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Validate environment variables
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Missing required environment variables' 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
   try {
     const { step, data, userId } = await req.json();
 
