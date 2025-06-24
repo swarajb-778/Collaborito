@@ -29,8 +29,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { createLogger } from '../../src/utils/logger';
 
 const { width, height } = Dimensions.get('window');
+const logger = createLogger('OnboardingProjectDetail');
 
 export default function OnboardingProjectDetailScreen() {
   const { user } = useAuth();
@@ -77,11 +79,11 @@ export default function OnboardingProjectDetailScreen() {
           const lastProject = existingProjects[existingProjects.length - 1];
           setProjectName(lastProject.name || '');
           setProjectDescription(lastProject.description || '');
-          console.log('Restored project data:', lastProject);
+          logger.info('Restored project data:', lastProject.name);
         }
         
       } catch (error) {
-        console.error('Failed to initialize project detail screen:', error);
+        logger.error('Failed to initialize project detail screen:', error);
         const showRecovery = await errorRecovery.showRecoveryDialog();
         if (!showRecovery) {
           router.replace('/welcome/signin');
@@ -97,7 +99,7 @@ export default function OnboardingProjectDetailScreen() {
   }, [user]);
 
   useEffect(() => {
-    console.log('Rendering OnboardingProjectDetailScreen');
+    logger.debug('Rendering OnboardingProjectDetailScreen');
     
     // Staggered fade-in animations using Reanimated
     headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
@@ -146,19 +148,20 @@ export default function OnboardingProjectDetailScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Saving project details to Supabase...');
+      logger.info('Saving project details to Supabase...');
       
       // Save project details using OnboardingStepManager
       const projectData = {
         name: projectName.trim(),
         description: projectDescription.trim(),
+        lookingFor: [], // Will be filled in skills step
         tags: [] // Could be extended later
       };
       
       const success = await stepManager.saveProjectDetailsStep(projectData);
       
       if (success) {
-        console.log('Project details saved successfully');
+        logger.info('Project details saved successfully');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
         // Get next step route from flow coordinator
@@ -174,7 +177,7 @@ export default function OnboardingProjectDetailScreen() {
       }
       
     } catch (error) {
-      console.error('Error saving project details:', error);
+      logger.error('Error saving project details:', error);
       
       // Use error recovery for better UX
       const canRecover = await errorRecovery.recoverFromError(error as Error, 'project_details_save');
