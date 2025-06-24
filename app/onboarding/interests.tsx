@@ -21,14 +21,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
-import { OnboardingProgress } from '../../components/OnboardingProgress';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createLogger } from '../../src/utils/logger';
-
-const logger = createLogger('OnboardingInterests');
 
 // Import image assets
 const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
@@ -37,256 +29,136 @@ const CollaboritoTextLogo = require('../../assets/images/welcome/collaborito-tex
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-// Default interests list for fallback (will be replaced by Supabase data)
-const FALLBACK_INTERESTS = [
-  { id: 'f7bff181-f722-44fd-8704-77816f16cdf8', name: 'Art' },
-  { id: 'e9e68517-2d26-46e9-8220-39d3745b3d92', name: 'Artificial Intelligence & Machine Learning' },
-  { id: '814d804f-04e3-421e-b1ff-64ba42f30e60', name: 'Biotechnology' },
-  { id: 'cc7ee20f-171b-4142-a839-9dc840d9a333', name: 'Business' },
-  { id: 'b58c1144-26c5-4f03-a2d1-d631bbdf29ae', name: 'Books' },
-  { id: '83be43cd-3d73-403b-9064-980b8fbb1229', name: 'Climate Change' },
-  { id: 'c3d05bc9-9de7-4bcd-96b7-f8d0f981dd22', name: 'Civic Engagement' },
-  { id: 'e44bdf24-f37d-4ae7-8f21-edd136d51562', name: 'Dancing' },
-  { id: '7e7ced62-8869-4679-b8f9-c8eb71eabd87', name: 'Data Science' },
-  { id: '37276e28-ecb5-4725-9463-dd8f761973e2', name: 'Education' },
-  { id: '3dc59a14-192b-4ed6-9870-51cdaf096c3c', name: 'Entrepreneurship' },
-  { id: 'a8107a20-5b9b-4ce8-89df-921386e5ea8f', name: 'Fashion' },
-  { id: 'd8c696c3-5201-49eb-afef-3d0b72bc20df', name: 'Fitness' },
-  { id: '6cd728f6-8ef3-44de-8da9-c850b057ed86', name: 'Food' },
-  { id: '45381efc-cf19-4b85-8cde-ca9f6feb5959', name: 'Gaming' },
-  { id: '87956f0e-0645-419d-bf42-4474912af027', name: 'Health & Wellness' },
-  { id: 'f89c0306-7e4a-4c70-bc5a-22a6be7e6c9c', name: 'Investing & Finance' },
-  { id: '1757bd6e-68fe-43ea-8791-3295852b1247', name: 'Marketing' },
-  { id: 'e96d075a-ef2a-4e9c-864b-83ff4cb8d71a', name: 'Movies' },
-  { id: 'b76bf249-a009-4a3d-b783-dc4bd255dc12', name: 'Music' },
-  { id: '8666b6be-a116-41f0-8ca6-649d75125045', name: 'Parenting' },
-  { id: 'b1336a3b-6618-4f94-821c-bb0da99a10be', name: 'Pets' },
-  { id: 'e2f41cb9-6639-4694-864c-037258766628', name: 'Product Design' },
-  { id: '2115f283-f75e-4ae7-bd76-153b3b171bf7', name: 'Reading' },
-  { id: '1ec9804e-9fca-48c6-972a-ddc0ff0612f6', name: 'Real Estate' },
-  { id: '556ddf1c-ccac-4d51-be85-299a10934300', name: 'Robotics' },
-  { id: '59e5ba19-d150-4321-b0c0-263b6918bfa2', name: 'Science & Tech' },
-  { id: '3b726657-705f-4e1a-901b-a1babcdd3cbb', name: 'Social Impact' },
-  { id: '6d52af64-2369-4de0-a5d1-54706c4b7616', name: 'Sports' },
-  { id: 'b87107cc-2ac3-4402-8ce6-52e2a1b52be8', name: 'Travel' },
-  { id: 'dd6970ec-6ed2-4eaa-9098-e56cc1065069', name: 'Writing' },
-  { id: '7f3f0d72-5952-4a47-a9fa-25ed02f77053', name: 'Other' },
+// List of available interest topics
+const INTERESTS = [
+  { id: 1, name: 'Art' },
+  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
+  { id: 3, name: 'Biotechnology' },
+  { id: 4, name: 'Business' },
+  { id: 5, name: 'Books' },
+  { id: 6, name: 'Climate Change' },
+  { id: 7, name: 'Civic Engagement' },
+  { id: 8, name: 'Dancing' },
+  { id: 9, name: 'Data Science' },
+  { id: 10, name: 'Education' },
+  { id: 11, name: 'Entrepreneurship' },
+  { id: 12, name: 'Fashion' },
+  { id: 13, name: 'Fitness' },
+  { id: 14, name: 'Food' },
+  { id: 15, name: 'Gaming' },
+  { id: 16, name: 'Health & Wellness' },
+  { id: 17, name: 'Investing & Finance' },
+  { id: 18, name: 'Marketing' },
+  { id: 19, name: 'Movies' },
+  { id: 20, name: 'Music' },
+  { id: 21, name: 'Parenting' },
+  { id: 22, name: 'Pets' },
+  { id: 23, name: 'Product Design' },
+  { id: 24, name: 'Reading' },
+  { id: 25, name: 'Real Estate' },
+  { id: 26, name: 'Robotics' },
+  { id: 27, name: 'Science & Tech' },
+  { id: 28, name: 'Social Impact' },
+  { id: 29, name: 'Sports' },
+  { id: 30, name: 'Travel' },
+  { id: 31, name: 'Writing' },
+  { id: 32, name: 'Other' },
 ];
 
 export default function OnboardingInterestsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [interests, setInterests] = useState<any[]>([]);
-  const [loadingInterests, setLoadingInterests] = useState(true);
-  const [savingInterests, setSavingInterests] = useState(false);
-  const [flowReady, setFlowReady] = useState(false);
-  const insets = useSafeAreaInsets();
+  const [selectedInterests, setSelectedInterests] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Services
-  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
-  const stepManager = OnboardingStepManager.getInstance();
-  const errorRecovery = new OnboardingErrorRecovery();
-
-  // Animation
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Animation values
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Animate screen entrance
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
+    // Animate logo and form on screen load
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
-  // Initialize flow and load interests
-  useEffect(() => {
-    const initializeInterestsFlow = async () => {
-      try {
-        logger.info('🎯 Initializing interests flow...');
-
-        // Check if flow coordinator is ready
-        if (!flowCoordinator.canProceed()) {
-          logger.warn('⚠️ Flow coordinator not ready, attempting initialization...');
-          const flowReady = await flowCoordinator.initializeFlow();
-          
-          if (!flowReady) {
-            logger.error('❌ Flow coordinator initialization failed');
-            const recovered = await errorRecovery.attemptRecovery();
-            if (!recovered) {
-              Alert.alert(
-                'Setup Error',
-                'Unable to continue with onboarding. Please restart the app.',
-                [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
-              );
-              return;
-            }
-          }
-        }
-
-        setFlowReady(true);
-        logger.info('✅ Flow ready for interests step');
-
-        // Load available interests
-        await loadInterests();
-
-      } catch (error) {
-        logger.error('❌ Error initializing interests flow:', error);
-        const recovered = await errorRecovery.recoverFromError(error, 'initializeInterestsFlow');
-        if (!recovered) {
-          Alert.alert('Error', 'Failed to load interests. Please try again.');
-        }
-      }
-    };
-
-    if (user && user.id) {
-      initializeInterestsFlow();
-    }
-  }, [user]);
-
-  const loadInterests = async () => {
-    try {
-      setLoadingInterests(true);
-      logger.info('📖 Loading available interests...');
-
-      const availableInterests = await stepManager.getAvailableInterests();
-      
-      if (availableInterests && availableInterests.length > 0) {
-        setInterests(availableInterests);
-        logger.info(`✅ Loaded ${availableInterests.length} interests`);
-      } else {
-        logger.warn('⚠️ No interests loaded, using fallback data');
-        setInterests(FALLBACK_INTERESTS);
-      }
-
-    } catch (error) {
-      logger.error('❌ Error loading interests:', error);
-      
-      // Use error recovery for graceful fallback
-      const recovered = await errorRecovery.recoverFromError(error, 'loadInterests');
-      if (recovered) {
-        logger.info('🔄 Using fallback interests due to error recovery');
-        setInterests(FALLBACK_INTERESTS);
-      } else {
-        Alert.alert('Error', 'Failed to load interests. Please try again.');
-      }
-    } finally {
-      setLoadingInterests(false);
-    }
-  };
-
-  const toggleInterest = (interestId: string) => {
+  const toggleInterest = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    setSelectedInterests(prev => 
-      prev.includes(interestId)
-        ? prev.filter(id => id !== interestId)
-        : [...prev, interestId]
-    );
+    setSelectedInterests(prevSelected => {
+      if (prevSelected.includes(id)) {
+        return prevSelected.filter(itemId => itemId !== id);
+      } else {
+        return [...prevSelected, id];
+      }
+    });
   };
 
-  const handleComplete = async () => {
+  const handleContinue = async () => {
     if (selectedInterests.length === 0) {
-      Alert.alert(
-        'No Interests Selected',
-        'Please select at least one interest to continue.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    if (selectedInterests.length > 10) {
-      Alert.alert(
-        'Too Many Interests',
-        'Please select no more than 10 interests.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Select Interests', 'Please select at least one interest to continue.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     try {
-      setSavingInterests(true);
+      setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      logger.info('💾 Executing interests step...');
-      logger.info('Selected interests:', selectedInterests);
-
-      // Execute interests step using flow coordinator
-      const result = await flowCoordinator.executeStep('interests', {
-        interestIds: selectedInterests
-      });
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save interests');
-      }
-
-      logger.info('✅ Interests step completed successfully');
-
-      // Navigate to next step
-      const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'goals');
-      if (nextRoute) {
-        logger.info('📍 Navigating to next step:', nextRoute);
-        router.replace(nextRoute as any);
-      } else {
-        logger.info('📍 Defaulting to goals screen');
-        router.replace('/onboarding/goals' as any);
-      }
-
-    } catch (error) {
-      logger.error('❌ Error saving interests:', error);
       
-      // Use error recovery
-      const recovered = await errorRecovery.recoverFromError(error, 'saveInterests');
-      if (!recovered) {
-        Alert.alert(
-          'Error',
-          error instanceof Error ? error.message : 'Failed to save interests. Please try again.'
-        );
-      }
-    } finally {
-      setSavingInterests(false);
+      // In a real app, this would save the selected interests to the user's profile
+      // selectedInterests contains the IDs to be saved
+      
+      // Simulate API call
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      
+      // Navigate to the goals screen instead of tabs
+      router.replace('/onboarding/goals');
+      
+                } catch {
+        Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
+      } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const handleSkip = async () => {
-    try {
-      logger.info('⏭️ Skipping interests step');
-
-      const result = await flowCoordinator.skipStep('interests', 'User chose to skip interests selection');
-
-      if (result.success) {
-        const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'goals');
-        if (nextRoute) {
-          router.replace(nextRoute as any);
-        } else {
-          router.replace('/onboarding/goals' as any);
-        }
-      } else {
-        throw new Error('Failed to skip interests step');
-      }
-
-    } catch (error) {
-      logger.error('❌ Error skipping interests:', error);
-      // Fallback navigation
-      router.replace('/onboarding/goals' as any);
-    }
-  };
-
-  const goBack = () => {
+  
+  const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
+    router.replace('/onboarding/goals');
   };
 
-  // Show loading screen while initializing
-  if (!flowReady || !user) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loadingText}>Preparing interests...</Text>
-      </View>
-    );
-  }
+  // Render interest item
+  const renderInterestItem = ({ item }: { item: { id: number; name: string } }) => (
+    <TouchableOpacity
+      style={[
+        styles.interestItem,
+        selectedInterests.includes(item.id) && styles.interestItemSelected
+      ]}
+      onPress={() => toggleInterest(item.id)}
+      activeOpacity={0.7}
+    >
+      {selectedInterests.includes(item.id) && (
+        <MaterialIcons name="check" size={18} color="#FFF" style={styles.checkIcon} />
+      )}
+      <Text 
+        style={[
+          styles.interestText,
+          selectedInterests.includes(item.id) && styles.interestTextSelected
+        ]}
+        numberOfLines={2}
+      >
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -315,7 +187,7 @@ export default function OnboardingInterestsScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {/* Logo container */}
-            <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
               <Image 
                 source={CollaboritoLogo} 
                 style={styles.logo}
@@ -329,91 +201,47 @@ export default function OnboardingInterestsScreen() {
             </Animated.View>
 
             {/* Content container */}
-            <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
               <Text style={styles.title}>Your Interests</Text>
               <Text style={styles.subtitle}>
                 I'm interested in the following topics. Select a few to make it easier to find people and projects you might find interesting.
               </Text>
-
-              {/* Onboarding Progress Component */}
-              {user && (
-                <OnboardingProgress 
-                  userId={user.id}
-                  onProgressChange={(progress) => {
-                    logger.info('Interests progress updated:', progress);
-                  }}
-                />
-              )}
               
               {/* Interests grid */}
               <View style={styles.interestsContainer}>
                 <FlatList
-                  data={interests}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.interestItem,
-                        selectedInterests.includes(item.id) && styles.interestItemSelected
-                      ]}
-                      onPress={() => toggleInterest(item.id)}
-                      activeOpacity={0.7}
-                    >
-                      {selectedInterests.includes(item.id) && (
-                        <MaterialIcons name="check" size={18} color="#FFF" style={styles.checkIcon} />
-                      )}
-                      <Text 
-                        style={[
-                          styles.interestText,
-                          selectedInterests.includes(item.id) && styles.interestTextSelected
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  keyExtractor={(item) => item.id}
+                  data={INTERESTS}
+                  renderItem={renderInterestItem}
+                  keyExtractor={(item) => item.id.toString()}
                   numColumns={2}
-                  scrollEnabled={false}
+                  scrollEnabled={false} // The parent ScrollView handles scrolling
                   contentContainerStyle={styles.interestsList}
                 />
               </View>
 
-              {/* Selection Counter */}
-              <View style={styles.selectionCounter}>
-                <Text style={styles.counterText}>
-                  {selectedInterests.length} of 10 interests selected
-                </Text>
-              </View>
-
               {/* Continue Button */}
               <TouchableOpacity 
-                style={[styles.button, styles.primaryButton, 
-                       (selectedInterests.length === 0 || savingInterests) && styles.buttonDisabled]}
-                onPress={handleComplete}
-                disabled={selectedInterests.length === 0 || savingInterests}
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleContinue}
+                disabled={isSubmitting}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={savingInterests ? ['#ccc', '#999'] : ['#000000', '#333333']}
+                  colors={['#000000', '#333333']} 
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
                 >
-                  {savingInterests ? (
-                    <View style={styles.buttonContent}>
-                      <ActivityIndicator color="#FFF" size="small" style={styles.buttonLoader} />
-                      <Text style={styles.primaryButtonText}>Saving...</Text>
-                    </View>
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" size="small" /> 
                   ) : (
-                    <Text style={styles.primaryButtonText}>Continue</Text>
+                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
 
               {/* Skip Link */}
-              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={savingInterests}>
+              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
                 <Text style={styles.skipLinkText}>
                   I'll select my interests later
                 </Text>
@@ -617,34 +445,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline',
     fontWeight: '600',
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#4A5568',
-    marginTop: 16,
-    fontFamily: 'Nunito',
-  },
-  selectionCounter: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  counterText: {
-    fontSize: 14,
-    color: '#718096',
-    fontFamily: 'Nunito',
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonLoader: {
-    marginRight: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 }); 
