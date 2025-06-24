@@ -240,4 +240,7 @@ export const getOnboardingOrchestrator = (): OnboardingOrchestrator => {
     globalOrchestrator = new OnboardingOrchestrator();
   }
   return globalOrchestrator;
-}; 
+};
+
+// Export robust authentication service with rate limit handling
+export { AuthService, authService } from './AuthService'; 

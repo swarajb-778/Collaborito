@@ -1,346 +1,155 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { Alert, Platform } from 'react-native';
-import { makeRedirectUri, useAuthRequest, ResponseType } from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
-
-// For the development mock server
-import { startServer } from '../utils/mockAuthServer';
-import { constants } from '../constants';
 import { supabase } from '../services/supabase';
+import { authService } from '../services/AuthService';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { createLogger } from '../utils/logger';
 
-// Define User type
-export type User = {
+const logger = createLogger('AuthContext');
+
+// Define User type for your app
+interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  username?: string;
+  username: string;
   profileImage: string | null;
   oauthProvider: string;
-  oauthTokens?: {
-    accessToken: string;
-    refreshToken: string | null;
-    expiresAt: number;
-  };
-  // Keeping these for backward compatibility
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-  app_metadata?: {
-    roles?: string[];
-    provider?: string;
-  };
-};
-
-// LinkedIn API response types
-interface LinkedInTokenResponse {
-  access_token: string;
-  expires_in: number;
-  id_token?: string;  // For OIDC
-  error?: string;     // Error code
-  error_description?: string; // Error description
+  isPending?: boolean; // For users created during rate limits
 }
 
-interface LinkedInProfileResponse {
-  id: string;
-  localizedFirstName: string;
-  localizedLastName: string;
-  profilePicture?: {
-    'displayImage~'?: {
-      elements?: Array<{
-        identifiers?: Array<{
-          identifier?: string;
-        }>;
-      }>;
-    };
-  };
-}
-
-interface LinkedInEmailResponse {
-  elements: Array<{
-    'handle~': {
-      emailAddress: string;
-    };
-  }>;
-}
-
-// OIDC user info response
-interface OpenIDUserInfoResponse {
-  sub: string;           // User ID
-  email: string;         // Email
-  name?: string;         // Full name
-  given_name?: string;   // First name
-  family_name?: string;  // Last name
-  picture?: string;      // Profile picture URL
-}
-
-// LinkedIn configuration
-const LINKEDIN_CONFIG = {
-  clientId: constants.auth.linkedin.clientId,
-  clientSecret: constants.auth.linkedin.clientSecret,
-  scopes: constants.auth.linkedin.scopes,
-  authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
-  tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
-  userInfoEndpoint: 'https://api.linkedin.com/v2/userinfo', // OIDC userinfo endpoint
-  redirectUri: constants.auth.linkedin.redirectUri,
-  appRedirectScheme: constants.appScheme,
-} as const;
-
-// Create context
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  loggedIn: boolean;
   signUp: (email: string, password: string, username?: string) => Promise<boolean>;
+  signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
-  signInWithLinkedIn: () => Promise<void>;
-  signInWithDemo: () => Promise<boolean>;
-  updateUser: (userData: Partial<User>) => Promise<boolean>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [mockServer, setMockServer] = useState<{ stop: () => void } | null>(null);
+// Helper functions for security
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
+const containsSqlInjection = (input: string): boolean => {
+  const sqlPatterns = [
+    /('|(\\'))|(|(\\))|(\*)|(%)|(\-\-)|(\;)|(\|\|)|(union)|(select)|(insert)|(delete)|(update)|(drop)|(create)|(alter)|(exec)|(execute)/i
+  ];
+  return sqlPatterns.some(pattern => pattern.test(input));
+};
+
+const storeUserData = async (userData: User): Promise<boolean> => {
+  try {
+    await SecureStore.setItemAsync('user', JSON.stringify(userData));
+    await SecureStore.setItemAsync('userSession', JSON.stringify({
+      userId: userData.id,
+      lastLogin: new Date().toISOString(),
+      version: '1.0'
+    }));
+    return true;
+  } catch (error) {
+    logger.error('Failed to store user data:', error);
+    return false;
+  }
+};
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loggedIn, setLoggedIn] = useState<boolean>(false);
+
+  // Load user from storage on startup
   useEffect(() => {
-    void loadUser();
-    
-    // Set up deep link listener for handling OAuth callbacks
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-    
-    // In development, start the mock auth server
-    if (__DEV__) {
-      try {
-      const server = startServer();
-      setMockServer(server);
-      } catch (error) {
-        console.warn('Failed to start mock auth server:', error);
-      }
-    }
-    
-    return () => {
-      subscription.remove();
-      // Clean up the mock server if it exists
-      if (mockServer) {
-        try {
-        mockServer.stop();
-        } catch (error) {
-          console.warn('Error stopping mock server:', error);
-        }
-      }
-    };
+    loadUserFromStorage();
   }, []);
 
-  const loadUser = async () => {
-    try {
-      setLoading(true);
-      const userJson = await SecureStore.getItemAsync('user');
-      const session = await SecureStore.getItemAsync('userSession');
-      
-      if (userJson && session) {
-        const userData = JSON.parse(userJson) as User;
-        setUser(userData);
-        setLoggedIn(true);
-        console.log('User loaded from storage');
-        return true;
+  // Monitor auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        logger.info('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          await handleSupabaseUser(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          await handleSignOut();
+        }
       }
-      return false;
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Process pending users periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      authService.processPendingUsers();
+    }, 5 * 60 * 1000); // Every 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadUserFromStorage = async () => {
+    try {
+      const userData = await SecureStore.getItemAsync('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        setLoggedIn(true);
+        logger.info('User loaded from storage:', parsedUser.id);
+      }
     } catch (error) {
-      console.error('Error loading user:', error);
-      return false;
+      logger.error('Error loading user from storage:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Deep link handler 
-  const handleDeepLink = async (event: { url: string }) => {
-    console.log('Deep link received:', event.url);
-    
-    // Check if this is our LinkedIn auth callback
-    if (event.url.includes('collaborito://auth')) {
-      console.log('Handling LinkedIn auth callback');
-      
-      try {
-        // Extract the query parameters from the deep link URL
-        const url = new URL(event.url);
-        const params = url.searchParams;
-        
-        // If the URL doesn't parse correctly, try to extract manually
-        let code, state, error;
-        
-        if (params.size === 0 && event.url.includes('?')) {
-          // Fallback manual parsing if URL parsing failed
-          const queryPart = event.url.split('?')[1];
-          if (queryPart) {
-            const queryParams = queryPart.split('&');
-            for (const param of queryParams) {
-              const [key, value] = param.split('=');
-              if (key === 'code') code = decodeURIComponent(value);
-              if (key === 'state') state = decodeURIComponent(value);
-              if (key === 'error') error = decodeURIComponent(value);
-            }
-          }
-        } else {
-          // Use parsed URL parameters
-          code = params.get('code');
-          state = params.get('state');
-          error = params.get('error');
-        }
-        
-        console.log('Extracted params:', { 
-          hasCode: !!code, 
-          hasState: !!state, 
-          hasError: !!error 
-        });
-        
-        // Check for errors first
-        if (error) {
-          console.error('OAuth error returned:', error);
-          Alert.alert('Authentication Error', `LinkedIn returned an error: ${error}`);
-          return;
-        }
-        
-        // Check for required parameters
-        if (!code) {
-          console.error('No authorization code found in callback URL');
-          Alert.alert('Authentication Error', 'No authorization code received from LinkedIn');
-          return;
-        }
-        
-        if (!state) {
-          console.error('No state parameter found in callback URL');
-          Alert.alert('Authentication Error', 'Invalid authentication response (missing state)');
-        return;
-        }
-        
-        // Verify state to prevent CSRF attacks
-        const storedState = await SecureStore.getItemAsync('oauth_state');
-        if (state !== storedState) {
-          console.error('State mismatch:', { receivedState: state, storedState });
-          
-          // In development, we might continue anyway with a warning
-          console.warn('Continuing despite state mismatch (for development)');
-          Alert.alert('Security Warning', 'State verification failed, but continuing for development');
-        }
-        
-        // Process the authorization code
-        console.log('Processing authorization code');
-        await handleLinkedInAuthCallback({ url: event.url });
-        
-      } catch (error) {
-        console.error('Error handling deep link:', error);
-        Alert.alert('Authentication Error', 'Failed to process authentication response');
-      }
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
+  const handleSupabaseUser = async (supabaseUser: SupabaseUser) => {
     try {
-      setLoading(true);
-      console.log('Signing in with email:', email);
-      
-      // Validate email and password to prevent SQL injection
-      if (!email || !validateEmail(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-      
-      if (!password || password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-      
-      // Check for SQL injection patterns
-      if (containsSqlInjection(email) || containsSqlInjection(password)) {
-        console.error('Potential SQL injection attempt detected');
-        throw new Error('Invalid characters detected in email or password');
-      }
-      
-      // Actually sign in with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
-      
-      if (authError) {
-        console.error('Supabase signin error:', authError);
-        throw new Error(authError.message || 'Invalid email or password');
-      }
-      
-      if (!authData.user) {
-        throw new Error('Sign in failed');
-      }
-      
-      console.log('Supabase user signed in:', authData.user.id);
-      
-      // Create user data from Supabase user
       const userData: User = {
-        id: authData.user.id, // Use Supabase user ID
-        email: authData.user.email || email,
-        firstName: authData.user.user_metadata?.firstName || '',
-        lastName: authData.user.user_metadata?.lastName || '',
-        username: authData.user.user_metadata?.username || '',
-        profileImage: authData.user.user_metadata?.avatar_url || null,
-        oauthProvider: 'email'
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        firstName: supabaseUser.user_metadata?.firstName || supabaseUser.user_metadata?.first_name || '',
+        lastName: supabaseUser.user_metadata?.lastName || supabaseUser.user_metadata?.last_name || '',
+        username: supabaseUser.user_metadata?.username || '',
+        profileImage: supabaseUser.user_metadata?.avatar_url || null,
+        oauthProvider: supabaseUser.app_metadata?.provider || 'email'
       };
-      
-      // Store user data and update state
+
       await storeUserData(userData);
       setUser(userData);
       setLoggedIn(true);
       
-      console.log('Sign in successful');
-      return true;
+      logger.info('User data updated from Supabase:', userData.id);
     } catch (error) {
-      console.error('Sign in error:', error);
-      // Throw the error so calling components can handle it properly
-      throw error;
-    } finally {
-      setLoading(false);
+      logger.error('Error handling Supabase user:', error);
     }
   };
 
-  // Helper functions to validate input and prevent SQL injection
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  };
-  
-  const containsSqlInjection = (input: string): boolean => {
-    // Check for common SQL injection patterns
-    const sqlPatterns = [
-      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
-      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
-      /--/,
-      /;/,
-      /\/\*/,
-      /\*\//,
-      /xp_/i,
-      /'.*OR.*--/i,
-      /'.*OR.*'/i,
-      /".*OR.*--/i,
-      /".*OR.*"/i,
-      /'\s*OR\s+.+[=<>].+/i,
-      /"\s*OR\s+.+[=<>].+/i,
-      /'.*=.*/i,
-      /".*=.*/i,
-      /'.*<>.*/i,
-      /".*<>.*/i
-    ];
-    
-    return sqlPatterns.some(pattern => pattern.test(input));
+  const handleSignOut = async () => {
+    try {
+      await SecureStore.deleteItemAsync('user');
+      await SecureStore.deleteItemAsync('userSession');
+      setUser(null);
+      setLoggedIn(false);
+      logger.info('User signed out and data cleared');
+    } catch (error) {
+      logger.error('Error during sign out cleanup:', error);
+    }
   };
 
-  const signUp = async (email: string, password: string, username?: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      console.log('Signing up with email:', email, 'username:', username);
+      logger.info('🔐 Starting sign in process...');
       
       // Validate inputs
       if (!email || !validateEmail(email)) {
@@ -351,439 +160,184 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Password must be at least 6 characters long');
       }
       
-      // firstName and lastName can be empty - they'll be collected during onboarding
-      // Just ensure they don't contain malicious content if provided
-      if (username && containsSqlInjection(username)) {
-        console.error('Potential SQL injection attempt detected in username');
-        throw new Error('Username contains invalid characters');
-      }
-      
-      // Check for SQL injection in required fields
+      // Check for SQL injection
       if (containsSqlInjection(email) || containsSqlInjection(password)) {
-        console.error('Potential SQL injection attempt detected');
+        logger.error('Potential SQL injection attempt detected');
         throw new Error('Invalid characters detected in email or password');
       }
       
-      // Actually create user in Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            username: username || '',
-            firstName: '',
-            lastName: ''
-          }
-        }
-      });
+      // Use robust auth service
+      const result = await authService.signIn(email, password);
       
-      if (authError) {
-        console.error('Supabase signup error:', authError);
-        throw new Error(authError.message || 'Failed to create account');
+      if (!result.success) {
+        throw new Error(result.error || 'Sign in failed');
       }
       
-      if (!authData.user) {
-        throw new Error('Account creation failed');
-      }
-      
-      console.log('Supabase user created:', authData.user.id);
-      
-      // Create user data for local storage
-      const userData: User = {
-        id: authData.user.id, // Use Supabase user ID
-        email: email,
-        firstName: '', // Leave empty, will be filled during onboarding
-        lastName: '',   // Leave empty, will be filled during onboarding
-        username: username || '', // Store username separately
-        profileImage: null,
-        oauthProvider: 'email'
-      };
-      
-      console.log('Creating user with data:', userData);
-      
-      // Store user data and update state
-      const storeSuccess = await storeUserData(userData);
-      
-      if (!storeSuccess) {
-        throw new Error('Failed to save account data. Please try again.');
-      }
-      
-      console.log('Sign up successful, user data stored');
+      // User data will be updated via onAuthStateChange
+      logger.info('✅ Sign in successful');
       return true;
+      
     } catch (error) {
-      console.error('Sign up error:', error);
-      // Now throw the error so calling components can catch it and show proper messages
+      logger.error('❌ Sign in error:', error);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async () => {
-    try {
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      // Clear local storage
-      await SecureStore.deleteItemAsync('user');
-      await SecureStore.deleteItemAsync('userSession');
-      setUser(null);
-      setLoggedIn(false);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Sign out error:', errorMessage);
-      Alert.alert('Error', 'Failed to sign out');
-    }
-  };
-
-  const signInWithLinkedIn = async () => {
-    try {
-      console.log('Starting LinkedIn sign-in flow');
-      
-      // Generate state for CSRF protection
-      const state = Math.random().toString(36).substring(7);
-      
-      // Store state for verification when the callback comes back
-      await SecureStore.setItemAsync('oauth_state', state);
-      
-      console.log('Generated state:', state);
-
-      // Construct the authorization URL with a custom param to signal our ngrok server
-      const authUrl = `${LINKEDIN_CONFIG.authorizationEndpoint}?` +
-        `response_type=code&` +
-        `client_id=${LINKEDIN_CONFIG.clientId}&` +
-        `redirect_uri=${encodeURIComponent(LINKEDIN_CONFIG.redirectUri)}&` +
-        `state=${state}&` +
-        `scope=${encodeURIComponent(LINKEDIN_CONFIG.scopes.join(' '))}&` +
-        `app_redirect=${encodeURIComponent(LINKEDIN_CONFIG.appRedirectScheme)}`;
-
-      console.log('Opening LinkedIn auth URL');
-      
-      // Open the browser to start the auth flow
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        LINKEDIN_CONFIG.appRedirectScheme
-      );
-      
-      console.log('Browser session closed with result type:', result.type);
-      
-      // Check if we got a successful redirect
-      if (result.type === 'success' && result.url) {
-        console.log('Successful auth redirect:', result.url);
-        await handleLinkedInAuthCallback({ url: result.url });
-      } else if (result.type === 'cancel') {
-        console.log('Authentication was canceled by user');
-        Alert.alert('Authentication Cancelled', 'LinkedIn sign in was cancelled');
-        } else {
-        console.log('Auth flow completed but without success type');
-        // We'll check if our deep link handler caught it instead
-      }
-      
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('LinkedIn sign in error:', errorMessage);
-      Alert.alert('Authentication Error', `Failed to sign in with LinkedIn: ${errorMessage}`);
-      
-      // In development, create a mock user to continue testing
-      if (__DEV__) {
-        createMockLinkedInUser();
-      }
-    }
-  };
-  
-  // Helper function to create a mock LinkedIn user
-  const createMockLinkedInUser = async () => {
-    try {
-      console.log('Creating mock LinkedIn user');
-      const mockUser: User = {
-        id: `linkedin_mock_${Date.now()}`,
-        email: `mock_linkedin_${Date.now()}@example.com`,
-        firstName: 'Mock',
-        lastName: 'LinkedIn User',
-        profileImage: 'https://via.placeholder.com/150',
-        oauthProvider: 'linkedin_mock'
-      };
-      
-      // Store user data and update state
-      await storeUserData(mockUser);
-      setUser(mockUser);
-      setLoggedIn(true);
-      
-      console.log('Mock LinkedIn user created successfully');
-      
-      // Display user information in an alert
-      Alert.alert(
-        'LinkedIn Profile',
-        `Name: ${mockUser.firstName} ${mockUser.lastName}\nEmail: ${mockUser.email}`,
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      console.error('Error creating mock user:', error);
-    }
-  };
-
-  // Store user data securely
-  const storeUserData = async (userData: User) => {
-    try {
-      await SecureStore.setItemAsync('user', JSON.stringify(userData));
-      await SecureStore.setItemAsync('userSession', 'active');
-      setUser(userData);
-      setLoggedIn(true);
-      return true;
-    } catch (error) {
-      console.error('Error storing user data:', error);
-      return false;
-    }
-  };
-
-  const handleLinkedInAuthCallback = async (event: { url: string }) => {
-    console.log('Handling LinkedIn auth callback', event);
+  const signUp = async (email: string, password: string, username?: string): Promise<boolean> => {
     try {
       setLoading(true);
+      logger.info('🚀 Starting robust signup process...');
       
-      // Extract the authorization code from the URL
-      const { url } = event;
+      // Validate inputs
+      if (!email || !validateEmail(email)) {
+        throw new Error('Please enter a valid email address');
+      }
       
-      // Parse the URL to extract code and state
-      let code, state;
+      if (!password || password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
       
-      if (url.includes('?')) {
-        const queryPart = url.split('?')[1];
-        if (queryPart) {
-          const params = new URLSearchParams(queryPart);
-          code = params.get('code');
-          state = params.get('state');
+      if (username && containsSqlInjection(username)) {
+        logger.error('Potential SQL injection attempt detected in username');
+        throw new Error('Username contains invalid characters');
+      }
+      
+      // Check for SQL injection
+      if (containsSqlInjection(email) || containsSqlInjection(password)) {
+        logger.error('Potential SQL injection attempt detected');
+        throw new Error('Invalid characters detected in email or password');
+      }
+      
+      // Use robust auth service with rate limit handling
+      const result = await authService.signUp({
+        email,
+        password,
+        metadata: {
+          username: username || '',
+          firstName: '',
+          lastName: ''
         }
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Account creation failed');
       }
       
-      // Fallback to regex if URLSearchParams doesn't work
-      if (!code && url.includes('code=')) {
-        code = url.match(/code=([^&]+)/)?.[1];
-      }
-      
-      if (!state && url.includes('state=')) {
-        state = url.match(/state=([^&]+)/)?.[1];
-      }
-      
-      console.log('Extracted params:', { hasCode: !!code, hasState: !!state });
-      
-      if (!code) {
-        throw new Error('No authorization code found in redirect URL');
-      }
-      
-      // Verify state to prevent CSRF attacks if we have it
-      if (state) {
-        const storedState = await SecureStore.getItemAsync('oauth_state');
-        if (state !== storedState) {
-          console.warn('State mismatch:', { receivedState: state, storedState });
-          // In development, we might continue anyway with a warning
-          console.warn('Continuing despite state mismatch (for development)');
-        }
-      }
-      
-      console.log('LinkedIn code obtained', code);
-      
-      try {
-        // Exchange the code for tokens directly (only for development testing)
-        // This approach exposes your client secret - DON'T use in production!
-        console.log('Exchanging code for token...');
+      // Handle different signup results
+      if (result.isPending) {
+        logger.info('📝 User created as pending due to rate limits');
         
-        // Prepare token request body
-        const tokenRequestBody = new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: LINKEDIN_CONFIG.redirectUri,
-          client_id: LINKEDIN_CONFIG.clientId,
-          client_secret: LINKEDIN_CONFIG.clientSecret
-        }).toString();
-        
-        // Make token request
-        const tokenResponse = await fetch(LINKEDIN_CONFIG.tokenEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: tokenRequestBody
-        });
-        
-        if (!tokenResponse.ok) {
-          const errorText = await tokenResponse.text();
-          console.error('Token exchange failed:', errorText);
-          throw new Error(`Failed to exchange code for token: ${tokenResponse.status}`);
-        }
-        
-        const tokens = await tokenResponse.json();
-        console.log('Received tokens:', { 
-          hasAccessToken: !!tokens.access_token,
-          expiresIn: tokens.expires_in,
-          hasRefreshToken: !!tokens.refresh_token
-        });
-        
-        // Now fetch user profile with the token
-        console.log('Fetching user profile from LinkedIn...');
-        const userInfoResponse = await fetch(LINKEDIN_CONFIG.userInfoEndpoint, {
-          headers: {
-            'Authorization': `Bearer ${tokens.access_token}`
-          }
-        });
-        
-        if (!userInfoResponse.ok) {
-          const errorText = await userInfoResponse.text();
-          console.error('User info fetch failed:', errorText);
-          throw new Error(`Failed to fetch user info: ${userInfoResponse.status}`);
-        }
-        
-        const userInfo = await userInfoResponse.json();
-        console.log('Received user info data:', userInfo);
-        
-        // Create user data from the response
-        const userData: User = {
-          id: userInfo.sub || `linkedin_${Date.now()}`,
-          email: userInfo.email || 'unknown@example.com',
-          firstName: userInfo.given_name || userInfo.name?.split(' ')[0] || 'LinkedIn',
-          lastName: userInfo.family_name || userInfo.name?.split(' ').slice(1).join(' ') || 'User',
-          profileImage: userInfo.picture || null,
-          oauthProvider: 'linkedin',
-          oauthTokens: {
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token || null,
-            expiresAt: Date.now() + (tokens.expires_in * 1000)
-          }
+        // Create local user data for pending users
+        const pendingUserData: User = {
+          id: result.user.id,
+          email: result.user.email,
+          firstName: '',
+          lastName: '',
+          username: username || '',
+          profileImage: null,
+          oauthProvider: 'email',
+          isPending: true
         };
         
-        // Store the user data and update state
-        await storeUserData(userData);
-        setUser(userData);
+        await storeUserData(pendingUserData);
+        setUser(pendingUserData);
         setLoggedIn(true);
         
-        // Display the LinkedIn profile data in an alert
         Alert.alert(
-          'LinkedIn Profile',
-          `Name: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}`,
+          'Account Created!',
+          'Your account has been created successfully. Email verification may take a few minutes due to high demand.',
+          [{ text: 'Continue' }]
+        );
+        
+      } else if (result.needsConfirmation) {
+        logger.info('📧 User created, email confirmation required');
+        
+        Alert.alert(
+          'Check Your Email!',
+          'We\'ve sent you a confirmation email. Please check your inbox and click the link to verify your account.',
           [{ text: 'OK' }]
         );
         
-        console.log('LinkedIn auth completed successfully with real data');
-        return;
+        // Don't automatically sign in until email is confirmed
+        return true;
         
-      } catch (apiError) {
-        console.error('API error when trying to get LinkedIn data:', apiError);
-        
-        // Fallback to mock data in development mode
-        if (__DEV__) {
-          console.log('Falling back to mock data due to API error');
-          createMockLinkedInUser();
-        } else {
-          throw apiError; // Rethrow in production
-        }
+      } else {
+        logger.info('✅ User created and confirmed immediately');
+        // User data will be updated via onAuthStateChange
       }
+      
+      logger.info('✅ Signup process completed successfully');
+      return true;
       
     } catch (error) {
-      console.error('LinkedIn auth error:', error);
-      Alert.alert('Authentication Error', error instanceof Error ? error.message : 'Failed to authenticate with LinkedIn');
-      
-      // In development, create a mock user to continue testing
-      if (__DEV__) {
-        createMockLinkedInUser();
-      }
+      logger.error('❌ Signup error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to sign in with a demo account
-  const signInWithDemo = async () => {
+  const signOut = async (): Promise<void> => {
     try {
       setLoading(true);
+      logger.info('🚪 Starting sign out process...');
       
-      // Create a demo user
-      const demoUser: User = {
-        id: 'demo-123',
-        email: 'demo@collaborito.com',
-        firstName: 'Demo',
-        lastName: 'User',
-        profileImage: null,
-        oauthProvider: 'demo'
-      };
+      // Use robust auth service
+      const result = await authService.signOut();
       
-      // Store the user data
-      await storeUserData(demoUser);
+      if (!result.success) {
+        logger.warn('Supabase sign out failed, continuing with local cleanup');
+      }
       
-      // Set the user in state
-      setUser(demoUser);
-      setLoggedIn(true);
+      // Clean up local storage regardless
+      await handleSignOut();
       
-      console.log('Demo login successful');
-      return true;
+      logger.info('✅ Sign out completed');
+      
     } catch (error) {
-      console.error('Demo sign in error:', error);
-      return false;
+      logger.error('❌ Sign out error:', error);
+      
+      // Force local cleanup even if Supabase fails
+      await handleSignOut();
+      
+      Alert.alert('Error', 'Failed to sign out completely. Please restart the app if you continue to have issues.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Add updateUser function
-  const updateUser = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User>): Promise<void> => {
     try {
-      console.log('updateUser called with data:', userData);
-      console.log('Current user state:', user);
-      
       if (!user) {
-        console.error('Cannot update user: No user is currently logged in');
-        console.error('User state:', { user, loading, loggedIn });
-        return false;
+        throw new Error('No user to update');
       }
       
-      if (!user.id) {
-        console.error('Cannot update user: User ID is missing');
-        console.error('User object:', user);
-        return false;
-      }
-      
-      // Validate update data
-      if (userData.firstName && containsSqlInjection(userData.firstName)) {
-        console.error('Invalid firstName in update data');
-        return false;
-      }
-      
-      if (userData.lastName && containsSqlInjection(userData.lastName)) {
-        console.error('Invalid lastName in update data');
-        return false;
-      }
-      
-      // Combine existing user data with the new data
       const updatedUser = { ...user, ...userData };
-      
-      console.log('Storing updated user data:', updatedUser);
-      
-      // Store the updated user data
-      await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      await storeUserData(updatedUser);
       setUser(updatedUser);
       
-      console.log('User profile updated successfully:', updatedUser);
-      return true;
+      logger.info('✅ User data updated locally');
+      
     } catch (error) {
-      console.error('Error updating user data:', error);
-      console.error('Update data that failed:', userData);
-      console.error('Current user at time of error:', user);
-      return false;
+      logger.error('❌ Error updating user:', error);
+      throw error;
     }
   };
 
-  const value: AuthContextType = {
+  const contextValue: AuthContextType = {
     user,
     loading,
-    signIn,
+    loggedIn,
     signUp,
+    signIn,
     signOut,
-    signInWithLinkedIn,
-    signInWithDemo,
-    updateUser
+    updateUser,
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
