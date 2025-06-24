@@ -38,6 +38,33 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
+const validateUsername = (username: string): { isValid: boolean; error?: string } => {
+  if (!username) {
+    return { isValid: false, error: 'Username is required' };
+  }
+  
+  if (username.length < 3) {
+    return { isValid: false, error: 'Username must be at least 3 characters long' };
+  }
+  
+  if (username.length > 30) {
+    return { isValid: false, error: 'Username must be less than 30 characters long' };
+  }
+  
+  // Allow alphanumeric characters, underscores, hyphens, and dots
+  const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+  if (!usernameRegex.test(username)) {
+    return { isValid: false, error: 'Username can only contain letters, numbers, dots, underscores, and hyphens' };
+  }
+  
+  // Username cannot start or end with special characters
+  if (/^[._-]|[._-]$/.test(username)) {
+    return { isValid: false, error: 'Username cannot start or end with dots, underscores, or hyphens' };
+  }
+  
+  return { isValid: true };
+};
+
 const containsSqlInjection = (input: string): boolean => {
   // More targeted SQL injection detection
   const sqlPatterns = [
@@ -217,9 +244,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Password must be at least 6 characters long');
       }
       
-      if (username && containsSqlInjection(username)) {
-        logger.error('Potential SQL injection attempt detected in username');
-        throw new Error('Username contains invalid characters');
+      if (username) {
+        const usernameValidation = validateUsername(username);
+        if (!usernameValidation.isValid) {
+          logger.error('Username validation failed:', usernameValidation.error);
+          throw new Error(usernameValidation.error || 'Invalid username format');
+        }
+        
+        // Still check for SQL injection in username
+        if (containsSqlInjection(username)) {
+          logger.error('Potential SQL injection attempt detected in username');
+          throw new Error('Username contains prohibited characters');
+        }
       }
       
       // Check for SQL injection
