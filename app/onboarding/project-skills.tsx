@@ -28,65 +28,43 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery, OnboardingCompletionService } from '../../src/services';
-import { OnboardingProgress } from '../../components/OnboardingProgress';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { createLogger } from '../../src/utils/logger';
 
 const { width, height } = Dimensions.get('window');
 
-const logger = createLogger('OnboardingProjectSkills');
-
-// Interface for dynamic skills from Supabase
-interface SupabaseSkill {
-  id: string;
-  name: string;
-  category?: string;
-}
-
-// List of fallback project skills (using actual Supabase UUIDs)
+// List of project skills
 const PROJECT_SKILLS = [
-  { id: '4182fd46-0754-4911-a91a-7dac8d5ac3f7', name: 'Accounting' },
-  { id: '10a6aafb-b1da-4515-8d54-ff94d79f5e32', name: 'Artificial Intelligence & Machine Learning' },
-  { id: '35464044-49fb-40ff-b6e1-05f40145bdbd', name: 'Biotechnology' },
-  { id: '42f0429d-bbb1-425e-9676-5c37a1823ecd', name: 'Business Development' },
-  { id: '6eb8696a-d172-4366-b180-06361b1e1336', name: 'Content Creation' },
-  { id: '1f8f2704-617b-4014-abb8-30c1dc417497', name: 'Counseling & Therapy' },
-  { id: '00d92eca-6809-4650-86c9-b9ab6c97c373', name: 'Data Analysis' },
-  { id: '038481fa-6a09-487f-b4ac-c59b5f3f8fe9', name: 'DevOps' },
-  { id: 'c811ca79-466f-4825-b7cc-62b47726e6f7', name: 'Finance' },
-  { id: '28bc517d-8708-47d4-8da1-1ddda26bd7b1', name: 'Fundraising' },
-  { id: '5ed27b4a-20e3-4f47-b89d-3cb425ec47d0', name: 'Graphic Design' },
-  { id: '4d97c64d-3c82-46b8-b0b4-bd7b43c6e4b5', name: 'Legal' },
-  { id: '8b8b5c6f-5e6e-4f8d-9a6a-3c3c9e9e9e9e', name: 'Manufacturing' },
-  { id: '1bc07b77-b9da-4c5c-8b8c-9e6f8e7c5b4a', name: 'Marketing' },
-  { id: '2cd08c88-c9eb-5d5d-9c9d-af7f9f8d6c5b', name: 'Policy' },
-  { id: '3de09d99-dafe-6e6e-adae-bf8faf9e7d6c', name: 'Product Management' },
-  { id: '4ef0aeaa-ebff-7f7f-bfbf-cf9fbfaf8e7d', name: 'Project Management' },
-  { id: '5f01bfbb-fcff-8f8f-cfcf-df8fcfbf9f8e', name: 'Public Relations' },
-  { id: '6012cfcc-feff-9f9f-dfdf-ef9fdfcfaf9f', name: 'Research' },
-  { id: '7123dfdd-ffff-afaf-efef-ffafefdfbfaf', name: 'Sales' },
-  { id: '8234efee-ffff-bfbf-ffff-ffbfffffcfbf', name: 'Software Development (Backend)' },
-  { id: '9345ffff-ffff-cfcf-ffff-ffcfffffdfcf', name: 'Software Development (Frontend)' },
-  { id: 'a456ffff-ffff-dfdf-ffff-ffdffffffedf', name: 'UI/UX Design' },
-  { id: 'b567ffff-ffff-efef-ffff-ffefffffff', name: 'Other' },
+  { id: 1, name: 'Accounting' },
+  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
+  { id: 3, name: 'Biotechnology' },
+  { id: 4, name: 'Business' },
+  { id: 5, name: 'Content Creation (e.g. video, copywriting)' },
+  { id: 6, name: 'Counseling & Therapy' },
+  { id: 7, name: 'Data Analysis' },
+  { id: 8, name: 'DevOps' },
+  { id: 9, name: 'Finance' },
+  { id: 10, name: 'Fundraising' },
+  { id: 11, name: 'Graphic Design' },
+  { id: 12, name: 'Legal' },
+  { id: 13, name: 'Manufacturing' },
+  { id: 14, name: 'Marketing' },
+  { id: 15, name: 'Policy' },
+  { id: 16, name: 'Product Management' },
+  { id: 17, name: 'Project Management' },
+  { id: 18, name: 'Public Relations' },
+  { id: 19, name: 'Research' },
+  { id: 20, name: 'Sales' },
+  { id: 21, name: 'Software Development (Backend)' },
+  { id: 22, name: 'Software Development (Frontend)' },
+  { id: 23, name: 'UI/UX Design' },
+  { id: 24, name: 'Other' },
 ];
 
 export default function ProjectSkillsScreen() {
-  const { user } = useAuth();
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [availableSkills, setAvailableSkills] = useState<SupabaseSkill[]>(PROJECT_SKILLS);
+  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [flowInitialized, setFlowInitialized] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  
-  // Enhanced onboarding services
-  const stepManager = OnboardingStepManager.getInstance();
-  const flowCoordinator = OnboardingFlowCoordinator.getInstance();
-  const errorRecovery = new OnboardingErrorRecovery();
   
   // Get the goalId from URL params and convert to number
   const goalId = params.goalId ? Number(params.goalId) : 2; // Default to 2 if not provided
@@ -94,80 +72,6 @@ export default function ProjectSkillsScreen() {
   // Animation values
   const logoScale = useRef(new RNAnimated.Value(0.8)).current;
   const formOpacity = useRef(new RNAnimated.Value(0)).current;
-
-  // Initialize onboarding flow and load data
-  useEffect(() => {
-    const initializeScreen = async () => {
-      try {
-        setLoading(true);
-        
-        // Initialize flow coordinator
-        const flowReady = await flowCoordinator.initializeFlow();
-        if (!flowReady) {
-          const recovered = await errorRecovery.attemptRecovery();
-          if (!recovered) {
-            Alert.alert('Setup Error', 'Unable to initialize onboarding. Please try again.');
-            router.replace('/welcome/signin');
-            return;
-          }
-        }
-        
-        setFlowInitialized(true);
-        
-        // Try to load skills from Supabase and restore user selections
-        await Promise.all([
-          loadAvailableSkills(),
-          restoreUserSkills()
-        ]);
-        
-      } catch (error) {
-        logger.error('Failed to initialize project skills screen:', error);
-        const showRecovery = await errorRecovery.showRecoveryDialog();
-        if (!showRecovery) {
-          router.replace('/welcome/signin');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user && user.id) {
-      initializeScreen();
-    }
-  }, [user]);
-
-  const loadAvailableSkills = async () => {
-    try {
-      // Try to load skills from Supabase
-      const supabaseSkills = await stepManager.getAvailableSkills();
-      
-      if (supabaseSkills && supabaseSkills.length > 0) {
-        setAvailableSkills(supabaseSkills);
-        logger.info(`Loaded ${supabaseSkills.length} skills from Supabase`);
-      } else {
-        // Keep using fallback skills
-        logger.warn('Using fallback skills - Supabase skills not available');
-      }
-    } catch (error) {
-      logger.error('Failed to load skills from Supabase:', error);
-      // Continue with fallback skills - not critical
-    }
-  };
-
-  const restoreUserSkills = async () => {
-    try {
-      // Try to restore existing user skills
-      const userSkills = await stepManager.getUserSkills();
-      if (userSkills && userSkills.length > 0) {
-        const skillIds = userSkills.map((skill: any) => skill.skillId || skill.id);
-        setSelectedSkills(skillIds);
-        logger.info('Restored user skills:', skillIds.length);
-      }
-    } catch (error) {
-      logger.error('Failed to restore user skills:', error);
-      // Continue without restoring - not critical
-    }
-  };
 
   // Get subtitle text based on the goalId
   const getSubtitleText = () => {
@@ -201,7 +105,7 @@ export default function ProjectSkillsScreen() {
   };
 
   useEffect(() => {
-    logger.debug('Rendering ProjectSkillsScreen with enhanced Supabase integration');
+    console.log('Rendering ProjectSkillsScreen with goalId:', goalId);
     
     // Animate logo and form on screen load
     RNAnimated.parallel([
@@ -219,24 +123,19 @@ export default function ProjectSkillsScreen() {
     ]).start();
   }, []);
 
-  const toggleSkill = (skillId: string) => {
+  const toggleSkill = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedSkills(prevSelected => {
-      if (prevSelected.includes(skillId)) {
-        return prevSelected.filter(id => id !== skillId);
+      if (prevSelected.includes(id)) {
+        return prevSelected.filter(itemId => itemId !== id);
       } else {
-        return [...prevSelected, skillId];
+        return [...prevSelected, id];
       }
     });
   };
 
   const handleContinue = async () => {
-    if (!flowInitialized || !user) {
-      Alert.alert('Error', 'System not ready. Please try again.');
-      return;
-    }
-
     if (selectedSkills.length === 0) {
       Alert.alert('Skills Required', 'Please select at least one skill to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -247,90 +146,29 @@ export default function ProjectSkillsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      logger.info('Saving skills to Supabase...');
+      console.log('Selected skills:', selectedSkills.map(id => PROJECT_SKILLS.find(item => item.id === id)?.name));
       
-      // Map selected skills to the required format
-      const skillsData = {
-        skills: selectedSkills.map(skillId => {
-          const skill = availableSkills.find(s => s.id === skillId);
-          return {
-            skillId: skillId,
-            isOffering: goalId === 3, // true if contributing skills
-            proficiency: 'intermediate' as const // Default proficiency
-          };
-        })
-      };
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const success = await stepManager.saveSkillsStep(skillsData);
-      
-      if (success) {
-        logger.info('Skills saved successfully');
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
-        // Mark onboarding as completed using completion service
-        const completionService = OnboardingCompletionService.getInstance();
-        const completionMetrics = {
-          totalStepsCompleted: 4, // profile, interests, goals, skills
-          skippedSteps: [],
-          timeToComplete: Date.now() - (new Date().getTime() - 300000), // Approximate 5 minutes
-          completionPercentage: 100,
-          deviceInfo: {
-            platform: 'mobile',
-            version: '1.0.0'
-          }
-        };
-        
-        const onboardingCompleted = await completionService.completeOnboarding(user!.id, completionMetrics);
-        
-        if (onboardingCompleted) {
-          logger.info('✅ Onboarding marked as completed');
-        } else {
-          logger.warn('Failed to mark onboarding as completed, but continuing...');
-        }
-        
-        // Navigate to the tabs screen (onboarding complete)
-        router.replace('/(tabs)' as any);
-      } else {
-        throw new Error('Failed to save skills');
-      }
+      // Navigate to main app
+      router.replace('/(tabs)' as any);
       
     } catch (error) {
-      logger.error('❌ Error saving skills:', error);
-      const recovered = await errorRecovery.recoverFromError(error as Error, 'saveSkills');
-      if (!recovered) {
-        Alert.alert('Error', 'There was a problem saving your skills. Please try again.');
-      }
+      console.error('Error saving project skills:', error);
+      Alert.alert('Error', 'There was a problem saving your project skills. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleSkip = async () => {
-    if (!flowInitialized) {
-      Alert.alert('Error', 'System not ready. Please try again.');
-      return;
-    }
-
-    try {
-      logger.info('Skipping skills step');
-
-      const result = await stepManager.skipStep('skills', 'User chose to skip skills selection');
-
-      if (result) {
-        // Navigate to main app
-        router.replace('/(tabs)' as any);
-      } else {
-        throw new Error('Failed to skip skills step');
-      }
-    } catch (error) {
-      logger.error('❌ Error skipping skills:', error);
-      // Fallback navigation
-      router.replace('/(tabs)' as any);
-    }
+  const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.replace('/(tabs)' as any);
   };
 
   // Render skill item
-  const renderSkillItem = ({ item }: { item: SupabaseSkill }) => (
+  const renderSkillItem = ({ item }: { item: { id: number; name: string } }) => (
     <TouchableOpacity
       style={[
         styles.skillItem,
@@ -354,25 +192,10 @@ export default function ProjectSkillsScreen() {
     </TouchableOpacity>
   );
 
-  // Show loading screen while initializing
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#FF6B35" />
-        <Text style={[styles.subtitle, { marginTop: 16, textAlign: 'center' }]}>
-          Loading skills...
-        </Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
-      
-      {/* Add OnboardingProgress component */}
-      <OnboardingProgress userId={user?.id || ''} />
       
       {/* Background elements */}
       <View style={styles.backgroundShapesContainer}>
@@ -393,11 +216,13 @@ export default function ProjectSkillsScreen() {
         >
           {/* Logo container */}
           <RNAnimated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
             <Image 
               source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
+            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
             <Image 
               source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
               style={styles.textLogo}
@@ -415,9 +240,9 @@ export default function ProjectSkillsScreen() {
             {/* Skills grid */}
             <View style={styles.skillsContainer}>
               <FlatList
-                data={availableSkills}
+                data={PROJECT_SKILLS}
                 renderItem={renderSkillItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
                 scrollEnabled={false} // The parent ScrollView handles scrolling
                 contentContainerStyle={styles.skillsList}
@@ -448,7 +273,7 @@ export default function ProjectSkillsScreen() {
             {/* Skip Link */}
             <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
               <Text style={styles.skipLinkText}>
-                I'll select skills later
+                I&apos;ll select skills later
               </Text>
             </TouchableOpacity>
           </RNAnimated.View>
