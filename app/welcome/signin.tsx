@@ -249,26 +249,27 @@ export default function SignInScreen() {
   
   // Helper function to detect SQL injection patterns
   const containsSqlInjection = (input: string): boolean => {
+    // More targeted SQL injection detection
     const sqlPatterns = [
-      /(\s|^)(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)(\s|$)/i,
-      /(\s|^)(FROM|WHERE|UNION|JOIN|INTO|EXEC|EXECUTE)(\s|$)/i,
-      /--/,
-      /;/,
-      /\/\*/,
-      /\*\//,
-      /xp_/i,
-      /'.*OR.*--/i,
-      /'.*OR.*'/i,
-      /".*OR.*--/i,
-      /".*OR.*"/i,
-      /'\s*OR\s+.+[=<>].+/i,
-      /"\s*OR\s+.+[=<>].+/i,
-      /'.*=.*/i,
-      /".*=.*/i,
-      /'.*<>.*/i,
-      /".*<>.*/i
+      // Actual SQL injection patterns
+      /('|(\\'))/i,                    // Single quotes
+      /(\-\-)/i,                       // SQL comments
+      /(\;)/i,                         // Statement terminators
+      /(\bunion\b)/i,                  // UNION keyword
+      /(\bselect\b)/i,                 // SELECT keyword
+      /(\binsert\b)/i,                 // INSERT keyword
+      /(\bdelete\b)/i,                 // DELETE keyword
+      /(\bupdate\b)/i,                 // UPDATE keyword
+      /(\bdrop\b)/i,                   // DROP keyword
+      /(\bcreate\b)/i,                 // CREATE keyword
+      /(\balter\b)/i,                  // ALTER keyword
+      /(\bexec\b|\bexecute\b)/i,       // EXEC/EXECUTE keywords
+      /(<script>|<\/script>)/i,        // Script tags
+      /(\bjavascript:)/i               // JavaScript protocol
     ];
     
+    // Allow normal names/usernames with alphanumeric characters, spaces, underscores, and hyphens
+    // Only flag if it contains actual SQL injection patterns
     return sqlPatterns.some(pattern => pattern.test(input));
   };
   
