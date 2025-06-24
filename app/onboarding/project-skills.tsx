@@ -28,7 +28,7 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
+import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery, OnboardingCompletionService } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { createLogger } from '../../src/utils/logger';
@@ -266,6 +266,27 @@ export default function ProjectSkillsScreen() {
       if (success) {
         logger.info('Skills saved successfully');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
+        // Mark onboarding as completed using completion service
+        const completionService = OnboardingCompletionService.getInstance();
+        const completionMetrics = {
+          totalStepsCompleted: 4, // profile, interests, goals, skills
+          skippedSteps: [],
+          timeToComplete: Date.now() - (new Date().getTime() - 300000), // Approximate 5 minutes
+          completionPercentage: 100,
+          deviceInfo: {
+            platform: 'mobile',
+            version: '1.0.0'
+          }
+        };
+        
+        const onboardingCompleted = await completionService.completeOnboarding(user!.id, completionMetrics);
+        
+        if (onboardingCompleted) {
+          logger.info('✅ Onboarding marked as completed');
+        } else {
+          logger.warn('Failed to mark onboarding as completed, but continuing...');
+        }
         
         // Navigate to the tabs screen (onboarding complete)
         router.replace('/(tabs)' as any);
