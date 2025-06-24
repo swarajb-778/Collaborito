@@ -29,8 +29,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { createLogger } from '../../src/utils/logger';
 
 const { width, height } = Dimensions.get('window');
+
+const logger = createLogger('OnboardingGoals');
 
 // Define the goals options (keeping icons)
 const GOALS = [
@@ -117,7 +120,7 @@ export default function OnboardingGoalsScreen() {
         }
 
       } catch (error) {
-        console.error('Failed to initialize goals screen:', error);
+        logger.error('❌ Failed to initialize goals screen:', error);
         
         // Try recovery
         const recovered = await errorRecovery.recoverFromError(error, 'initializeGoalsScreen');
@@ -170,7 +173,7 @@ export default function OnboardingGoalsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       const selectedGoalName = GOALS.find(item => item.id === selectedGoal)?.name;
-      console.log('Selected goal:', selectedGoalName);
+      logger.info('Selected goal:', selectedGoalName);
       
       // Map goal ID to type
       const goalTypeMapping = {
@@ -184,8 +187,8 @@ export default function OnboardingGoalsScreen() {
       
       // Save goal using step manager (saves to Supabase)
       const goalsData = {
-        goalType: goalType as 'find_cofounder' | 'find_collaborators' | 'contribute_skills' | 'explore_ideas',
-        details: { selectedGoalId: selectedGoal, selectedGoalName }
+        goals: [selectedGoalName || goalType],
+        primaryGoal: goalType
       };
       
       const success = await stepManager.saveGoalsStep(goalsData);
@@ -194,29 +197,24 @@ export default function OnboardingGoalsScreen() {
         throw new Error('Failed to save goals');
       }
       
-      console.log('Goals step saved successfully');
+      logger.info('Goals step saved successfully');
       
       // Get next step route from step manager
       const nextRoute = await stepManager.getNextStepRoute('goals');
       if (nextRoute) {
         router.replace(nextRoute as any);
       } else {
-        // Fallback routing based on goal type
-        if (selectedGoal === 1 || selectedGoal === 2) {
+        // Fallback to determine next step based on goal type
+        if (goalType === 'find_cofounder') {
           router.replace('/onboarding/project-detail' as any);
         } else {
           router.replace('/onboarding/project-skills' as any);
         }
       }
-      
+
     } catch (error) {
-      console.error('Error saving goals step:', error);
-      
-      // Use error recovery to handle the error gracefully
-      const recovered = await errorRecovery.recoverFromError(error, 'saveGoalsStep');
-      if (!recovered) {
-        Alert.alert('Error', 'There was a problem saving your goal. Please try again.');
-      }
+      logger.error('❌ Error saving goals:', error);
+      Alert.alert('Error', 'There was a problem saving your goals. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -224,25 +222,21 @@ export default function OnboardingGoalsScreen() {
   
   const handleSkip = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      console.log('Skipping goals step');
-      
-      if (flowInitialized) {
-        // Skip through step manager for proper tracking
-        await stepManager.skipStep('goals', 'User chose to skip');
-        
-        const nextRoute = await stepManager.getNextStepRoute('goals');
-        if (nextRoute) {
-          router.replace(nextRoute as any);
-          return;
-        }
+      logger.info('Skipping goals step');
+
+      const result = await stepManager.skipStep('goals', 'User chose to skip goal selection');
+
+      if (result) {
+        // Navigate to project-skills as default next step
+        router.replace('/onboarding/project-skills' as any);
+      } else {
+        throw new Error('Failed to skip goals step');
       }
-      
-      // Fallback navigation
-      router.replace('/(tabs)');
+
     } catch (error) {
-      console.error('Error skipping goals step:', error);
-      router.replace('/(tabs)');
+      logger.error('❌ Error skipping goals:', error);
+      // Fallback navigation
+      router.replace('/onboarding/project-skills' as any);
     }
   };
 
@@ -285,7 +279,7 @@ export default function OnboardingGoalsScreen() {
           <OnboardingProgress 
             userId={user.id}
             onProgressChange={(progress) => {
-              console.log('Goals progress updated:', progress);
+              logger.debug('Goals progress updated:', progress);
             }}
           />
         )}
