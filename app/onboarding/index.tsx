@@ -17,37 +17,25 @@ import {
   Animated 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
+import { FontAwesome5, Ionicons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
-import { getSimpleOnboardingManager } from '../../src/services';
-import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 // Get screen dimensions like in register.tsx
 const { width, height } = Dimensions.get('window');
-
-// Import image assets
-const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
-const CollaboritoTextLogo = require('../../assets/images/welcome/collaborito-text-logo.png');
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { user, updateUser, loading } = useAuth(); // Get loading state from context
   const [savingProfile, setSavingProfile] = useState(false);
   const [userDataReady, setUserDataReady] = useState(false);
-  const [flowInitialized, setFlowInitialized] = useState(false);
-  const [migrationInProgress, setMigrationInProgress] = useState(false);
   const insets = useSafeAreaInsets();
-
-  // Enhanced onboarding services
-  const onboardingManager = getSimpleOnboardingManager();
 
   // Animation values like in register.tsx
   const logoScale = useRef(new Animated.Value(0.8)).current;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -61,56 +49,14 @@ export default function OnboardingScreen() {
         duration: 800,
         useNativeDriver: true,
       }),
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
       Animated.timing(formOpacity, {
         toValue: 1,
-        duration: 600,
+        duration: 800,
+        delay: 300,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
-
-  // Initialize onboarding flow
-  useEffect(() => {
-    const initializeOnboarding = async () => {
-      try {
-        console.log('🚀 Initializing onboarding flow...');
-        const initialized = await onboardingManager.initialize();
-        
-        if (initialized) {
-          setFlowInitialized(true);
-          console.log('✅ Onboarding flow initialized successfully');
-          
-          // Get current progress
-          const progress = await onboardingManager.getCurrentProgress();
-          console.log('📊 Current progress:', progress);
-          
-        } else {
-          console.warn('Onboarding manager initialization failed');
-          Alert.alert(
-            'Setup Error',
-            'Unable to initialize onboarding. Please try again.',
-            [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
-          );
-        }
-      } catch (error) {
-        console.error('Failed to initialize onboarding:', (error as Error).message);
-        Alert.alert(
-          'Error',
-          'Failed to initialize onboarding system.',
-          [{ text: 'OK', onPress: () => router.replace('/welcome/signin') }]
-        );
-      }
-    };
-
-    if (!loading && user && user.id) {
-      initializeOnboarding();
-    }
-  }, [user, loading]);
 
   // Monitor user data availability
   useEffect(() => {
@@ -121,13 +67,9 @@ export default function OnboardingScreen() {
     if (!loading && user && user.id) {
       setUserDataReady(true);
       console.log('User data is ready for onboarding');
-      
-      // Pre-fill form if user data exists
-      if (user.firstName) setFirstName(user.firstName);
-      if (user.lastName) setLastName(user.lastName);
-      
     } else if (!loading && !user) {
       console.error('No user data available after auth loading completed');
+      // Navigate back to login if no user data after loading
       Alert.alert(
         'Session Error',
         'Unable to retrieve user data. Please sign in again.',
@@ -146,6 +88,14 @@ export default function OnboardingScreen() {
   const [lastName, setLastName] = useState('');
   const [location, setLocation] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  
+  // Initialize form fields with existing user data when available
+  useEffect(() => {
+    if (user && userDataReady) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+    }
+  }, [user, userDataReady]);
   
   // Keep error states
   const [firstNameError, setFirstNameError] = useState('');
@@ -184,11 +134,11 @@ export default function OnboardingScreen() {
     return true;
   };
 
-  // Enhanced completion logic with Supabase integration
+  // Enhanced completion logic with better error handling
   const handleComplete = async () => {
-    // Check if user data and flow are ready
-    if (!userDataReady || !user || !flowInitialized) {
-      Alert.alert('Error', 'System not ready. Please try again.');
+    // Check if user data is available before proceeding
+    if (!userDataReady || !user) {
+      Alert.alert('Error', 'User session not ready. Please try again.');
       return;
     }
 
@@ -198,82 +148,52 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('💾 Executing profile step with flow coordinator...');
+      console.log('Attempting to update user profile...');
       console.log('Current user ID:', user.id);
-      console.log('Profile data:', { firstName, lastName, location, jobTitle });
+      console.log('Update data:', { firstName, lastName, location, jobTitle });
       
-      // Execute profile step using onboarding manager
-      const result = await onboardingManager.executeStep('profile', {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        location: location.trim(),
-        jobTitle: jobTitle.trim(),
-        email: user.email, // Include email for migration
-        password: undefined // Will be auto-generated if needed
-      });
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save profile data');
-      }
-      
-      console.log('✅ Profile step executed successfully');
-      
-      // Update local auth context for immediate UI updates
+      // Update user profile with entered data
       const userProfileUpdate = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        firstName,
+        lastName,
+        // You could add these to the User type and save them too
+        // location,
+        // jobTitle,
       };
       
-      await updateUser(userProfileUpdate);
+      // Save user profile data with additional validation
+      const updateSuccess = await updateUser(userProfileUpdate);
       
-      // Navigate to next step
-      const nextStep = result.nextStep || 'interests';
-      console.log('📍 Navigating to next step:', nextStep);
-      router.replace(`/onboarding/${nextStep}` as any);
-      
-    } catch (error: any) {
-      console.error('❌ Error saving profile step:', error);
-      Alert.alert(
-        'Error', 
-        error?.message || 'There was a problem saving your profile. Please try again.'
-      );
-    } finally {
-      setSavingProfile(false);
-      setMigrationInProgress(false);
-    }
-  };
-
-  const handleSkip = async () => {
-    try {
-      console.log('⏭️ Skipping profile step');
-      
-      const result = await onboardingManager.skipStep('profile');
-      
-      if (result.success) {
-        const nextStep = result.nextStep || 'interests';
-        router.replace(`/onboarding/${nextStep}` as any);
-      } else {
-        throw new Error('Failed to skip profile step');
+      if (!updateSuccess) {
+        throw new Error('Failed to update user profile');
       }
       
-    } catch (error) {
-      console.error('❌ Error skipping profile step:', error instanceof Error ? error.message : error);
-      // Fallback navigation
+      console.log('Profile updated successfully with:', { firstName, lastName, location, jobTitle });
+      
+      // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'There was a problem updating your profile. Please try again.');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
-  // Show loading spinner while auth is loading or flow is not ready
-  if (loading || !userDataReady || !flowInitialized) {
+  const handleSkip = () => {
+    // Allow skipping even if user data is not ready
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    console.log('Skipping onboarding, navigating to interests screen');
+    router.replace('/onboarding/interests' as any);
+  };
+
+  // Show loading spinner while auth is loading or user data is not ready
+  if (loading || !userDataReady) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <StatusBar style="dark" />
         <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loadingText}>
-          {loading ? 'Loading user data...' : 
-           !userDataReady ? 'Preparing onboarding...' : 
-           'Initializing flow...'}
-        </Text>
+        <Text style={styles.loadingText}>Setting up your profile...</Text>
       </View>
     );
   }
@@ -308,44 +228,19 @@ export default function OnboardingScreen() {
           >
             {/* Logo container from register.tsx */}
             <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-              {/* Ensure these image paths are correct */}
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
-                source={CollaboritoLogo} 
+                source={require('../../assets/images/welcome/collaborito-dark-logo.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
               <Image 
-                source={CollaboritoTextLogo} 
+                source={require('../../assets/images/welcome/collaborito-text-logo.png')} 
                 style={styles.textLogo}
                 resizeMode="contain"
               />
           </Animated.View>
-
-            {/* Content container from register.tsx */}
-            <Animated.View style={[styles.contentContainer, { opacity: contentOpacity }]}>
-              <Text style={styles.title}>Welcome to Collaborito</Text>
-              <Text style={styles.subtitle}>
-                Let's set up your profile to help you connect with the right people and projects.
-              </Text>
-
-              {/* Onboarding Progress Component - Temporarily disabled */}
-              {/* {user && (
-                <OnboardingProgress 
-                  userId={user.id}
-                  onProgressChange={(progress) => {
-                    console.log('Profile progress updated:', progress);
-                  }}
-                />
-              )} */}
-
-              {/* Migration Progress Indicator */}
-              {migrationInProgress && (
-                <View style={styles.migrationContainer}>
-                  <ActivityIndicator size="small" color="#000000" />
-                  <Text style={styles.migrationText}>Setting up your account...</Text>
-                </View>
-              )}
-            </Animated.View>
 
             {/* Form container from register.tsx */}
             <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
@@ -432,24 +327,19 @@ export default function OnboardingScreen() {
 
               {/* Use Primary Button style from register.tsx */}
               <TouchableOpacity 
-                style={[styles.button, styles.primaryButton, savingProfile && styles.buttonDisabled]}
+                style={[styles.button, styles.primaryButton]}
                   onPress={handleComplete}
                   disabled={savingProfile}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={savingProfile ? ['#ccc', '#999'] : ['#000000', '#333333']} 
+                  colors={['#000000', '#333333']} 
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
                 >
                   {savingProfile ? (
-                    <View style={styles.buttonContent}>
-                      <ActivityIndicator color="#FFF" size="small" style={styles.buttonLoader} />
-                      <Text style={[styles.buttonText, styles.primaryButtonText]}>
-                        {migrationInProgress ? 'Setting up account...' : 'Saving profile...'}
-                      </Text>
-                    </View>
+                    <ActivityIndicator color="#FFF" size="small" /> 
                   ) : (
                     <Text style={[styles.buttonText, styles.primaryButtonText]}>Complete Setup</Text>
                   )}
@@ -459,7 +349,7 @@ export default function OnboardingScreen() {
               {/* Skip Link - Styled like login link in register.tsx */}
               <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={savingProfile}>
                 <Text style={styles.skipLinkText}>
-                    I'll complete this later
+                    I&apos;ll complete this later
                   </Text>
                 </TouchableOpacity>
 
@@ -553,9 +443,16 @@ const styles = StyleSheet.create({
     maxHeight: 30,
     marginTop: 10,
   },
-  contentContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
+  formContainer: { // from register
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: { // from register
     fontSize: 26, 
@@ -640,21 +537,11 @@ const styles = StyleSheet.create({
   primaryButton: { // from register
      overflow: 'hidden', 
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
   buttonGradient: { // from register
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonLoader: {
-    marginRight: 8,
   },
   buttonText: { // from register
     fontSize: 16,
@@ -685,20 +572,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#4A5568',
     marginTop: 20,
-  },
-  migrationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  migrationText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#4A5568',
-    fontFamily: 'Nunito',
   },
 }); 
