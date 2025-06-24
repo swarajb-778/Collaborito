@@ -31,8 +31,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingStepManager, OnboardingFlowCoordinator, OnboardingErrorRecovery } from '../../src/services';
 import { OnboardingProgress } from '../../components/OnboardingProgress';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { createLogger } from '../../src/utils/logger';
 
 const { width, height } = Dimensions.get('window');
+
+const logger = createLogger('OnboardingProjectSkills');
 
 // Interface for dynamic skills from Supabase
 interface SupabaseSkill {
@@ -118,7 +121,7 @@ export default function ProjectSkillsScreen() {
         ]);
         
       } catch (error) {
-        console.error('Failed to initialize project skills screen:', error);
+        logger.error('Failed to initialize project skills screen:', error);
         const showRecovery = await errorRecovery.showRecoveryDialog();
         if (!showRecovery) {
           router.replace('/welcome/signin');
@@ -140,13 +143,13 @@ export default function ProjectSkillsScreen() {
       
       if (supabaseSkills && supabaseSkills.length > 0) {
         setAvailableSkills(supabaseSkills);
-        console.log(`Loaded ${supabaseSkills.length} skills from Supabase`);
+        logger.info(`Loaded ${supabaseSkills.length} skills from Supabase`);
       } else {
         // Keep using fallback skills
-        console.log('Using fallback skills - Supabase skills not available');
+        logger.warn('Using fallback skills - Supabase skills not available');
       }
     } catch (error) {
-      console.error('Failed to load skills from Supabase:', error);
+      logger.error('Failed to load skills from Supabase:', error);
       // Continue with fallback skills - not critical
     }
   };
@@ -158,10 +161,10 @@ export default function ProjectSkillsScreen() {
       if (userSkills && userSkills.length > 0) {
         const skillIds = userSkills.map((skill: any) => skill.skillId || skill.id);
         setSelectedSkills(skillIds);
-        console.log('Restored user skills:', skillIds);
+        logger.info('Restored user skills:', skillIds.length);
       }
     } catch (error) {
-      console.error('Failed to restore user skills:', error);
+      logger.error('Failed to restore user skills:', error);
       // Continue without restoring - not critical
     }
   };
@@ -198,7 +201,7 @@ export default function ProjectSkillsScreen() {
   };
 
   useEffect(() => {
-    console.log('Rendering ProjectSkillsScreen with enhanced Supabase integration');
+    logger.debug('Rendering ProjectSkillsScreen with enhanced Supabase integration');
     
     // Animate logo and form on screen load
     RNAnimated.parallel([
@@ -244,42 +247,36 @@ export default function ProjectSkillsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Saving skills to Supabase...');
+      logger.info('Saving skills to Supabase...');
       
-      // Prepare skills data for Supabase
-      const isOffering = goalId === 3; // If goal is "contribute skills", user is offering
+      // Map selected skills to the required format
       const skillsData = {
-        skills: selectedSkills.map(skillId => ({
-          skillId: skillId,
-          isOffering: isOffering,
-          proficiency: 'intermediate' as const
-        }))
+        skills: selectedSkills.map(skillId => {
+          const skill = availableSkills.find(s => s.id === skillId);
+          return {
+            skillId: skillId,
+            isOffering: goalId === 3, // true if contributing skills
+            proficiency: 'intermediate' as const // Default proficiency
+          };
+        })
       };
       
       const success = await stepManager.saveSkillsStep(skillsData);
       
       if (success) {
-        console.log('Skills saved successfully');
+        logger.info('Skills saved successfully');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
-        // Get next step route from flow coordinator
-        const nextRoute = await stepManager.getNextStepRoute('skills');
-        if (nextRoute) {
-          router.replace(nextRoute as any);
-        } else {
-          // Complete onboarding - navigate to main app
-          router.replace('/(tabs)');
-        }
+        
+        // Navigate to the tabs screen (onboarding complete)
+        router.replace('/(tabs)' as any);
       } else {
         throw new Error('Failed to save skills');
       }
       
     } catch (error) {
-      console.error('Error saving skills:', error);
-      
-      // Use error recovery for better UX
-      const canRecover = await errorRecovery.recoverFromError(error as Error, 'skills_save');
-      if (!canRecover) {
+      logger.error('❌ Error saving skills:', error);
+      const recovered = await errorRecovery.recoverFromError(error as Error, 'saveSkills');
+      if (!recovered) {
         Alert.alert('Error', 'There was a problem saving your skills. Please try again.');
       }
     } finally {
@@ -294,23 +291,20 @@ export default function ProjectSkillsScreen() {
     }
 
     try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // Skip step using step manager
-      await stepManager.skipStep('skills', 'User chose to skip skills selection');
-      
-      // Get next step route
-      const nextRoute = await stepManager.getNextStepRoute('skills');
-      if (nextRoute) {
-        router.replace(nextRoute as any);
+      logger.info('Skipping skills step');
+
+      const result = await stepManager.skipStep('skills', 'User chose to skip skills selection');
+
+      if (result) {
+        // Navigate to main app
+        router.replace('/(tabs)' as any);
       } else {
-        // Complete onboarding
-        router.replace('/(tabs)');
+        throw new Error('Failed to skip skills step');
       }
     } catch (error) {
-      console.error('Error skipping step:', error);
+      logger.error('❌ Error skipping skills:', error);
       // Fallback navigation
-      router.replace('/(tabs)');
+      router.replace('/(tabs)' as any);
     }
   };
 
