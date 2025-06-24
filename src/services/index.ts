@@ -16,6 +16,7 @@ export { SimpleOnboardingManager, getSimpleOnboardingManager } from './SimpleOnb
 export { OnboardingSupabaseService, getOnboardingSupabaseService } from './OnboardingSupabaseService';
 export { ServiceContainer, getServiceContainer } from './ServiceContainer';
 export { SeedDataService, getSeedDataService } from './SeedDataService';
+export { OnboardingCompletionService } from './OnboardingCompletionService';
 
 // Configuration
 export * from '../config/onboardingConfig';
