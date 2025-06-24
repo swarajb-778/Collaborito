@@ -26,6 +26,9 @@ import { OnboardingProgress } from '../../components/OnboardingProgress';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('OnboardingInterests');
 
 // Import image assets
 const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
@@ -101,15 +104,15 @@ export default function OnboardingInterestsScreen() {
   useEffect(() => {
     const initializeInterestsFlow = async () => {
       try {
-        console.log('🎯 Initializing interests flow...');
+        logger.info('🎯 Initializing interests flow...');
 
         // Check if flow coordinator is ready
         if (!flowCoordinator.canProceed()) {
-          console.log('⚠️ Flow coordinator not ready, attempting initialization...');
+          logger.warn('⚠️ Flow coordinator not ready, attempting initialization...');
           const flowReady = await flowCoordinator.initializeFlow();
           
           if (!flowReady) {
-            console.error('❌ Flow coordinator initialization failed');
+            logger.error('❌ Flow coordinator initialization failed');
             const recovered = await errorRecovery.attemptRecovery();
             if (!recovered) {
               Alert.alert(
@@ -123,13 +126,13 @@ export default function OnboardingInterestsScreen() {
         }
 
         setFlowReady(true);
-        console.log('✅ Flow ready for interests step');
+        logger.info('✅ Flow ready for interests step');
 
         // Load available interests
         await loadInterests();
 
       } catch (error) {
-        console.error('❌ Error initializing interests flow:', error);
+        logger.error('❌ Error initializing interests flow:', error);
         const recovered = await errorRecovery.recoverFromError(error, 'initializeInterestsFlow');
         if (!recovered) {
           Alert.alert('Error', 'Failed to load interests. Please try again.');
@@ -145,25 +148,25 @@ export default function OnboardingInterestsScreen() {
   const loadInterests = async () => {
     try {
       setLoadingInterests(true);
-      console.log('📖 Loading available interests...');
+      logger.info('📖 Loading available interests...');
 
       const availableInterests = await stepManager.getAvailableInterests();
       
       if (availableInterests && availableInterests.length > 0) {
         setInterests(availableInterests);
-        console.log(`✅ Loaded ${availableInterests.length} interests`);
+        logger.info(`✅ Loaded ${availableInterests.length} interests`);
       } else {
-        console.warn('⚠️ No interests loaded, using fallback data');
+        logger.warn('⚠️ No interests loaded, using fallback data');
         setInterests(FALLBACK_INTERESTS);
       }
 
     } catch (error) {
-      console.error('❌ Error loading interests:', error);
+      logger.error('❌ Error loading interests:', error);
       
       // Use error recovery for graceful fallback
       const recovered = await errorRecovery.recoverFromError(error, 'loadInterests');
       if (recovered) {
-        console.log('🔄 Using fallback interests due to error recovery');
+        logger.info('🔄 Using fallback interests due to error recovery');
         setInterests(FALLBACK_INTERESTS);
       } else {
         Alert.alert('Error', 'Failed to load interests. Please try again.');
@@ -206,8 +209,8 @@ export default function OnboardingInterestsScreen() {
       setSavingInterests(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      console.log('💾 Executing interests step...');
-      console.log('Selected interests:', selectedInterests);
+      logger.info('💾 Executing interests step...');
+      logger.info('Selected interests:', selectedInterests);
 
       // Execute interests step using flow coordinator
       const result = await flowCoordinator.executeStep('interests', {
@@ -218,20 +221,20 @@ export default function OnboardingInterestsScreen() {
         throw new Error(result.error || 'Failed to save interests');
       }
 
-      console.log('✅ Interests step completed successfully');
+      logger.info('✅ Interests step completed successfully');
 
       // Navigate to next step
       const nextRoute = await flowCoordinator.getStepRoute(result.nextStep || 'goals');
       if (nextRoute) {
-        console.log('📍 Navigating to next step:', nextRoute);
+        logger.info('📍 Navigating to next step:', nextRoute);
         router.replace(nextRoute as any);
       } else {
-        console.log('📍 Defaulting to goals screen');
+        logger.info('📍 Defaulting to goals screen');
         router.replace('/onboarding/goals' as any);
       }
 
     } catch (error) {
-      console.error('❌ Error saving interests:', error);
+      logger.error('❌ Error saving interests:', error);
       
       // Use error recovery
       const recovered = await errorRecovery.recoverFromError(error, 'saveInterests');
@@ -248,7 +251,7 @@ export default function OnboardingInterestsScreen() {
 
   const handleSkip = async () => {
     try {
-      console.log('⏭️ Skipping interests step');
+      logger.info('⏭️ Skipping interests step');
 
       const result = await flowCoordinator.skipStep('interests', 'User chose to skip interests selection');
 
@@ -264,7 +267,7 @@ export default function OnboardingInterestsScreen() {
       }
 
     } catch (error) {
-      console.error('❌ Error skipping interests:', error);
+      logger.error('❌ Error skipping interests:', error);
       // Fallback navigation
       router.replace('/onboarding/goals' as any);
     }
@@ -337,7 +340,7 @@ export default function OnboardingInterestsScreen() {
                 <OnboardingProgress 
                   userId={user.id}
                   onProgressChange={(progress) => {
-                    console.log('Interests progress updated:', progress);
+                    logger.info('Interests progress updated:', progress);
                   }}
                 />
               )}
