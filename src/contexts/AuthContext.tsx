@@ -39,9 +39,27 @@ const validateEmail = (email: string): boolean => {
 };
 
 const containsSqlInjection = (input: string): boolean => {
+  // More targeted SQL injection detection
   const sqlPatterns = [
-    /('|(\\'))|(|(\\))|(\*)|(%)|(\-\-)|(\;)|(\|\|)|(union)|(select)|(insert)|(delete)|(update)|(drop)|(create)|(alter)|(exec)|(execute)/i
+    // Actual SQL injection patterns
+    /('|(\\'))/i,                    // Single quotes
+    /(\-\-)/i,                       // SQL comments
+    /(\;)/i,                         // Statement terminators
+    /(\bunion\b)/i,                  // UNION keyword
+    /(\bselect\b)/i,                 // SELECT keyword
+    /(\binsert\b)/i,                 // INSERT keyword
+    /(\bdelete\b)/i,                 // DELETE keyword
+    /(\bupdate\b)/i,                 // UPDATE keyword
+    /(\bdrop\b)/i,                   // DROP keyword
+    /(\bcreate\b)/i,                 // CREATE keyword
+    /(\balter\b)/i,                  // ALTER keyword
+    /(\bexec\b|\bexecute\b)/i,       // EXEC/EXECUTE keywords
+    /(<script>|<\/script>)/i,        // Script tags
+    /(\bjavascript:)/i               // JavaScript protocol
   ];
+  
+  // Allow normal usernames with alphanumeric characters, underscores, and hyphens
+  // Only flag if it contains actual SQL injection patterns
   return sqlPatterns.some(pattern => pattern.test(input));
 };
 
