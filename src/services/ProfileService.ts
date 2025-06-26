@@ -4,204 +4,119 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('ProfileService');
 
 export interface ProfileData {
-  firstName: string;
-  lastName: string;
-  location?: string;
-  jobTitle?: string;
-  bio?: string;
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   username?: string;
+  location?: string;
+  job_title?: string;
+  bio?: string;
+  avatar_url?: string;
+  profile_image_path?: string;
+  oauth_provider?: string;
+  onboarding_step?: string;
+  onboarding_completed?: boolean;
+  onboarding_completed_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProfileUpdateResult {
   success: boolean;
+  data?: ProfileData | null;
   error?: string;
-  data?: any;
 }
 
-export class ProfileService {
+class ProfileService {
   /**
-   * Create a new user profile in the database
+   * Create or update user profile in Supabase
    */
-  static async createProfile(userId: string, email: string, profileData: Partial<ProfileData>): Promise<ProfileUpdateResult> {
+  async upsertProfile(userId: string, profileData: Partial<ProfileData>): Promise<ProfileUpdateResult> {
     try {
-      logger.info('Creating new profile for user:', userId);
+      logger.info('Upserting profile for user:', userId);
+      logger.info('Profile data:', profileData);
 
-      const profileRecord = {
+      // Prepare the upsert data with proper field mapping
+      const upsertData: ProfileData = {
         id: userId,
-        email,
-        first_name: profileData.firstName || '',
-        last_name: profileData.lastName || '',
-        full_name: profileData.firstName && profileData.lastName 
-          ? `${profileData.firstName} ${profileData.lastName}`.trim() 
-          : '',
-        location: profileData.location || null,
-        job_title: profileData.jobTitle || null,
-        bio: profileData.bio || null,
-        username: profileData.username || '',
-        onboarding_step: 'profile',
-        onboarding_completed: false,
-        oauth_provider: 'email',
-        created_at: new Date().toISOString(),
+        ...profileData,
         updated_at: new Date().toISOString()
       };
 
+      // Perform the upsert operation
       const { data, error } = await supabase
         .from('profiles')
-        .upsert(profileRecord, { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
+        .upsert(upsertData, {
+          onConflict: 'id'
         })
         .select()
         .single();
 
       if (error) {
-        logger.error('Failed to create profile:', error);
-        return { success: false, error: error.message };
+        logger.error('Profile upsert error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
       }
 
-      logger.info('Profile created successfully:', data.id);
-      return { success: true, data };
+      logger.info('Profile upserted successfully:', data);
+      return {
+        success: true,
+        data: data
+      };
 
     } catch (error) {
-      logger.error('Exception creating profile:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to create profile' 
+      logger.error('Profile service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
   /**
-   * Update user profile with onboarding data
+   * Get user profile from Supabase
    */
-  static async updateProfile(userId: string, profileData: Partial<ProfileData>, nextStep?: string): Promise<ProfileUpdateResult> {
-    try {
-      logger.info('Updating profile for user:', userId, 'with data:', profileData);
-
-      // First, check if profile exists
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError && fetchError.code === 'PGRST116') {
-        logger.warn('Profile does not exist, creating new profile');
-        
-        // Get user email from auth.users
-        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
-        if (authError || !authUser.user) {
-          return { success: false, error: 'User not found in authentication system' };
-        }
-
-        return this.createProfile(userId, authUser.user.email || '', profileData);
-      }
-
-      if (fetchError) {
-        logger.error('Error fetching existing profile:', fetchError);
-        return { success: false, error: fetchError.message };
-      }
-
-      // Build update data
-      const updateData: any = {
-        updated_at: new Date().toISOString()
-      };
-
-      if (profileData.firstName !== undefined) {
-        updateData.first_name = profileData.firstName;
-      }
-      if (profileData.lastName !== undefined) {
-        updateData.last_name = profileData.lastName;
-      }
-      if (profileData.firstName || profileData.lastName) {
-        const firstName = profileData.firstName || existingProfile?.first_name || '';
-        const lastName = profileData.lastName || existingProfile?.last_name || '';
-        updateData.full_name = `${firstName} ${lastName}`.trim();
-      }
-      if (profileData.location !== undefined) {
-        updateData.location = profileData.location || null;
-      }
-      if (profileData.jobTitle !== undefined) {
-        updateData.job_title = profileData.jobTitle || null;
-      }
-      if (profileData.bio !== undefined) {
-        updateData.bio = profileData.bio || null;
-      }
-      if (profileData.username !== undefined) {
-        updateData.username = profileData.username;
-      }
-      if (nextStep) {
-        updateData.onboarding_step = nextStep;
-      }
-
-      // Update the profile
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId)
-        .select()
-        .single();
-
-      if (error) {
-        logger.error('Failed to update profile:', error);
-        return { success: false, error: error.message };
-      }
-
-      logger.info('Profile updated successfully:', data.id);
-      return { success: true, data };
-
-    } catch (error) {
-      logger.error('Exception updating profile:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update profile' 
-      };
-    }
-  }
-
-  /**
-   * Get user profile data
-   */
-  static async getProfile(userId: string): Promise<ProfileUpdateResult> {
+  async getProfile(userId: string): Promise<ProfileUpdateResult> {
     try {
       logger.info('Fetching profile for user:', userId);
 
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          full_name,
-          location,
-          job_title,
-          bio,
-          username,
-          avatar_url,
-          oauth_provider,
-          onboarding_step,
-          onboarding_completed,
-          onboarding_completed_at,
-          created_at,
-          updated_at
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (error) {
-        logger.error('Failed to fetch profile:', error);
-        return { success: false, error: error.message };
+        if (error.code === 'PGRST116') {
+          // No profile found, this is okay for new users
+          logger.info('No profile found for user:', userId);
+          return {
+            success: true,
+            data: null
+          };
+        }
+        
+        logger.error('Profile fetch error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
       }
 
-      logger.info('Profile fetched successfully for user:', userId);
-      return { success: true, data };
+      logger.info('Profile fetched successfully:', data);
+      return {
+        success: true,
+        data: data
+      };
 
     } catch (error) {
-      logger.error('Exception fetching profile:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch profile' 
+      logger.error('Profile fetch service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -209,16 +124,17 @@ export class ProfileService {
   /**
    * Update onboarding step
    */
-  static async updateOnboardingStep(userId: string, step: string, completed: boolean = false): Promise<ProfileUpdateResult> {
+  async updateOnboardingStep(userId: string, step: string): Promise<ProfileUpdateResult> {
     try {
-      logger.info('Updating onboarding step for user:', userId, 'to step:', step);
+      logger.info('Updating onboarding step for user:', userId, 'to:', step);
 
-      const updateData: any = {
+      const updateData: Partial<ProfileData> = {
         onboarding_step: step,
         updated_at: new Date().toISOString()
       };
 
-      if (completed) {
+      // If completing onboarding, set completion fields
+      if (step === 'completed') {
         updateData.onboarding_completed = true;
         updateData.onboarding_completed_at = new Date().toISOString();
       }
@@ -227,70 +143,105 @@ export class ProfileService {
         .from('profiles')
         .update(updateData)
         .eq('id', userId)
-        .select('id, onboarding_step, onboarding_completed')
-        .single();
-
-      if (error) {
-        logger.error('Failed to update onboarding step:', error);
-        return { success: false, error: error.message };
-      }
-
-      logger.info('Onboarding step updated successfully:', data);
-      return { success: true, data };
-
-    } catch (error) {
-      logger.error('Exception updating onboarding step:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update onboarding step' 
-      };
-    }
-  }
-
-  /**
-   * Complete onboarding process
-   */
-  static async completeOnboarding(userId: string): Promise<ProfileUpdateResult> {
-    return this.updateOnboardingStep(userId, 'completed', true);
-  }
-
-  /**
-   * Reset onboarding (development only)
-   */
-  static async resetOnboarding(userId: string): Promise<ProfileUpdateResult> {
-    try {
-      if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Reset not allowed in production' };
-      }
-
-      logger.info('Resetting onboarding for user:', userId);
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          onboarding_step: 'profile',
-          onboarding_completed: false,
-          onboarding_completed_at: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
         .select()
         .single();
 
       if (error) {
-        logger.error('Failed to reset onboarding:', error);
-        return { success: false, error: error.message };
+        logger.error('Onboarding step update error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
       }
 
-      logger.info('Onboarding reset successfully');
-      return { success: true, data };
+      logger.info('Onboarding step updated successfully:', data);
+      return {
+        success: true,
+        data: data
+      };
 
     } catch (error) {
-      logger.error('Exception resetting onboarding:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to reset onboarding' 
+      logger.error('Onboarding step update service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
-} 
+
+  /**
+   * Check if profile exists for user
+   */
+  async profileExists(userId: string): Promise<{ exists: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return { exists: false };
+        }
+        return { exists: false, error: error.message };
+      }
+
+      return { exists: !!data };
+
+    } catch (error) {
+      return { 
+        exists: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Create initial profile for new user
+   */
+  async createInitialProfile(userId: string, email: string, username?: string): Promise<ProfileUpdateResult> {
+    try {
+      logger.info('Creating initial profile for user:', userId);
+
+      const profileData: ProfileData = {
+        id: userId,
+        username: username || '',
+        oauth_provider: 'email',
+        onboarding_step: 'profile',
+        onboarding_completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert(profileData)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('Initial profile creation error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      logger.info('Initial profile created successfully:', data);
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      logger.error('Initial profile creation service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+export const profileService = new ProfileService(); 
