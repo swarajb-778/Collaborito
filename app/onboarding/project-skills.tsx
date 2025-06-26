@@ -28,76 +28,70 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { onboardingService } from '../../src/services';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('ProjectSkills');
 
 const { width, height } = Dimensions.get('window');
 
-// List of project skills
-const PROJECT_SKILLS = [
-  { id: 1, name: 'Accounting' },
-  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
-  { id: 3, name: 'Biotechnology' },
-  { id: 4, name: 'Business' },
-  { id: 5, name: 'Content Creation (e.g. video, copywriting)' },
-  { id: 6, name: 'Counseling & Therapy' },
-  { id: 7, name: 'Data Analysis' },
-  { id: 8, name: 'DevOps' },
-  { id: 9, name: 'Finance' },
-  { id: 10, name: 'Fundraising' },
-  { id: 11, name: 'Graphic Design' },
-  { id: 12, name: 'Legal' },
-  { id: 13, name: 'Manufacturing' },
-  { id: 14, name: 'Marketing' },
-  { id: 15, name: 'Policy' },
-  { id: 16, name: 'Product Management' },
-  { id: 17, name: 'Project Management' },
-  { id: 18, name: 'Public Relations' },
-  { id: 19, name: 'Research' },
-  { id: 20, name: 'Sales' },
-  { id: 21, name: 'Software Development (Backend)' },
-  { id: 22, name: 'Software Development (Frontend)' },
-  { id: 23, name: 'UI/UX Design' },
-  { id: 24, name: 'Other' },
-];
+// Skill interface
+interface Skill {
+  id: string;
+  name: string;
+  category?: string;
+}
+
+// User skill with proficiency level
+interface UserSkill {
+  skill_id: string;
+  proficiency: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  is_offering: boolean;
+}
 
 export default function ProjectSkillsScreen() {
-  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{[key: string]: { proficiency: 'beginner' | 'intermediate' | 'advanced' | 'expert', is_offering: boolean }}>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user } = useAuth();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   
-  // Get the goalId from URL params and convert to number
-  const goalId = params.goalId ? Number(params.goalId) : 2; // Default to 2 if not provided
+  // Get the goal type from navigation
+  const goalType = params.goalType || 'contribute_skills';
   
   // Animation values
   const logoScale = useRef(new RNAnimated.Value(0.8)).current;
   const formOpacity = useRef(new RNAnimated.Value(0)).current;
 
-  // Get subtitle text based on the goalId
+  // Get subtitle text based on the goal
   const getSubtitleText = () => {
-    switch (goalId) {
-      case 1:
+    switch (goalType) {
+      case 'find_cofounder':
         return "Select the skills you'd like your co-founder to bring to your project.";
-      case 2:
+      case 'find_collaborators':
         return "Select the skills you'd like collaborators to bring to your project.";
-      case 3:
+      case 'contribute_skills':
         return "Select the skills you can offer to projects.";
-      case 4:
+      case 'explore_ideas':
         return "Select the skills you're interested in exploring.";
       default:
         return "Select the skills you'd like collaborators to bring to your project.";
     }
   };
 
-  // Get title text based on the goalId
+  // Get title text based on the goal
   const getTitleText = () => {
-    switch (goalId) {
-      case 1:
-      case 2:
+    switch (goalType) {
+      case 'find_cofounder':
+      case 'find_collaborators':
         return "What skills are you looking for?";
-      case 3:
+      case 'contribute_skills':
         return "What skills can you offer?";
-      case 4:
+      case 'explore_ideas':
         return "What skills interest you?";
       default:
         return "What skills are you looking for?";
@@ -105,7 +99,7 @@ export default function ProjectSkillsScreen() {
   };
 
   useEffect(() => {
-    console.log('Rendering ProjectSkillsScreen with goalId:', goalId);
+    logger.info('ProjectSkills mounted with goal type:', goalType);
     
     // Animate logo and form on screen load
     RNAnimated.parallel([
@@ -121,22 +115,81 @@ export default function ProjectSkillsScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Load available skills from backend
+    loadSkills();
   }, []);
 
-  const toggleSkill = (id: number) => {
+  const loadSkills = async () => {
+    try {
+      logger.info('Loading skills from backend...');
+      const result = await onboardingService.getAvailableSkills();
+      
+      if (result.success && result.data) {
+        setAvailableSkills(result.data);
+        logger.info('Skills loaded successfully:', result.data.length);
+      } else {
+        // Fallback to hardcoded skills if backend fails
+        logger.warn('Backend skills failed, using fallback:', result.error);
+        setAvailableSkills([
+          { id: 'accounting', name: 'Accounting' },
+          { id: 'ai_ml', name: 'Artificial Intelligence & Machine Learning' },
+          { id: 'biotech', name: 'Biotechnology' },
+          { id: 'business', name: 'Business' },
+          { id: 'content_creation', name: 'Content Creation (e.g. video, copywriting)' },
+          { id: 'counseling', name: 'Counseling & Therapy' },
+          { id: 'data_analysis', name: 'Data Analysis' },
+          { id: 'devops', name: 'DevOps' },
+          { id: 'finance', name: 'Finance' },
+          { id: 'fundraising', name: 'Fundraising' },
+          { id: 'graphic_design', name: 'Graphic Design' },
+          { id: 'legal', name: 'Legal' },
+          { id: 'manufacturing', name: 'Manufacturing' },
+          { id: 'marketing', name: 'Marketing' },
+          { id: 'policy', name: 'Policy' },
+          { id: 'product_management', name: 'Product Management' },
+          { id: 'project_management', name: 'Project Management' },
+          { id: 'public_relations', name: 'Public Relations' },
+          { id: 'research', name: 'Research' },
+          { id: 'sales', name: 'Sales' },
+          { id: 'backend_dev', name: 'Software Development (Backend)' },
+          { id: 'frontend_dev', name: 'Software Development (Frontend)' },
+          { id: 'ui_ux_design', name: 'UI/UX Design' },
+          { id: 'other', name: 'Other' }
+        ]);
+      }
+    } catch (error) {
+      logger.error('Error loading skills:', error);
+      Alert.alert('Error', 'Failed to load skills. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSkill = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedSkills(prevSelected => {
-      if (prevSelected.includes(id)) {
-        return prevSelected.filter(itemId => itemId !== id);
+      const newSelected = { ...prevSelected };
+      if (newSelected[id]) {
+        delete newSelected[id];
       } else {
-        return [...prevSelected, id];
+        newSelected[id] = {
+          proficiency: 'intermediate',
+          is_offering: goalType === 'contribute_skills'
+        };
       }
+      return newSelected;
     });
   };
 
   const handleContinue = async () => {
-    if (selectedSkills.length === 0) {
+    if (!user) {
+      Alert.alert('Error', 'User session not available. Please sign in again.');
+      return;
+    }
+
+    if (!selectedSkills || Object.keys(selectedSkills).length === 0) {
       Alert.alert('Skills Required', 'Please select at least one skill to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -146,17 +199,39 @@ export default function ProjectSkillsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Selected skills:', selectedSkills.map(id => PROJECT_SKILLS.find(item => item.id === id)?.name));
+      logger.info('Saving skills to database and completing onboarding...');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Convert selected skills to the format expected by the service
+      const userSkills: UserSkill[] = Object.entries(selectedSkills).map(([skillId, config]) => ({
+        skill_id: skillId,
+        proficiency: config.proficiency,
+        is_offering: config.is_offering
+      }));
       
-      // Navigate to main app
-      router.replace('/(tabs)' as any);
+      // Save skills using OnboardingService - this will also mark onboarding as complete
+      const result = await onboardingService.saveSkillsStep(user.id, userSkills);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save skills');
+      }
+      
+      logger.info('Skills saved and onboarding completed successfully!');
+      
+      // Show success message
+      Alert.alert(
+        'Welcome to Collaborito!',
+        'Your onboarding is complete. Let\'s start collaborating!',
+        [
+          {
+            text: 'Get Started',
+            onPress: () => router.replace('/(tabs)' as any)
+          }
+        ]
+      );
       
     } catch (error) {
-      console.error('Error saving project skills:', error);
-      Alert.alert('Error', 'There was a problem saving your project skills. Please try again.');
+      logger.error('Error completing onboarding:', error);
+      Alert.alert('Error', 'There was a problem completing your onboarding. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -164,26 +239,38 @@ export default function ProjectSkillsScreen() {
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    logger.info('Skipping skills, navigating to main app');
     router.replace('/(tabs)' as any);
   };
 
+  // Show loading spinner while loading skills
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loadingText}>Loading skills...</Text>
+      </View>
+    );
+  }
+
   // Render skill item
-  const renderSkillItem = ({ item }: { item: { id: number; name: string } }) => (
+  const renderSkillItem = ({ item }: { item: Skill }) => (
     <TouchableOpacity
       style={[
         styles.skillItem,
-        selectedSkills.includes(item.id) && styles.skillItemSelected
+        selectedSkills?.[item.id] && styles.skillItemSelected
       ]}
       onPress={() => toggleSkill(item.id)}
       activeOpacity={0.7}
     >
-      {selectedSkills.includes(item.id) && (
+      {selectedSkills?.[item.id] && (
         <MaterialIcons name="check" size={18} color="#FFF" style={styles.checkIcon} />
       )}
       <Text 
         style={[
           styles.skillText,
-          selectedSkills.includes(item.id) && styles.skillTextSelected
+          selectedSkills?.[item.id] && styles.skillTextSelected
         ]}
         numberOfLines={2}
       >
@@ -240,9 +327,9 @@ export default function ProjectSkillsScreen() {
             {/* Skills grid */}
             <View style={styles.skillsContainer}>
               <FlatList
-                data={PROJECT_SKILLS}
+                data={availableSkills}
                 renderItem={renderSkillItem}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id}
                 numColumns={2}
                 scrollEnabled={false} // The parent ScrollView handles scrolling
                 contentContainerStyle={styles.skillsList}
@@ -471,5 +558,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+    fontFamily: 'Nunito',
   },
 }); 
