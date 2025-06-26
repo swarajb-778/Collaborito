@@ -152,13 +152,12 @@ export default function OnboardingScreen() {
       console.log('Current user ID:', user.id);
       console.log('Update data:', { firstName, lastName, location, jobTitle });
       
-      // Update user profile with entered data
+      // Update user profile with entered data - now using ProfileService via AuthContext
       const userProfileUpdate = {
         firstName,
         lastName,
-        // You could add these to the User type and save them too
-        // location,
-        // jobTitle,
+        location,
+        jobTitle,
       };
       
       // Save user profile data with additional validation
@@ -168,13 +167,20 @@ export default function OnboardingScreen() {
         throw new Error('Failed to update user profile');
       }
       
-      console.log('Profile updated successfully with:', { firstName, lastName, location, jobTitle });
+      console.log('Profile updated successfully in database with:', { firstName, lastName, location, jobTitle });
       
       // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'There was a problem updating your profile. Please try again.');
+      Alert.alert(
+        'Profile Update Failed', 
+        'There was a problem saving your profile to our servers. Please check your internet connection and try again.',
+        [
+          { text: 'Try Again', onPress: () => handleComplete() },
+          { text: 'Skip for now', onPress: handleSkip, style: 'cancel' }
+        ]
+      );
     } finally {
       setSavingProfile(false);
     }

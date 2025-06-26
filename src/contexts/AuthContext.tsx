@@ -17,6 +17,9 @@ interface User {
   username: string;
   profileImage: string | null;
   oauthProvider: string;
+  location?: string;
+  jobTitle?: string;
+  bio?: string;
   isPending?: boolean; // For users created during rate limits
 }
 
@@ -378,7 +381,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         firstName: userData.firstName,
         lastName: userData.lastName,
         username: userData.username,
-        // Add other fields as needed
+        location: userData.location,
+        jobTitle: userData.jobTitle,
+        bio: userData.bio,
       }, 'interests'); // Move to next step after profile update
 
       if (!result.success) {
