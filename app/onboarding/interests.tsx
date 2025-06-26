@@ -21,6 +21,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { onboardingService } from '../../src/services';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('OnboardingInterests');
 
 // Import image assets
 const CollaboritoLogo = require('../../assets/images/welcome/collaborito-dark-logo.png');
@@ -29,52 +34,28 @@ const CollaboritoTextLogo = require('../../assets/images/welcome/collaborito-tex
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-// List of available interest topics
-const INTERESTS = [
-  { id: 1, name: 'Art' },
-  { id: 2, name: 'Artificial Intelligence & Machine Learning' },
-  { id: 3, name: 'Biotechnology' },
-  { id: 4, name: 'Business' },
-  { id: 5, name: 'Books' },
-  { id: 6, name: 'Climate Change' },
-  { id: 7, name: 'Civic Engagement' },
-  { id: 8, name: 'Dancing' },
-  { id: 9, name: 'Data Science' },
-  { id: 10, name: 'Education' },
-  { id: 11, name: 'Entrepreneurship' },
-  { id: 12, name: 'Fashion' },
-  { id: 13, name: 'Fitness' },
-  { id: 14, name: 'Food' },
-  { id: 15, name: 'Gaming' },
-  { id: 16, name: 'Health & Wellness' },
-  { id: 17, name: 'Investing & Finance' },
-  { id: 18, name: 'Marketing' },
-  { id: 19, name: 'Movies' },
-  { id: 20, name: 'Music' },
-  { id: 21, name: 'Parenting' },
-  { id: 22, name: 'Pets' },
-  { id: 23, name: 'Product Design' },
-  { id: 24, name: 'Reading' },
-  { id: 25, name: 'Real Estate' },
-  { id: 26, name: 'Robotics' },
-  { id: 27, name: 'Science & Tech' },
-  { id: 28, name: 'Social Impact' },
-  { id: 29, name: 'Sports' },
-  { id: 30, name: 'Travel' },
-  { id: 31, name: 'Writing' },
-  { id: 32, name: 'Other' },
-];
+// Interest interface
+interface Interest {
+  id: string;
+  name: string;
+  category?: string;
+}
 
 export default function OnboardingInterestsScreen() {
   const router = useRouter();
-  const [selectedInterests, setSelectedInterests] = useState<number[]>([]);
+  const { user } = useAuth();
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableInterests, setAvailableInterests] = useState<Interest[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    logger.info('OnboardingInterests mounted');
+    
     // Animate logo and form on screen load
     Animated.parallel([
       Animated.timing(logoScale, {
@@ -89,9 +70,66 @@ export default function OnboardingInterestsScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Load available interests from backend
+    loadInterests();
   }, []);
 
-  const toggleInterest = (id: number) => {
+  const loadInterests = async () => {
+    try {
+      logger.info('Loading interests from backend...');
+      const result = await onboardingService.getAvailableInterests();
+      
+      if (result.success && result.data) {
+        setAvailableInterests(result.data);
+        logger.info('Interests loaded successfully:', result.data.length);
+      } else {
+        // Fallback to hardcoded interests if backend fails
+        logger.warn('Backend interests failed, using fallback:', result.error);
+        setAvailableInterests([
+          { id: 'art', name: 'Art' },
+          { id: 'ai_ml', name: 'Artificial Intelligence & Machine Learning' },
+          { id: 'biotech', name: 'Biotechnology' },
+          { id: 'business', name: 'Business' },
+          { id: 'books', name: 'Books' },
+          { id: 'climate', name: 'Climate Change' },
+          { id: 'civic', name: 'Civic Engagement' },
+          { id: 'dancing', name: 'Dancing' },
+          { id: 'data_science', name: 'Data Science' },
+          { id: 'education', name: 'Education' },
+          { id: 'entrepreneurship', name: 'Entrepreneurship' },
+          { id: 'fashion', name: 'Fashion' },
+          { id: 'fitness', name: 'Fitness' },
+          { id: 'food', name: 'Food' },
+          { id: 'gaming', name: 'Gaming' },
+          { id: 'health', name: 'Health & Wellness' },
+          { id: 'finance', name: 'Investing & Finance' },
+          { id: 'marketing', name: 'Marketing' },
+          { id: 'movies', name: 'Movies' },
+          { id: 'music', name: 'Music' },
+          { id: 'parenting', name: 'Parenting' },
+          { id: 'pets', name: 'Pets' },
+          { id: 'product_design', name: 'Product Design' },
+          { id: 'reading', name: 'Reading' },
+          { id: 'real_estate', name: 'Real Estate' },
+          { id: 'robotics', name: 'Robotics' },
+          { id: 'science_tech', name: 'Science & Tech' },
+          { id: 'social_impact', name: 'Social Impact' },
+          { id: 'sports', name: 'Sports' },
+          { id: 'travel', name: 'Travel' },
+          { id: 'writing', name: 'Writing' },
+          { id: 'other', name: 'Other' }
+        ]);
+      }
+    } catch (error) {
+      logger.error('Error loading interests:', error);
+      Alert.alert('Error', 'Failed to load interests. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleInterest = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setSelectedInterests(prevSelected => {
@@ -104,6 +142,11 @@ export default function OnboardingInterestsScreen() {
   };
 
   const handleContinue = async () => {
+    if (!user) {
+      Alert.alert('Error', 'User session not available. Please sign in again.');
+      return;
+    }
+
     if (selectedInterests.length === 0) {
       Alert.alert('Select Interests', 'Please select at least one interest to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -114,29 +157,47 @@ export default function OnboardingInterestsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // In a real app, this would save the selected interests to the user's profile
-      // selectedInterests contains the IDs to be saved
+      logger.info('Saving interests to database...', selectedInterests);
       
-      // Simulate API call
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      // Save interests using OnboardingService
+      const result = await onboardingService.saveInterestsStep(user.id, selectedInterests);
       
-      // Navigate to the goals screen instead of tabs
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save interests');
+      }
+      
+      logger.info('Interests saved successfully, navigating to goals');
+      
+      // Navigate to the goals screen
       router.replace('/onboarding/goals');
       
-                } catch {
-        Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
-      } finally {
+    } catch (error) {
+      logger.error('Error saving interests:', error);
+      Alert.alert('Error', 'There was a problem saving your interests. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    logger.info('Skipping interests, navigating to goals');
     router.replace('/onboarding/goals');
   };
 
+  // Show loading spinner while loading interests
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loadingText}>Loading interests...</Text>
+      </View>
+    );
+  }
+
   // Render interest item
-  const renderInterestItem = ({ item }: { item: { id: number; name: string } }) => (
+  const renderInterestItem = ({ item }: { item: Interest }) => (
     <TouchableOpacity
       style={[
         styles.interestItem,
@@ -210,9 +271,9 @@ export default function OnboardingInterestsScreen() {
               {/* Interests grid */}
               <View style={styles.interestsContainer}>
                 <FlatList
-                  data={INTERESTS}
+                  data={availableInterests}
                   renderItem={renderInterestItem}
-                  keyExtractor={(item) => item.id.toString()}
+                  keyExtractor={(item) => item.id}
                   numColumns={2}
                   scrollEnabled={false} // The parent ScrollView handles scrolling
                   contentContainerStyle={styles.interestsList}
@@ -445,5 +506,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     textDecorationLine: 'underline',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginTop: 20,
   },
 }); 

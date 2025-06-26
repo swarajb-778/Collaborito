@@ -26,45 +26,55 @@ import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { onboardingService } from '../../src/services';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('OnboardingGoals');
 
 const { width, height } = Dimensions.get('window');
 
-// Define the goals options (keeping icons)
+// Define the goal types with proper mapping to database values
 const GOALS = [
   {
-    id: 1,
+    id: 'find_cofounder',
     name: 'Find a co-founder',
     icon: 'people-outline',
-    iconType: 'Ionicons',
-    description: 'Seek a partner to build your vision together.'
+    iconType: 'Ionicons' as const,
+    description: 'Seek a partner to build your vision together.',
+    nextStep: 'project-detail'
   },
   {
-    id: 2,
+    id: 'find_collaborators',
     name: 'Find collaborators',
     icon: 'account-group-outline',
-    iconType: 'MaterialCommunityIcons',
-    description: 'Get help with your project or idea.'
+    iconType: 'MaterialCommunityIcons' as const,
+    description: 'Get help with your project or idea.',
+    nextStep: 'project-detail'
   },
   {
-    id: 3,
+    id: 'contribute_skills',
     name: 'Contribute skills',
     icon: 'hammer-outline',
-    iconType: 'Ionicons',
-    description: 'Offer your expertise to existing projects.'
+    iconType: 'Ionicons' as const,
+    description: 'Offer your expertise to existing projects.',
+    nextStep: 'project-skills'
   },
   {
-    id: 4,
+    id: 'explore_ideas',
     name: 'Explore ideas',
     icon: 'lightbulb-outline',
-    iconType: 'MaterialCommunityIcons',
-    description: 'Discover new ventures and opportunities.'
+    iconType: 'MaterialCommunityIcons' as const,
+    description: 'Discover new ventures and opportunities.',
+    nextStep: 'project-skills'
   },
 ];
 
 export default function OnboardingGoalsScreen() {
-  const [selectedGoal, setSelectedGoal] = useState<number | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   
   // Reanimated shared values for animations
@@ -73,6 +83,8 @@ export default function OnboardingGoalsScreen() {
   const buttonsOpacity = useSharedValue(0);
 
   useEffect(() => {
+    logger.info('OnboardingGoals mounted');
+    
     // Staggered fade-in animations using Reanimated
     headerOpacity.value = withDelay(100, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
     listOpacity.value = withDelay(250, withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) }));
@@ -98,12 +110,17 @@ export default function OnboardingGoalsScreen() {
     };
   });
 
-  const handleSelectGoal = (id: number) => {
+  const handleSelectGoal = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedGoal(id === selectedGoal ? null : id); // Allow deselecting
   };
 
   const handleContinue = async () => {
+    if (!user) {
+      Alert.alert('Error', 'User session not available. Please sign in again.');
+      return;
+    }
+
     if (selectedGoal === null) {
       Alert.alert('Select Goal', 'Please select a goal to continue.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -114,26 +131,37 @@ export default function OnboardingGoalsScreen() {
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      const selectedGoalName = GOALS.find(item => item.id === selectedGoal)?.name;
-      console.log('Selected goal:', selectedGoalName);
+      const selectedGoalData = GOALS.find(goal => goal.id === selectedGoal);
+      logger.info('Saving goal to database:', selectedGoalData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Save goal using OnboardingService
+      const result = await onboardingService.saveGoalsStep(user.id, {
+        goal_type: selectedGoal as any,
+        details: {
+          description: selectedGoalData?.description,
+          selectedAt: new Date().toISOString()
+        }
+      });
       
-      // Redirect based on selected goal
-      if (selectedGoal === 1 || selectedGoal === 2) { // Find a co-founder or Find collaborators
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save goal');
+      }
+      
+      logger.info('Goal saved successfully, navigating based on goal type');
+      
+      // Navigate based on the selected goal's next step
+      const nextStep = selectedGoalData?.nextStep;
+      if (nextStep === 'project-detail') {
         router.replace('/onboarding/project-detail' as any);
-      } else if (selectedGoal === 3 || selectedGoal === 4) { // Contribute skills or Explore ideas
-        router.replace({
-          pathname: '/onboarding/project-skills',
-          params: { goalId: selectedGoal }
-        } as any);
+      } else if (nextStep === 'project-skills') {
+        router.replace('/onboarding/project-skills' as any);
       } else {
-        // Fallback - go directly to the main app
+        // Fallback - go to main app
         router.replace('/(tabs)');
       }
       
     } catch (error) {
-      console.error('Error saving goal:', error);
+      logger.error('Error saving goal:', error);
       Alert.alert('Error', 'There was a problem saving your goal. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -142,6 +170,7 @@ export default function OnboardingGoalsScreen() {
   
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    logger.info('Skipping goals, navigating to main app');
     router.replace('/(tabs)');
   };
 
