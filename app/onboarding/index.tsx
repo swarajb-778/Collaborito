@@ -23,13 +23,17 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
+import { onboardingService } from '../../src/services';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('OnboardingScreen');
 
 // Get screen dimensions like in register.tsx
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { user, updateUser, loading } = useAuth(); // Get loading state from context
+  const { user, loading } = useAuth(); // Get loading state from context
   const [savingProfile, setSavingProfile] = useState(false);
   const [userDataReady, setUserDataReady] = useState(false);
   const insets = useSafeAreaInsets();
@@ -39,8 +43,7 @@ export default function OnboardingScreen() {
   const formOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Log only once when component mounts
-    console.log('Rendering OnboardingScreen with register.tsx style');
+    logger.info('OnboardingScreen mounted with backend integration');
     
     // Animate logo and form on screen load
     Animated.parallel([
@@ -60,16 +63,13 @@ export default function OnboardingScreen() {
 
   // Monitor user data availability
   useEffect(() => {
-    console.log('Onboarding screen received user:', user);
-    console.log('Auth loading state:', loading);
+    logger.info('User state update:', { user: !!user, loading });
     
-    // Check if user data is available
     if (!loading && user && user.id) {
       setUserDataReady(true);
-      console.log('User data is ready for onboarding');
+      logger.info('User data ready for onboarding');
     } else if (!loading && !user) {
-      console.error('No user data available after auth loading completed');
-      // Navigate back to login if no user data after loading
+      logger.error('No user data available after auth loading completed');
       Alert.alert(
         'Session Error',
         'Unable to retrieve user data. Please sign in again.',
@@ -94,6 +94,8 @@ export default function OnboardingScreen() {
     if (user && userDataReady) {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
+      setLocation(user.location || '');
+      setJobTitle(user.jobTitle || '');
     }
   }, [user, userDataReady]);
   
@@ -134,9 +136,8 @@ export default function OnboardingScreen() {
     return true;
   };
 
-  // Enhanced completion logic with better error handling
+  // Enhanced completion logic with backend integration
   const handleComplete = async () => {
-    // Check if user data is available before proceeding
     if (!userDataReady || !user) {
       Alert.alert('Error', 'User session not ready. Please try again.');
       return;
@@ -148,38 +149,31 @@ export default function OnboardingScreen() {
       setSavingProfile(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      console.log('Attempting to update user profile...');
-      console.log('Current user ID:', user.id);
-      console.log('Update data:', { firstName, lastName, location, jobTitle });
+      logger.info('Saving profile step to database...');
       
-      // Update user profile with entered data - now using ProfileService via AuthContext
-      const userProfileUpdate = {
-        firstName,
-        lastName,
-        location,
-        jobTitle,
-      };
+      // Use OnboardingService to save profile data to database
+      const result = await onboardingService.saveProfileStep(user.id, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        location: location.trim(),
+        jobTitle: jobTitle.trim()
+      });
       
-      // Save user profile data with additional validation
-      const updateSuccess = await updateUser(userProfileUpdate);
-      
-      if (!updateSuccess) {
-        throw new Error('Failed to update user profile');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save profile');
       }
       
-      console.log('Profile updated successfully in database with:', { firstName, lastName, location, jobTitle });
+      logger.info('Profile step saved successfully, navigating to interests');
       
       // Navigate to the interests screen
       router.replace('/onboarding/interests' as any);
+      
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error saving profile:', error);
       Alert.alert(
-        'Profile Update Failed', 
-        'There was a problem saving your profile to our servers. Please check your internet connection and try again.',
-        [
-          { text: 'Try Again', onPress: () => handleComplete() },
-          { text: 'Skip for now', onPress: handleSkip, style: 'cancel' }
-        ]
+        'Error', 
+        'There was a problem saving your profile. Please try again.',
+        [{ text: 'OK' }]
       );
     } finally {
       setSavingProfile(false);
@@ -187,9 +181,8 @@ export default function OnboardingScreen() {
   };
 
   const handleSkip = () => {
-    // Allow skipping even if user data is not ready
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log('Skipping onboarding, navigating to interests screen');
+    logger.info('Skipping profile setup, navigating to interests screen');
     router.replace('/onboarding/interests' as any);
   };
 

@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../services/supabase';
 import { authService } from '../services/AuthService';
+import { profileService } from '../services/ProfileService';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { createLogger } from '../utils/logger';
 
@@ -17,10 +18,10 @@ interface User {
   username: string;
   profileImage: string | null;
   oauthProvider: string;
+  isPending?: boolean; // For users created during rate limits
   location?: string;
   jobTitle?: string;
   bio?: string;
-  isPending?: boolean; // For users created during rate limits
 }
 
 interface AuthContextType {
@@ -31,6 +32,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<boolean>;
+  initializeUserProfile: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -177,6 +179,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoggedIn(true);
       
       logger.info('User data updated from Supabase:', userData.id);
+      
+      // Initialize profile in database for new users
+      try {
+        await profileService.createInitialProfile(userData.id, userData.email, userData.username);
+        logger.info('Profile initialized for user:', userData.id);
+      } catch (profileError) {
+        // Profile might already exist, log but don't throw
+        logger.warn('Profile initialization note:', profileError);
+      }
+      
     } catch (error) {
       logger.error('Error handling Supabase user:', error);
     }
@@ -370,37 +382,79 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!user) {
         throw new Error('No user to update');
       }
-
-      logger.info('🔄 Updating user profile in database...');
       
-      // Import ProfileService dynamically to avoid circular imports
-      const { ProfileService } = await import('../services/ProfileService');
+      logger.info('🔄 Updating user profile in database...', userData);
       
-      // Update profile in Supabase database
-      const result = await ProfileService.updateProfile(user.id, {
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        username: userData.username,
-        location: userData.location,
-        jobTitle: userData.jobTitle,
-        bio: userData.bio,
-      }, 'interests'); // Move to next step after profile update
-
-      if (!result.success) {
-        logger.error('❌ Failed to update profile in database:', result.error);
-        throw new Error(result.error || 'Failed to update profile');
+      // Map frontend fields to database fields
+      const profileData: any = {};
+      if (userData.firstName) profileData.first_name = userData.firstName;
+      if (userData.lastName) profileData.last_name = userData.lastName;
+      if (userData.location) profileData.location = userData.location;
+      if (userData.jobTitle) profileData.job_title = userData.jobTitle;
+      if (userData.bio) profileData.bio = userData.bio;
+      
+      // Create full name if first or last name provided
+      if (userData.firstName || userData.lastName) {
+        const firstName = userData.firstName || user.firstName;
+        const lastName = userData.lastName || user.lastName;
+        profileData.full_name = `${firstName} ${lastName}`.trim();
       }
       
-      // Update local user data
+      // Save to Supabase database
+      const result = await profileService.upsertProfile(user.id, profileData);
+      
+      if (!result.success) {
+        logger.error('❌ Failed to update profile in database:', result.error);
+        throw new Error(result.error || 'Failed to update user profile');
+      }
+      
+      // Update local storage and state only after successful database update
       const updatedUser = { ...user, ...userData };
       await storeUserData(updatedUser);
       setUser(updatedUser);
       
-      logger.info('✅ User data updated successfully in database and locally');
+      logger.info('✅ User profile updated successfully in database and locally');
       return true;
       
     } catch (error) {
       logger.error('❌ Error updating user:', error);
+      throw error;
+    }
+  };
+
+  const initializeUserProfile = async (): Promise<boolean> => {
+    try {
+      if (!user) {
+        throw new Error('No user to initialize profile');
+      }
+      
+      logger.info('🚀 Initializing user profile in database...');
+      
+      // Check if profile already exists
+      const existingProfile = await profileService.getProfile(user.id);
+      
+      if (existingProfile.success && existingProfile.data) {
+        logger.info('✅ User profile already exists in database');
+        return true;
+      }
+      
+      // Create initial profile with basic user data
+      const result = await profileService.createInitialProfile(
+        user.id, 
+        user.email, 
+        user.username
+      );
+      
+      if (!result.success) {
+        logger.error('❌ Failed to initialize profile:', result.error);
+        throw new Error(result.error || 'Failed to initialize user profile');
+      }
+      
+      logger.info('✅ User profile initialized successfully in database');
+      return true;
+      
+    } catch (error) {
+      logger.error('❌ Error initializing user profile:', error);
       throw error;
     }
   };
@@ -413,6 +467,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signIn,
     signOut,
     updateUser,
+    initializeUserProfile,
   };
 
   return (
