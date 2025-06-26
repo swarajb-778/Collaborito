@@ -27,7 +27,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username?: string) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
-  updateUser: (userData: Partial<User>) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -362,17 +362,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUser = async (userData: Partial<User>): Promise<void> => {
+  const updateUser = async (userData: Partial<User>): Promise<boolean> => {
     try {
       if (!user) {
         throw new Error('No user to update');
       }
+
+      logger.info('🔄 Updating user profile in database...');
       
+      // Import ProfileService dynamically to avoid circular imports
+      const { ProfileService } = await import('../services/ProfileService');
+      
+      // Update profile in Supabase database
+      const result = await ProfileService.updateProfile(user.id, {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        username: userData.username,
+        // Add other fields as needed
+      }, 'interests'); // Move to next step after profile update
+
+      if (!result.success) {
+        logger.error('❌ Failed to update profile in database:', result.error);
+        throw new Error(result.error || 'Failed to update profile');
+      }
+      
+      // Update local user data
       const updatedUser = { ...user, ...userData };
       await storeUserData(updatedUser);
       setUser(updatedUser);
       
-      logger.info('✅ User data updated locally');
+      logger.info('✅ User data updated successfully in database and locally');
+      return true;
       
     } catch (error) {
       logger.error('❌ Error updating user:', error);
