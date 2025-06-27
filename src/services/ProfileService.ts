@@ -204,6 +204,13 @@ class ProfileService {
     try {
       logger.info('Creating initial profile for user:', userId);
 
+      // Check if profile already exists
+      const existsCheck = await this.profileExists(userId);
+      if (existsCheck.exists) {
+        logger.info('Profile already exists for user:', userId);
+        return this.getProfile(userId);
+      }
+
       const profileData: ProfileData = {
         id: userId,
         onboarding_step: 'profile',
@@ -212,9 +219,12 @@ class ProfileService {
         updated_at: new Date().toISOString()
       };
 
+      // Use upsert instead of insert to handle duplicates gracefully
       const { data, error } = await supabase
         .from('profiles')
-        .insert(profileData)
+        .upsert(profileData, {
+          onConflict: 'id'
+        })
         .select()
         .single();
 
@@ -234,6 +244,57 @@ class ProfileService {
 
     } catch (error) {
       logger.error('Initial profile creation service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Complete onboarding
+   */
+  async completeOnboarding(userId: string): Promise<ProfileUpdateResult> {
+    return this.updateOnboardingStep(userId, 'completed');
+  }
+
+  /**
+   * Reset onboarding (for development)
+   */
+  async resetOnboarding(userId: string): Promise<ProfileUpdateResult> {
+    try {
+      logger.info('Resetting onboarding for user:', userId);
+
+      const resetData: Partial<ProfileData> = {
+        onboarding_step: 'profile',
+        onboarding_completed: false,
+        onboarding_completed_at: undefined,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(resetData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('Onboarding reset error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      logger.info('Onboarding reset successfully:', data);
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      logger.error('Onboarding reset service error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
