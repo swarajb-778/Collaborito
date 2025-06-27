@@ -508,6 +508,13 @@ export class SimpleOnboardingService {
 
       const profile = profileResult.data;
 
+      if (!profile) {
+        return {
+          success: false,
+          error: 'Profile not found'
+        };
+      }
+
       // Get user interests
       const { data: interests, error: interestsError } = await supabase
         .from('user_interests')
