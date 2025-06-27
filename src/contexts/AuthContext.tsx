@@ -180,14 +180,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       logger.info('User data updated from Supabase:', userData.id);
       
-      // Initialize profile in database for new users
-      try {
-        await profileService.createInitialProfile(userData.id, userData.email, userData.username);
-        logger.info('Profile initialized for user:', userData.id);
-      } catch (profileError) {
-        // Profile might already exist, log but don't throw
-        logger.warn('Profile initialization note:', profileError);
-      }
+      // Profile is automatically created by database trigger
+      // No need to create profile manually as trigger handles it
+      logger.info('Profile will be automatically created by database trigger for user:', userData.id);
       
     } catch (error) {
       logger.error('Error handling Supabase user:', error);
