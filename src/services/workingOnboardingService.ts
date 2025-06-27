@@ -244,9 +244,9 @@ class WorkingOnboardingService {
   async saveSkillsStep(
     userId: string, 
     skills: Array<{
-      skillId: string;
+      skill_id: string;
       proficiency: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-      isOffering: boolean;
+      is_offering: boolean;
     }>
   ): Promise<WorkingOnboardingResult> {
     try {
@@ -261,9 +261,9 @@ class WorkingOnboardingService {
       // Insert new skills
       const userSkills = skills.map(skill => ({
         user_id: userId,
-        skill_id: skill.skillId,
+        skill_id: skill.skill_id,
         proficiency: skill.proficiency,
-        is_offering: skill.isOffering
+        is_offering: skill.is_offering
       }));
 
       const { error: insertError } = await supabase

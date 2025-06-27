@@ -29,7 +29,7 @@ import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { onboardingService } from '../../src/services';
+import { workingOnboardingService } from '../../src/services/workingOnboardingService';
 import { createLogger } from '../../src/utils/logger';
 
 const logger = createLogger('ProjectSkills');
@@ -123,7 +123,7 @@ export default function ProjectSkillsScreen() {
   const loadSkills = async () => {
     try {
       logger.info('Loading skills from backend...');
-      const result = await onboardingService.getAvailableSkills();
+              const result = await workingOnboardingService.getAvailableSkills();
       
       if (result.success && result.data) {
         setAvailableSkills(result.data);
@@ -209,7 +209,7 @@ export default function ProjectSkillsScreen() {
       }));
       
       // Save skills using OnboardingService - this will also mark onboarding as complete
-      const result = await onboardingService.saveSkillsStep(user.id, userSkills);
+              const result = await workingOnboardingService.saveSkillsStep(user.id, userSkills);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save skills');
