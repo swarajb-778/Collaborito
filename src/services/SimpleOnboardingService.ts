@@ -476,7 +476,7 @@ export class SimpleOnboardingService {
       }
 
       // Complete onboarding
-      const completeResult = await profileService.updateOnboardingStep(userId, 'completed');
+      const completeResult = await profileService.completeOnboarding(userId);
       if (!completeResult.success) {
         logger.warn('Failed to complete onboarding:', completeResult.error);
       }
@@ -568,7 +568,7 @@ export class SimpleOnboardingService {
       logger.info('Resetting onboarding for user:', userId);
 
       // Reset profile
-      const profileResult = await profileService.updateOnboardingStep(userId, 'profile');
+      const profileResult = await profileService.resetOnboarding(userId);
       if (!profileResult.success) {
         return profileResult;
       }
