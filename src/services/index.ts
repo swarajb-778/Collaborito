@@ -3,7 +3,7 @@
 
 // Core Services
 export { supabase, handleError } from './supabase';
-export * as onboardingService from './onboardingService';
+export * as onboardingService from './OnboardingService';
 
 // Enhanced Onboarding Services
 export { SessionManager } from './SessionManager';
