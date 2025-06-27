@@ -206,8 +206,6 @@ class ProfileService {
 
       const profileData: ProfileData = {
         id: userId,
-        username: username || '',
-        oauth_provider: 'email',
         onboarding_step: 'profile',
         onboarding_completed: false,
         created_at: new Date().toISOString(),
