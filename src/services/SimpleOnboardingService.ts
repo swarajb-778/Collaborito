@@ -31,6 +31,7 @@ export interface SimpleOnboardingResult {
   success: boolean;
   error?: string;
   nextStep?: string;
+  data?: any;
 }
 
 /**
@@ -332,7 +333,7 @@ export class SimpleOnboardingService {
       }
 
       // Update onboarding step
-      const stepResult = await ProfileService.updateOnboardingStep(userId, 'goals');
+      const stepResult = await profileService.updateOnboardingStep(userId, 'goals');
       if (!stepResult.success) {
         logger.warn('Failed to update onboarding step:', stepResult.error);
       }
@@ -388,7 +389,7 @@ export class SimpleOnboardingService {
       const nextStep = goalData.type === 'find_cofounder' ? 'project_details' : 'skills';
       
       // Update onboarding step
-      const stepResult = await ProfileService.updateOnboardingStep(userId, nextStep);
+      const stepResult = await profileService.updateOnboardingStep(userId, nextStep);
       if (!stepResult.success) {
         logger.warn('Failed to update onboarding step:', stepResult.error);
       }
@@ -475,7 +476,7 @@ export class SimpleOnboardingService {
       }
 
       // Complete onboarding
-      const completeResult = await ProfileService.completeOnboarding(userId);
+      const completeResult = await profileService.updateOnboardingStep(userId, 'completed');
       if (!completeResult.success) {
         logger.warn('Failed to complete onboarding:', completeResult.error);
       }
@@ -500,7 +501,7 @@ export class SimpleOnboardingService {
       logger.info('Fetching onboarding progress for user:', userId);
 
       // Get profile data
-      const profileResult = await ProfileService.getProfile(userId);
+      const profileResult = await profileService.getProfile(userId);
       if (!profileResult.success) {
         return profileResult;
       }
@@ -567,7 +568,7 @@ export class SimpleOnboardingService {
       logger.info('Resetting onboarding for user:', userId);
 
       // Reset profile
-      const profileResult = await ProfileService.resetOnboarding(userId);
+      const profileResult = await profileService.updateOnboardingStep(userId, 'profile');
       if (!profileResult.success) {
         return profileResult;
       }
@@ -587,6 +588,70 @@ export class SimpleOnboardingService {
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to reset onboarding' 
+      };
+    }
+  }
+
+  async getAvailableInterests(): Promise<SimpleOnboardingResult> {
+    try {
+      console.log('🔄 Loading available interests...');
+
+      const { data, error } = await supabase
+        .from('interests')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('❌ Interests fetch error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      console.log('✅ Interests loaded successfully');
+      return {
+        success: true,
+        data: data || []
+      };
+
+    } catch (error) {
+      console.error('❌ Interests fetch service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async getAvailableSkills(): Promise<SimpleOnboardingResult> {
+    try {
+      console.log('🔄 Loading available skills...');
+
+      const { data, error } = await supabase
+        .from('skills')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('❌ Skills fetch error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      console.log('✅ Skills loaded successfully');
+      return {
+        success: true,
+        data: data || []
+      };
+
+    } catch (error) {
+      console.error('❌ Skills fetch service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
