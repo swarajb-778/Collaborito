@@ -2,7 +2,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Tabs, useRouter } from 'expo-router';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { Colors } from '../../constants/Colors';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
