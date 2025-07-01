@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -132,7 +132,7 @@ export default function SignInScreen() {
   const buttonScale = useRef(new Animated.Value(0.95)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
   
-  const { signIn, signInWithLinkedIn, signInWithDemo } = useAuth();
+  const { signIn } = useAuth();
   
   useEffect(() => {
     // Animate logo and content on screen load
@@ -218,17 +218,9 @@ export default function SignInScreen() {
       // Log the credentials for debugging
       console.log('Attempting to sign in with:', { email, password });
       
-      // For demo account, use the dedicated demo login function
+      // For demo account, show message that feature is coming soon
       if (email === 'demo@collaborito.com' && password === 'demo123') {
-        // Use the signInWithDemo function from auth context
-        const success = await signInWithDemo();
-        
-        if (success) {
-          // Directly navigate to tabs
-          router.replace('/(tabs)');
-        } else {
-          setError('Demo sign in failed');
-        }
+        Alert.alert('Demo Account', 'Demo login feature is coming soon! Please use a regular account for now.', [{ text: 'OK' }]);
         return;
       }
       
@@ -293,9 +285,8 @@ export default function SignInScreen() {
     ]).start();
     
     try {
-      await signInWithLinkedIn();
-      // After successful LinkedIn sign in, manually navigate to tabs
-      router.replace('/(tabs)');
+      // LinkedIn sign-in feature coming soon
+      Alert.alert('LinkedIn Sign In', 'LinkedIn integration is coming soon! Please use email sign-in for now.', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('LinkedIn Sign In Failed', 'There was an error signing in with LinkedIn. Please try again.', [{ text: 'OK' }]);
       console.error('LinkedIn login error:', error);
@@ -308,23 +299,9 @@ export default function SignInScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLoading(true);
     
-    // Directly use the signInWithDemo function
-    signInWithDemo()
-      .then(success => {
-        if (success) {
-          // Navigate directly to tabs on success
-          router.replace('/(tabs)');
-        } else {
-          setError('Demo sign in failed');
-        }
-      })
-      .catch(error => {
-        console.error('Demo login error:', error);
-        Alert.alert('Demo Sign In Failed', 'There was an error signing in with the demo account. Please try again.', [{ text: 'OK' }]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    // Demo feature coming soon
+    Alert.alert('Demo Account', 'Demo account feature is coming soon! Please create a regular account for now.', [{ text: 'OK' }]);
+    setIsLoading(false);
   };
   
   const navigateToRegister = () => {
