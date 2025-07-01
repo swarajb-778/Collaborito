@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
