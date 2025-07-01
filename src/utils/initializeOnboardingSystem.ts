@@ -9,7 +9,7 @@
 
 import { supabase } from '../services/supabase';
 import { SeedDataService } from '../services/SeedDataService';
-import { SimpleOnboardingManager } from '../services/SimpleOnboardingManager';
+import { optimizedOnboardingService } from '../services/OptimizedOnboardingService';
 import { createLogger } from './logger';
 
 const logger = createLogger('InitializeOnboarding');
@@ -59,21 +59,32 @@ export async function initializeOnboardingSystem(): Promise<boolean> {
       logger.warn('⚠️ Data seeding failed, but continuing');
     }
 
-    // Step 4: Initialize onboarding manager
-    const onboardingManager = SimpleOnboardingManager.getInstance();
-    const managerInitialized = await onboardingManager.initialize();
-    
-    if (managerInitialized) {
-      logger.info('✅ Onboarding manager initialized successfully');
-    } else {
-      logger.error('❌ Onboarding manager initialization failed');
+    // Step 4: Initialize optimized onboarding service
+    try {
+      await optimizedOnboardingService.preloadOnboardingData();
+      logger.info('✅ Optimized onboarding service initialized successfully');
+    } catch (error) {
+      logger.error('❌ Optimized onboarding service initialization failed:', error);
       return false;
     }
 
     // Step 5: Test basic functionality
     try {
-      const progress = await onboardingManager.getCurrentProgress();
-      logger.info('✅ Basic functionality test passed:', progress);
+      // Test by fetching reference data which should be cached
+      const interestsResult = await optimizedOnboardingService.getAvailableInterests();
+      const skillsResult = await optimizedOnboardingService.getAvailableSkills();
+      
+      if (interestsResult.success && skillsResult.success) {
+        const interestsCount = Array.isArray(interestsResult.data) ? interestsResult.data.length : 0;
+        const skillsCount = Array.isArray(skillsResult.data) ? skillsResult.data.length : 0;
+        
+        logger.info('✅ Basic functionality test passed:', {
+          interestsCount,
+          skillsCount
+        });
+      } else {
+        logger.warn('⚠️ Basic functionality test failed: Service calls unsuccessful');
+      }
     } catch (error) {
       logger.warn('⚠️ Basic functionality test failed:', error);
     }
