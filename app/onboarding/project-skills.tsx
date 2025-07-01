@@ -29,7 +29,7 @@ import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { workingOnboardingService } from '../../src/services/workingOnboardingService';
+import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
 
 const logger = createLogger('ProjectSkills');
@@ -123,7 +123,7 @@ export default function ProjectSkillsScreen() {
   const loadSkills = async () => {
     try {
       logger.info('Loading skills from backend...');
-              const result = await workingOnboardingService.getAvailableSkills();
+              const result = await optimizedOnboardingService.getAvailableSkills();
       
       if (result.success && result.data) {
         setAvailableSkills(result.data);
@@ -201,15 +201,15 @@ export default function ProjectSkillsScreen() {
       
       logger.info('Saving skills to database and completing onboarding...');
       
-      // Convert selected skills to the format expected by the service
-      const userSkills: UserSkill[] = Object.entries(selectedSkills).map(([skillId, config]) => ({
-        skill_id: skillId,
+            // Convert selected skills to the format expected by the service
+      const userSkills = Object.entries(selectedSkills).map(([skillId, config]) => ({
+        skillId: skillId,
         proficiency: config.proficiency,
-        is_offering: config.is_offering
+        isOffering: config.is_offering
       }));
       
       // Save skills using OnboardingService - this will also mark onboarding as complete
-              const result = await workingOnboardingService.saveSkillsStep(user.id, userSkills);
+      const result = await optimizedOnboardingService.saveSkills(user.id, userSkills);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save skills');

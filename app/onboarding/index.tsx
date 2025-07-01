@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
-import { workingOnboardingService } from '../../src/services/workingOnboardingService';
+import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
 
 const logger = createLogger('OnboardingScreen');
@@ -152,7 +152,7 @@ export default function OnboardingScreen() {
       logger.info('Saving profile step to database...');
       
       // Use OnboardingService to save profile data to database
-      const result = await workingOnboardingService.saveProfileStep(user.id, {
+      const result = await optimizedOnboardingService.saveProfile(user.id, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         location: location.trim(),

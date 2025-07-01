@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { workingOnboardingService } from '../../src/services/workingOnboardingService';
+import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
 
 const logger = createLogger('OnboardingInterests');
@@ -78,7 +78,7 @@ export default function OnboardingInterestsScreen() {
   const loadInterests = async () => {
     try {
       logger.info('Loading interests from backend...');
-              const result = await workingOnboardingService.getAvailableInterests();
+              const result = await optimizedOnboardingService.getAvailableInterests();
       
       if (result.success && result.data) {
         setAvailableInterests(result.data);
@@ -160,7 +160,7 @@ export default function OnboardingInterestsScreen() {
       logger.info('Saving interests to database...', selectedInterests);
       
       // Save interests using OnboardingService
-              const result = await workingOnboardingService.saveInterestsStep(user.id, selectedInterests);
+              const result = await optimizedOnboardingService.saveInterests(user.id, selectedInterests);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save interests');

@@ -27,7 +27,7 @@ import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { workingOnboardingService } from '../../src/services/workingOnboardingService';
+import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
 
 const logger = createLogger('OnboardingGoals');
@@ -135,8 +135,8 @@ export default function OnboardingGoalsScreen() {
       logger.info('Saving goal to database:', selectedGoalData);
       
       // Save goal using OnboardingService
-              const result = await workingOnboardingService.saveGoalsStep(user.id, {
-        goal_type: selectedGoal as any,
+                      const result = await optimizedOnboardingService.saveGoal(user.id, {
+          goalType: selectedGoal as any,
         details: {
           description: selectedGoalData?.description,
           selectedAt: new Date().toISOString()

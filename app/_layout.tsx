@@ -3,7 +3,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider } from '../src/contexts/AuthContext';
+import { OptimizedAuthProvider } from '../src/contexts/OptimizedAuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { Colors } from '../constants/Colors';
@@ -42,9 +42,9 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-    <AuthProvider>
+    <OptimizedAuthProvider>
       <RootLayoutNav />
-    </AuthProvider>
+    </OptimizedAuthProvider>
     </ErrorBoundary>
   );
 }
