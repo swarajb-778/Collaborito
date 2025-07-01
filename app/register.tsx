@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useAuth } from '../src/contexts/OptimizedAuthContext';
 import { Ionicons, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -145,7 +145,7 @@ export default function RegisterScreen() {
       console.log('Starting signup process with username:', username);
       
       // signUp now throws errors instead of returning boolean
-      await signUp(email, password, username);
+      await signUp(email, password, { firstName: username });
       
       // Wait a moment for user data to be stored
       console.log('Sign up successful, waiting for user data to be set...');
