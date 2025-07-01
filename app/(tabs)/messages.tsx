@@ -12,7 +12,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TextInput } from '@/components/ui/TextInput';
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth } from '@/src/contexts/OptimizedAuthContext';
 
 // Define message type
 interface Sender {

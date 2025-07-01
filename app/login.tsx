@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useAuth } from '../src/contexts/OptimizedAuthContext';
 import { useRouter, router as globalRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   
-  const { signIn, signUp, loading, signInWithLinkedIn, signInWithDemo } = useAuth();
+  const { signIn, signUp, loading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -184,11 +184,9 @@ export default function LoginScreen() {
   
   const handleLinkedInLogin = async () => {
     try {
-      console.log('Starting LinkedIn login');
+      console.log('LinkedIn login feature coming soon');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await signInWithLinkedIn();
-      console.log('LinkedIn sign in successful, navigating to tabs');
-      router.replace('/(tabs)');
+      Alert.alert('LinkedIn Sign In', 'LinkedIn integration is coming soon! Please use email sign-in for now.', [{ text: 'OK' }]);
     } catch (error) {
       console.error('LinkedIn login error:', error);
     }
@@ -200,37 +198,13 @@ export default function LoginScreen() {
       setDemoLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
-      // Clear any previous error messages
-      setEmailError('');
-      setPasswordError('');
+      // Demo feature coming soon
+      Alert.alert('Demo Account', 'Demo login feature is coming soon! Please create a regular account for now.', [{ text: 'OK' }]);
+      console.log('Demo login feature coming soon');
       
-      // Set the demo credentials in the input fields for visual feedback
-      setEmail('demo@collaborito.com');
-      setPassword('password123');
-      
-      console.log('Demo login: authenticating...');
-
-      // Use the dedicated demo sign in function from auth context
-      const success = await signInWithDemo();
-      
-      if (success) {
-        console.log('Demo login successful, navigating to tabs');
-        // Use a timeout to ensure everything is updated before navigation
-        setTimeout(() => {
-          try {
-            globalRouter.replace('/(tabs)');
-          } catch (navError) {
-            console.error('Navigation error:', navError);
-            router.replace('/(tabs)');
-          }
-        }, 300);
-      } else {
-        console.error('Demo login failed');
-        Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');
-      }
     } catch (error) {
       console.error('Demo login error:', error);
-      Alert.alert('Login Failed', 'There was an error signing in with the demo account. Please try again.');
+      Alert.alert('Login Failed', 'There was an error with the demo account. Please try again.');
     } finally {
       setDemoLoading(false);
     }

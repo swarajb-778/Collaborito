@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/ui/Card';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 

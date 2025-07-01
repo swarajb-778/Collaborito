@@ -27,7 +27,7 @@ import Animated, {
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { Card } from '../../components/ui/Card';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';

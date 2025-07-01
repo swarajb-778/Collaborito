@@ -22,7 +22,7 @@ import { Card } from '@/components/ui/Card';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '@/src/services/supabase';
 import { Project, Task, ProjectMember, Profile } from '@/src/types/supabase';
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth } from '@/src/contexts/OptimizedAuthContext';
 
 export default function ProjectDetail() {
   const { id } = useLocalSearchParams();

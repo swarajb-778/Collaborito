@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useAuth } from '../src/contexts/OptimizedAuthContext';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
