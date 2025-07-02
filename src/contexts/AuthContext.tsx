@@ -15,9 +15,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  username: string;
   profileImage: string | null;
-  oauthProvider: string;
   isPending?: boolean; // For users created during rate limits
   location?: string;
   jobTitle?: string;
@@ -169,9 +167,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: supabaseUser.email || '',
         firstName: supabaseUser.user_metadata?.firstName || supabaseUser.user_metadata?.first_name || '',
         lastName: supabaseUser.user_metadata?.lastName || supabaseUser.user_metadata?.last_name || '',
-        username: supabaseUser.user_metadata?.username || '',
-        profileImage: supabaseUser.user_metadata?.avatar_url || null,
-        oauthProvider: supabaseUser.app_metadata?.provider || 'email'
+        profileImage: supabaseUser.user_metadata?.avatar_url || null
       };
 
       await storeUserData(userData);
