@@ -36,10 +36,26 @@ class Logger {
   }
 
   /**
-   * Format the log message with the namespace
+   * Format the log message with the namespace and timestamp
    */
   private formatMessage(message: string): string {
-    return `[${this.namespace}] ${message}`;
+    const timestamp = new Date().toISOString();
+    return `[${timestamp}] [${this.namespace}] ${message}`;
+  }
+
+  /**
+   * Format error objects for better logging
+   */
+  private formatError(error: any): any {
+    if (error instanceof Error) {
+      return {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        ...(error as any) // Include additional error properties
+      };
+    }
+    return error;
   }
 
   /**
@@ -74,7 +90,10 @@ class Logger {
    */
   error(message: string, ...args: any[]): void {
     if (this.shouldLog('error')) {
-      console.error(this.formatMessage(message), ...args);
+      const formattedArgs = args.map(arg => 
+        arg instanceof Error ? this.formatError(arg) : arg
+      );
+      console.error(this.formatMessage(message), ...formattedArgs);
     }
   }
 
@@ -107,6 +126,55 @@ class Logger {
       return await fn();
     } finally {
       console.timeEnd(this.formatMessage(label));
+    }
+  }
+
+  /**
+   * Log a table of data (useful for debugging)
+   */
+  table(data: any[], properties?: string[]): void {
+    if (this.shouldLog('debug')) {
+      console.info(this.formatMessage('Table data:'));
+      if (properties) {
+        console.table(data, properties);
+      } else {
+        console.table(data);
+      }
+    }
+  }
+
+  /**
+   * Log a group of related messages
+   */
+  group(label: string, fn: () => void): void {
+    if (this.shouldLog('debug')) {
+      console.group(this.formatMessage(label));
+      try {
+        fn();
+      } finally {
+        console.groupEnd();
+      }
+    }
+  }
+
+  /**
+   * Log success messages with green color in browser
+   */
+  success(message: string, ...args: any[]): void {
+    if (this.shouldLog('info')) {
+      console.info(`✅ ${this.formatMessage(message)}`, ...args);
+    }
+  }
+
+  /**
+   * Log API calls for debugging
+   */
+  api(method: string, url: string, data?: any, response?: any): void {
+    if (this.shouldLog('debug')) {
+      this.group(`API ${method} ${url}`, () => {
+        if (data) this.debug('Request data:', data);
+        if (response) this.debug('Response:', response);
+      });
     }
   }
 }
