@@ -151,9 +151,32 @@ export const getRedirectUri = () => {
 export const handleError = (error: any, customMessage?: string) => {
   console.error('Supabase error:', error);
   
-  const message = customMessage || 
-    error?.message || 
-    'An unexpected error occurred. Please try again.';
+  // Enhanced error message mapping
+  let message = customMessage || 'An unexpected error occurred. Please try again.';
+  
+  if (error?.code) {
+    switch (error.code) {
+      case 'PGRST116':
+        message = 'No data found matching your request.';
+        break;
+      case '23505':
+        message = 'This item already exists. Please try a different value.';
+        break;
+      case '23503':
+        message = 'Cannot delete this item as it is referenced by other data.';
+        break;
+      case '42501':
+        message = 'You do not have permission to perform this action.';
+        break;
+      case 'invalid_jwt':
+        message = 'Your session has expired. Please sign in again.';
+        break;
+      default:
+        message = error?.message || message;
+    }
+  } else if (error?.message) {
+    message = error.message;
+  }
   
   Alert.alert('Error', message);
   
@@ -161,8 +184,129 @@ export const handleError = (error: any, customMessage?: string) => {
   return {
     error: true,
     message,
+    code: error?.code,
     details: error
   };
+};
+
+/**
+ * Enhanced query wrapper with automatic retry and error handling
+ */
+export const executeSupabaseQuery = async <T>(
+  queryFn: () => Promise<{ data: T; error: any }>,
+  options: {
+    retries?: number;
+    retryDelay?: number;
+    customErrorMessage?: string;
+    suppressAlert?: boolean;
+  } = {}
+): Promise<{ data: T | null; error: any; success: boolean }> => {
+  const { retries = 2, retryDelay = 1000, customErrorMessage, suppressAlert = false } = options;
+  
+  let lastError: any = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await queryFn();
+      
+      if (result.error) {
+        lastError = result.error;
+        
+        // Check if it's a retryable error
+        const isRetryable = ['network_error', 'timeout', '503', '502', '500'].includes(
+          result.error.code || result.error.status
+        );
+        
+        if (attempt < retries && isRetryable) {
+          console.warn(`Query attempt ${attempt + 1} failed, retrying in ${retryDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
+        }
+        
+        // Handle error
+        if (!suppressAlert) {
+          handleError(result.error, customErrorMessage);
+        }
+        
+        return {
+          data: null,
+          error: result.error,
+          success: false
+        };
+      }
+      
+      return {
+        data: result.data,
+        error: null,
+        success: true
+      };
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`Query attempt ${attempt + 1} failed:`, error);
+      
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        continue;
+      }
+    }
+  }
+  
+  // All attempts failed
+  if (!suppressAlert) {
+    handleError(lastError, customErrorMessage);
+  }
+  
+  return {
+    data: null,
+    error: lastError,
+    success: false
+  };
+};
+
+/**
+ * Validate database connection and configuration
+ */
+export const validateSupabaseConnection = async (): Promise<{
+  isValid: boolean;
+  error?: string;
+  details?: any;
+}> => {
+  try {
+    // Test basic connectivity
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      return {
+        isValid: false,
+        error: 'Failed to connect to Supabase',
+        details: error
+      };
+    }
+    
+    // Test database query
+    const { error: queryError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    if (queryError) {
+      return {
+        isValid: false,
+        error: 'Database connection failed',
+        details: queryError
+      };
+    }
+    
+    return { isValid: true };
+    
+  } catch (error) {
+    return {
+      isValid: false,
+      error: 'Connection validation failed',
+      details: error
+    };
+  }
 };
 
 /**
