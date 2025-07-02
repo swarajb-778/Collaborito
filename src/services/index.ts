@@ -4,8 +4,9 @@
 // Core Services
 export { supabase, handleError } from './supabase';
 
-// Optimized Services (Performance Enhanced)
+// Onboarding Services
 export { optimizedOnboardingService } from './OptimizedOnboardingService';
+export { onboardingService } from './OnboardingService';
 
 // Other Available Services
 export { OnboardingAnalytics } from './OnboardingAnalytics';
