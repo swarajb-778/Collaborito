@@ -8,13 +8,11 @@ export interface ProfileData {
   first_name?: string;
   last_name?: string;
   full_name?: string;
-  username?: string;
   location?: string;
   job_title?: string;
   bio?: string;
   avatar_url?: string;
   profile_image_path?: string;
-  oauth_provider?: string;
   onboarding_step?: string;
   onboarding_completed?: boolean;
   onboarding_completed_at?: string;
@@ -200,7 +198,7 @@ class ProfileService {
   /**
    * Create initial profile for new user
    */
-  async createInitialProfile(userId: string, email: string, username?: string): Promise<ProfileUpdateResult> {
+  async createInitialProfile(userId: string, email: string): Promise<ProfileUpdateResult> {
     try {
       logger.info('Creating initial profile for user:', userId);
 
