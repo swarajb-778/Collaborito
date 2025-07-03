@@ -13,6 +13,7 @@ import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withS
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
+import { SecurityService } from '../src/services/SecurityService';
 
 export default function LoginScreen() {
   console.log('Rendering LoginScreen');
@@ -39,6 +40,19 @@ export default function LoginScreen() {
   useEffect(() => {
     cardScale.value = withSpring(1);
     opacity.value = withSpring(1);
+    
+    // Initialize security service
+    const initializeSecurity = async () => {
+      try {
+        const securityService = SecurityService.getInstance();
+        await securityService.initialize();
+        console.log('🔐 Security service initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize security service:', error);
+      }
+    };
+    
+    initializeSecurity();
   }, []);
   
   const cardAnimatedStyle = useAnimatedStyle(() => {
@@ -122,14 +136,65 @@ export default function LoginScreen() {
     if (!validateForm()) {
       return;
     }
+
+    const securityService = SecurityService.getInstance();
+    
+    // Check if account is locked before attempting authentication
+    if (mode === 'signin') {
+      const isLocked = await securityService.isAccountLocked(email);
+      if (isLocked) {
+        const timeRemaining = await securityService.getAccountLockTimeRemaining(email);
+        Alert.alert(
+          'Account Locked',
+          `Your account is temporarily locked due to multiple failed login attempts. Please try again in ${timeRemaining} minutes.`,
+          [{ text: 'OK' }]
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+    }
     
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       console.log(`Authenticating with mode: ${mode}`);
+      
       if (mode === 'signin') {
-        await signIn(email, password);
-        console.log('Sign in successful, navigating to tabs');
-        router.replace('/(tabs)');
+        try {
+          await signIn(email, password);
+          console.log('Sign in successful, navigating to tabs');
+          
+          // Record successful login attempt
+          await securityService.recordLoginAttempt(email, true);
+          
+          // Provide success haptic feedback
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          router.replace('/(tabs)');
+        } catch (signInError: any) {
+          // Record failed login attempt
+          await securityService.recordLoginAttempt(
+            email, 
+            false, 
+            signInError?.message || 'Authentication failed'
+          );
+          
+          // Check if this failure caused an account lockout
+          const isNowLocked = await securityService.isAccountLocked(email);
+          if (isNowLocked) {
+            const timeRemaining = await securityService.getAccountLockTimeRemaining(email);
+            Alert.alert(
+              'Account Locked',
+              `Too many failed login attempts. Your account has been temporarily locked for ${timeRemaining} minutes.`,
+              [{ text: 'OK' }]
+            );
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          } else {
+            // Show regular sign in failed message
+            Alert.alert('Sign In Failed', signInError?.message || 'Invalid email or password');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          }
+          return;
+        }
       } else if (mode === 'signup') {
         console.log('Creating new user account...');
         
@@ -179,6 +244,8 @@ export default function LoginScreen() {
       } else if (mode === 'reset') {
         Alert.alert('Reset Password Failed', errorMessage);
       }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
   
