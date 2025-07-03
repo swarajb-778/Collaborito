@@ -12,7 +12,7 @@ import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withS
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
-import { supabase } from '../src/services/supabase';
+import { passwordResetService } from '../src/services/supabase';
 
 export default function ForgotPasswordScreen() {
   const colorScheme = useColorScheme();
@@ -66,12 +66,10 @@ export default function ForgotPasswordScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.EXPO_PUBLIC_APP_SCHEME || 'collaborito'}://reset-password`,
-      });
+      const result = await passwordResetService.sendResetEmail(email);
       
-      if (error) {
-        throw error;
+      if (!result.success && result.error) {
+        throw new Error(result.error);
       }
       
       setIsSuccess(true);
@@ -86,6 +84,8 @@ export default function ForgotPasswordScreen() {
         errorMessage = 'No account found with this email address.';
       } else if (error.message?.includes('rate limit')) {
         errorMessage = 'Too many requests. Please wait a moment before trying again.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       Alert.alert('Reset Failed', errorMessage, [{ text: 'OK' }]);

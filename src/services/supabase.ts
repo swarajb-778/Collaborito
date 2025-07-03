@@ -190,6 +190,141 @@ export const handleError = (error: any, customMessage?: string) => {
 };
 
 /**
+ * Password reset utilities
+ */
+export const passwordResetService = {
+  /**
+   * Sends a password reset email to the user
+   */
+  async sendResetEmail(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${getBaseUrl()}reset-password`,
+      });
+
+      if (error) {
+        console.error('Password reset error:', error);
+        return {
+          success: false,
+          error: error.message || 'Failed to send reset email'
+        };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Password reset service error:', error);
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred'
+      };
+    }
+  },
+
+  /**
+   * Updates user password after reset
+   */
+  async updatePassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        console.error('Password update error:', error);
+        return {
+          success: false,
+          error: error.message || 'Failed to update password'
+        };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Password update service error:', error);
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred'
+      };
+    }
+  },
+
+  /**
+   * Sets session from reset link parameters
+   */
+  async setSessionFromResetLink(accessToken: string, refreshToken: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      if (error) {
+        console.error('Session set error:', error);
+        return {
+          success: false,
+          error: 'Invalid or expired reset link'
+        };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Set session service error:', error);
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred'
+      };
+    }
+  },
+
+  /**
+   * Validates password strength
+   */
+  validatePasswordStrength(password: string): { 
+    isValid: boolean; 
+    strength: number; 
+    feedback: string[] 
+  } {
+    const feedback: string[] = [];
+    let strength = 0;
+
+    if (password.length >= 8) {
+      strength += 25;
+    } else {
+      feedback.push('Password must be at least 8 characters long');
+    }
+
+    if (/[a-z]/.test(password)) {
+      strength += 25;
+    } else {
+      feedback.push('Include lowercase letters');
+    }
+
+    if (/[A-Z]/.test(password)) {
+      strength += 25;
+    } else {
+      feedback.push('Include uppercase letters');
+    }
+
+    if (/[0-9]/.test(password)) {
+      strength += 25;
+    } else {
+      feedback.push('Include numbers');
+    }
+
+    if (/[^A-Za-z0-9]/.test(password)) {
+      strength += 25;
+    } else {
+      feedback.push('Include special characters');
+    }
+
+    return {
+      isValid: strength >= 75,
+      strength: Math.min(strength, 100),
+      feedback
+    };
+  }
+};
+
+/**
  * Enhanced query wrapper with automatic retry and error handling
  */
 export const executeSupabaseQuery = async <T>(

@@ -12,7 +12,7 @@ import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withS
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
-import { supabase } from '../src/services/supabase';
+import { passwordResetService } from '../src/services/supabase';
 
 export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
@@ -42,11 +42,11 @@ export default function ResetPasswordScreen() {
     if (error) {
       setLinkError(error_description as string || error as string || 'Reset link is invalid or expired');
     } else if (access_token && refresh_token) {
-      supabase.auth.setSession({
-        access_token: access_token as string,
-        refresh_token: refresh_token as string,
-      }).then((result) => {
-        if (result.error) {
+      passwordResetService.setSessionFromResetLink(
+        access_token as string,
+        refresh_token as string
+      ).then((result) => {
+        if (!result.success) {
           setLinkError('Invalid or expired reset link. Please request a new one.');
         }
       });
@@ -90,9 +90,11 @@ export default function ResetPasswordScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     try {
-      const { error } = await supabase.auth.updateUser({ password: password });
+      const result = await passwordResetService.updatePassword(password);
       
-      if (error) throw error;
+      if (!result.success && result.error) {
+        throw new Error(result.error);
+      }
       
       setIsSuccess(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
