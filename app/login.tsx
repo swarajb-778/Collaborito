@@ -468,7 +468,10 @@ export default function LoginScreen() {
               {mode === 'signin' && (
                 <>
                   <TouchableOpacity 
-                    onPress={() => toggleMode('reset')}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.navigate('/forgot-password' as any);
+                    }}
                     style={styles.footerButton}
                   >
                     <Text style={[styles.footerText, { color: 'white' }]}>
