@@ -198,13 +198,12 @@ export default function LoginScreen() {
       setDemoLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
-      // Demo feature coming soon
-      Alert.alert('Demo Account', 'Demo login feature is coming soon! Please create a regular account for now.', [{ text: 'OK' }]);
-      console.log('Demo login feature coming soon');
+      // Navigate to guest mode screen
+      router.push('/guest-mode' as any);
       
     } catch (error) {
       console.error('Demo login error:', error);
-      Alert.alert('Login Failed', 'There was an error with the demo account. Please try again.');
+      Alert.alert('Navigation Failed', 'There was an error opening the demo. Please try again.');
     } finally {
       setDemoLoading(false);
     }
@@ -288,7 +287,7 @@ export default function LoginScreen() {
                 <ActivityIndicator size="small" color="white" />
               ) : (
                 <Text style={[styles.demoButtonText, { color: 'white' }]}>
-                  Use Demo Account
+                  Try Free Demo - No Sign-up Required
                 </Text>
               )}
             </TouchableOpacity>
