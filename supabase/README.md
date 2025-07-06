@@ -35,21 +35,21 @@ For first-time setup, it's best to run the SQL script in separate parts to avoid
 2. Go to the SQL Editor
 3. Run the script in this order:
    ```
-   -- First run just the schema creation part (tables only)
-   -- Lines 1-140 in complete_setup.sql
+   -- First run the schema creation script
+   -- supabase/1_schema.sql
 
-   -- Then run the triggers and functions
-   -- Lines 141-250 in complete_setup.sql
+   -- Then run the functions and triggers script
+   -- supabase/2_functions.sql
 
    -- Finally run the RLS policies
-   -- Lines 251-end in complete_setup.sql
+   -- supabase/3_security.sql
    ```
 
 This approach prevents errors with column references in RLS policies before tables are fully created.
 
 #### Option 2: Using the Supabase CLI
 
-If you have the Supabase CLI installed, you can run:
+If you have the Supabase CLI installed, you can apply all migrations from the `supabase/migrations` directory:
 
 ```bash
 supabase db push
