@@ -11,7 +11,8 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Animated as RNAnimated
+  Animated as RNAnimated,
+  Pressable
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/ui/Card';
@@ -29,9 +30,14 @@ import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import AvatarManager from '../../components/ui/AvatarManager';
+import { createLogger } from '../../src/utils/logger';
+import { useThemeColor } from '../../src/hooks/useThemeColor';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
+
+const logger = createLogger('ProfileScreen');
 
 // Design system colors
 const COLORS = {
@@ -83,6 +89,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('Bio');
   const insets = useSafeAreaInsets();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   
   // Determine theme-based styles
   const theme = colorScheme === 'dark' ? COLORS.dark : COLORS.light;
@@ -154,6 +161,38 @@ export default function ProfileScreen() {
       case 'linkedin_mock': return 'LinkedIn (Demo)';
       default: return user.oauthProvider;
     }
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsSigningOut(true);
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              await signOut();
+              logger.info('User signed out successfully');
+            } catch (error) {
+              logger.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            } finally {
+              setIsSigningOut(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+  
+  const handleAvatarChange = (url: string) => {
+    logger.info('Avatar updated:', url);
+    // Here you could update the user context or make additional API calls
   };
 
   const renderTabContent = () => {
@@ -246,7 +285,7 @@ export default function ProfileScreen() {
               
               <TouchableOpacity
                 style={[styles.actionButton, { borderBottomWidth: 0 }]}
-                onPress={signOut}
+                onPress={handleSignOut}
               >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.accent }]}>
                   <FontAwesome5 name="sign-out-alt" size={18} color="#FFF" />
@@ -308,23 +347,17 @@ export default function ProfileScreen() {
           >
             {/* Enhanced Profile Card */}
             <RNAnimated.View style={[styles.avatarWrapper, { transform: [{ scale: logoScale }] }]}>
-              <TouchableOpacity onPress={handleAvatarPress}>
-                <Animated.View style={[styles.avatarContainer, animatedStyles]}>
-                  <LinearGradient
-                    colors={[COLORS.primary, COLORS.secondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.avatarBorder}
-                  >
-                    <View style={styles.avatarInnerBorder}>
-                      <Image 
-                        source={{ uri: getProfileImage() }} 
-                        style={styles.avatar} 
-                      />
-                    </View>
-                  </LinearGradient>
-                </Animated.View>
-              </TouchableOpacity>
+              <AvatarManager
+                size="xl"
+                showBorder={true}
+                editable={true}
+                onAvatarChange={handleAvatarChange}
+                userInfo={{
+                  name: user?.user_metadata?.full_name || user?.email || 'User',
+                  email: user?.email || '',
+                  avatarUrl: user?.user_metadata?.avatar_url,
+                }}
+              />
               
               <Text style={[styles.name, { color: theme.text }]}>{getDisplayName()}</Text>
               <Text style={[styles.email, { color: theme.textMuted }]}>{user?.email || USER.email}</Text>
