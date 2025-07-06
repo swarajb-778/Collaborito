@@ -1,9 +1,12 @@
--- Performance Optimizations for Onboarding System
--- This file contains RPC functions, indexes, and other database optimizations
+-- =================================================================
+-- Collaborito: Performance Optimizations
+-- Description: This migration applies performance enhancements,
+-- including indexes, optimized RPC functions, and a
+-- materialized view for analytics.
+-- =================================================================
 
--- =====================================================
--- INDEXES FOR PERFORMANCE
--- =====================================================
+-- Part 1: Indexes for Performance
+-- =================================================================
 
 -- Indexes for faster user-specific queries
 CREATE INDEX IF NOT EXISTS idx_user_interests_user_id ON user_interests(user_id);
@@ -19,9 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_user_skills_with_skill ON user_skills(user_id, sk
 CREATE INDEX IF NOT EXISTS idx_interests_category_name ON interests(category, name);
 CREATE INDEX IF NOT EXISTS idx_skills_category_name ON skills(category, name);
 
--- =====================================================
--- OPTIMIZED RPC FUNCTIONS
--- =====================================================
+-- Part 2: Optimized RPC Functions
+-- =================================================================
 
 -- Function to get complete onboarding progress in a single query
 CREATE OR REPLACE FUNCTION get_user_onboarding_progress(user_id_param UUID)
@@ -85,7 +87,6 @@ RETURNS JSON AS $$
 DECLARE
   updated_profile profiles%ROWTYPE;
 BEGIN
-  -- Upsert profile with optimized single query
   INSERT INTO profiles (
     id, first_name, last_name, full_name, location, job_title, bio, 
     onboarding_step, updated_at
@@ -118,14 +119,11 @@ CREATE OR REPLACE FUNCTION save_user_interests_optimized(
 )
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- Delete existing interests and insert new ones in a transaction
   DELETE FROM user_interests WHERE user_id = user_id_param;
   
-  -- Insert new interests using unnest for batch insert
   INSERT INTO user_interests (user_id, interest_id)
   SELECT user_id_param, unnest(interest_ids_param);
   
-  -- Update onboarding step
   UPDATE profiles 
   SET onboarding_step = 'goals', updated_at = NOW()
   WHERE id = user_id_param;
@@ -143,13 +141,11 @@ CREATE OR REPLACE FUNCTION save_user_goal_optimized(
 )
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- Deactivate existing goals and insert new one
   UPDATE user_goals SET is_active = false WHERE user_id = user_id_param;
   
   INSERT INTO user_goals (user_id, goal_type, details, is_active)
   VALUES (user_id_param, goal_type_param, details_param, true);
   
-  -- Update onboarding step
   UPDATE profiles 
   SET onboarding_step = next_step_param, updated_at = NOW()
   WHERE id = user_id_param;
@@ -167,10 +163,8 @@ RETURNS BOOLEAN AS $$
 DECLARE
   skill_record JSON;
 BEGIN
-  -- Delete existing skills
   DELETE FROM user_skills WHERE user_id = user_id_param;
   
-  -- Insert new skills from JSON array
   FOR skill_record IN SELECT * FROM json_array_elements(skills_param)
   LOOP
     INSERT INTO user_skills (user_id, skill_id, proficiency, is_offering)
@@ -182,7 +176,6 @@ BEGIN
     );
   END LOOP;
   
-  -- Complete onboarding
   UPDATE profiles 
   SET 
     onboarding_step = 'completed',
@@ -195,11 +188,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- MATERIALIZED VIEW FOR ANALYTICS
--- =====================================================
+-- Part 3: Materialized View for Analytics
+-- =================================================================
 
--- Materialized view for fast onboarding analytics
 CREATE MATERIALIZED VIEW IF NOT EXISTS onboarding_analytics AS
 SELECT 
   COUNT(*) as total_users,
@@ -213,10 +204,8 @@ SELECT
 FROM profiles
 GROUP BY onboarding_step;
 
--- Index on materialized view
 CREATE INDEX IF NOT EXISTS idx_onboarding_analytics_step ON onboarding_analytics(onboarding_step);
 
--- Function to refresh analytics (can be called periodically)
 CREATE OR REPLACE FUNCTION refresh_onboarding_analytics()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -225,11 +214,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- BATCH OPERATION FUNCTIONS
--- =====================================================
+-- Part 4: Batch Operation and Performance Monitoring Functions
+-- =================================================================
 
--- Function to batch load interests and skills for caching
 CREATE OR REPLACE FUNCTION get_onboarding_reference_data()
 RETURNS JSON AS $$
 BEGIN
@@ -248,11 +235,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- PERFORMANCE MONITORING FUNCTIONS
--- =====================================================
-
--- Function to get onboarding performance metrics
 CREATE OR REPLACE FUNCTION get_onboarding_performance_metrics()
 RETURNS JSON AS $$
 BEGIN
@@ -285,55 +267,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- ROW LEVEL SECURITY FOR NEW FUNCTIONS
--- =====================================================
+-- Part 5: RLS for New Functions
+-- =================================================================
 
--- Grant execute permissions to authenticated users
 GRANT EXECUTE ON FUNCTION get_user_onboarding_progress(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_profile_step_optimized(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_user_interests_optimized(UUID, UUID[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_user_goal_optimized(UUID, TEXT, JSONB, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_user_skills_and_complete(UUID, JSON) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_onboarding_reference_data() TO authenticated;
-
--- Grant analytics functions to service role only
 GRANT EXECUTE ON FUNCTION refresh_onboarding_analytics() TO service_role;
-GRANT EXECUTE ON FUNCTION get_onboarding_performance_metrics() TO service_role;
-
--- =====================================================
--- OPTIMIZATION NOTES
--- =====================================================
-
-/*
-Performance Improvements Implemented:
-
-1. INDEXES:
-   - User-specific indexes for faster lookups
-   - Composite indexes for join optimization
-   - Category-based indexes for ordered results
-
-2. RPC FUNCTIONS:
-   - Single query for complete onboarding progress (eliminates N+1 problem)
-   - Batch operations for profile, interests, goals, and skills
-   - Transactional integrity maintained
-
-3. MATERIALIZED VIEW:
-   - Pre-computed analytics for dashboard performance
-   - Refreshable when needed
-
-4. BATCH OPERATIONS:
-   - Reduced database round trips
-   - Optimized insert/update patterns
-
-5. CACHING SUPPORT:
-   - Reference data function for interests/skills caching
-   - Structured for frontend cache implementation
-
-Expected Performance Gains:
-- 70-80% reduction in database queries for progress fetching
-- 50-60% faster profile/interests/skills saving
-- Near-instant analytics loading with materialized view
-- Significant reduction in network latency
-*/ 
-
+GRANT EXECUTE ON FUNCTION get_onboarding_performance_metrics() TO service_role; 
