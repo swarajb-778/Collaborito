@@ -247,7 +247,7 @@ export class OnboardingStepManager {
    */
   async saveInterestsStep(data: InterestsData): Promise<boolean> {
     try {
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         throw new Error('No user ID available');
       }
@@ -425,7 +425,7 @@ export class OnboardingStepManager {
    */
   async saveProjectDetailsStep(data: ProjectDetailsData): Promise<boolean> {
     try {
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         throw new Error('No user ID available');
       }
@@ -528,7 +528,7 @@ export class OnboardingStepManager {
    */
   async saveSkillsStep(data: SkillsData): Promise<boolean> {
     try {
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         throw new Error('No user ID available');
       }
