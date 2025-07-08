@@ -77,7 +77,7 @@ export class OnboardingStepManager {
   /**
    * Check if current user is a mock user (development mode)
    */
-  private async isMockUser(): Promise<boolean> {
+  async isMockUser(): Promise<boolean> {
     const userId = await this.getCurrentUserId();
     return !userId || userId.startsWith('new') || userId.includes('mock');
   }
@@ -85,7 +85,7 @@ export class OnboardingStepManager {
   /**
    * Get current user ID from session or auth context
    */
-  private async getCurrentUserId(): Promise<string | null> {
+  async getCurrentUserId(): Promise<string | null> {
     try {
       const session = await this.sessionManager.getSession();
       if (session?.user?.id) {
@@ -104,7 +104,7 @@ export class OnboardingStepManager {
   /**
    * Validate UUID format
    */
-  private isValidUUID(uuid: string): boolean {
+  isValidUUID(uuid: string): boolean {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
