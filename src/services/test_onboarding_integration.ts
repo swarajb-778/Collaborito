@@ -82,7 +82,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ Session management test passed');
       
     } catch (error) {
-      this.addTestResult('session_management', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('session_management', false, errorMessage);
       logger.error('❌ Session management test failed:', error);
     }
   }
@@ -110,7 +111,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ Flow coordinator test passed');
       
     } catch (error) {
-      this.addTestResult('flow_coordinator', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('flow_coordinator', false, errorMessage);
       logger.error('❌ Flow coordinator test failed:', error);
     }
   }
@@ -150,7 +152,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ Interest operations test passed');
       
     } catch (error) {
-      this.addTestResult('interest_operations', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('interest_operations', false, errorMessage);
       logger.error('❌ Interest operations test failed:', error);
     }
   }
