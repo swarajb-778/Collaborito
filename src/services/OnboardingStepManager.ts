@@ -76,8 +76,8 @@ export class OnboardingStepManager {
   /**
    * Check if current user is a mock user (development mode)
    */
-  private isMockUser(): boolean {
-    const userId = this.getCurrentUserId();
+  private async isMockUser(): Promise<boolean> {
+    const userId = await this.getCurrentUserId();
     return !userId || userId.startsWith('new') || userId.includes('mock');
   }
 
@@ -156,7 +156,7 @@ export class OnboardingStepManager {
    */
   async saveProfileStep(data: ProfileData): Promise<boolean> {
     try {
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         throw new Error('No user ID available');
       }
@@ -335,7 +335,7 @@ export class OnboardingStepManager {
    */
   async saveGoalsStep(data: GoalsData): Promise<boolean> {
     try {
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         throw new Error('No user ID available');
       }
