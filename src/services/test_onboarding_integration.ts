@@ -196,7 +196,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ Skill operations test passed');
       
     } catch (error) {
-      this.addTestResult('skill_operations', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('skill_operations', false, errorMessage);
       logger.error('❌ Skill operations test failed:', error);
     }
   }
@@ -241,7 +242,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ UUID validation test passed');
       
     } catch (error) {
-      this.addTestResult('uuid_validation', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('uuid_validation', false, errorMessage);
       logger.error('❌ UUID validation test failed:', error);
     }
   }
@@ -284,7 +286,8 @@ export class OnboardingIntegrationTest {
       logger.info('✅ Mock user handling test passed');
       
     } catch (error) {
-      this.addTestResult('mock_user_handling', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('mock_user_handling', false, errorMessage);
       logger.error('❌ Mock user handling test failed:', error);
     }
   }
