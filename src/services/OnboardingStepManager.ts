@@ -850,7 +850,7 @@ export class OnboardingStepManager {
   async validateAndSaveStep(stepId: string, data: any): Promise<boolean> {
     try {
       const validation = await this.flowCoordinator.validateStepData(stepId, data);
-      if (!validation.valid) {
+      if (!validation.isValid) {
         throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
       }
 
@@ -927,7 +927,7 @@ export class OnboardingStepManager {
   /**
    * Get user email from session
    */
-  private async getUserEmail(): string {
+  private async getUserEmail(): Promise<string> {
     try {
       const session = await this.sessionManager.getSession();
       return session?.user?.email || 'unknown@example.com';
