@@ -187,7 +187,7 @@ export class SessionManager {
       }
 
       // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      let { data: authData, error: authError } = await supabase.auth.signUp({
         email: profileData.email,
         password: profileData.password || 'temp_password_' + Date.now(),
         options: {
@@ -214,8 +214,7 @@ export class SessionManager {
             throw new Error(`User exists but cannot sign in: ${signInError.message}`);
           }
 
-          authData.user = signInData.user;
-          authData.session = signInData.session;
+          authData = signInData;
         } else {
           throw authError;
         }
@@ -243,7 +242,7 @@ export class SessionManager {
         updated_at: new Date().toISOString()
       };
 
-      const { data: profileData_response, error: profileError } = await supabase
+      let { data: profileData_response, error: profileError } = await supabase
         .from('profiles')
         .insert([profileInsertData])
         .select('id')
