@@ -855,7 +855,8 @@ export class OnboardingStepManager {
         throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
       }
 
-      return await this.flowCoordinator.executeStep(stepId, data);
+      const result = await this.flowCoordinator.executeStep(stepId, data);
+      return result.success || false;
     } catch (error) {
       logger.error(`Failed to validate and save step ${stepId}:`, error);
       throw error;
