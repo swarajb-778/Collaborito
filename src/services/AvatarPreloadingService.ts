@@ -147,10 +147,10 @@ class AvatarPreloadingService {
       }
 
       const userAvatars = teamMembers
-        ?.filter(member => member.users?.avatar_url)
+        ?.filter(member => member.users && (member.users as any).avatar_url)
         .map(member => ({
           userId: member.user_id,
-          avatarUrl: member.users.avatar_url,
+          avatarUrl: (member.users as any).avatar_url,
         })) || [];
 
       if (userAvatars.length > 0) {
@@ -352,10 +352,10 @@ class AvatarPreloadingService {
       }
 
       const userAvatars = connections
-        ?.filter(conn => conn.users?.avatar_url)
+        ?.filter(conn => conn.users && (conn.users as any).avatar_url)
         .map(conn => ({
           userId: conn.connected_user_id,
-          avatarUrl: conn.users.avatar_url,
+          avatarUrl: (conn.users as any).avatar_url,
         })) || [];
 
       if (userAvatars.length > 0) {
@@ -404,10 +404,10 @@ class AvatarPreloadingService {
       }
 
       const userAvatars = chatParticipants
-        ?.filter(participant => participant.users?.avatar_url)
+        ?.filter(participant => participant.users && (participant.users as any).avatar_url)
         .map(participant => ({
           userId: participant.participant_id,
-          avatarUrl: participant.users.avatar_url,
+          avatarUrl: (participant.users as any).avatar_url,
         })) || [];
 
       if (userAvatars.length > 0) {
@@ -437,10 +437,10 @@ class AvatarPreloadingService {
       }
 
       const userAvatars = projectMembers
-        ?.filter(member => member.users?.avatar_url && member.user_id !== userId)
+        ?.filter(member => member.users && (member.users as any).avatar_url && member.user_id !== userId)
         .map(member => ({
           userId: member.user_id,
-          avatarUrl: member.users.avatar_url,
+          avatarUrl: (member.users as any).avatar_url,
         })) || [];
 
       if (userAvatars.length > 0) {
