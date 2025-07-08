@@ -34,6 +34,10 @@ interface OnboardingState {
   supabaseUserId?: string;
   created_at: string;
   updated_at: string;
+  profile?: any;
+  goals?: any;
+  skills?: any[];
+  projects?: any[];
 }
 
 export interface MockSession {
