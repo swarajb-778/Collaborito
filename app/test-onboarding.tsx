@@ -32,16 +32,16 @@ export default function TestOnboardingScreen() {
     initializeSystem();
     
     // Set up event listeners
-    onboardingManager.on('progress-updated', (newProgress) => {
+    onboardingManager.on('progress-updated', (newProgress: any) => {
       setProgress(newProgress);
       addLog(`Progress updated: ${newProgress.currentStep} (${newProgress.percentageComplete}%)`);
     });
 
-    onboardingManager.on('step-completed', (step, data) => {
+    onboardingManager.on('step-completed', (step: string, data: any) => {
       addLog(`Step completed: ${step}`);
     });
 
-    onboardingManager.on('error-occurred', (error) => {
+    onboardingManager.on('error-occurred', (error: any) => {
       addLog(`Error: ${error.message}`);
     });
 
@@ -96,8 +96,8 @@ export default function TestOnboardingScreen() {
         Alert.alert('Error', result.error || 'Profile step failed');
       }
     } catch (error) {
-      addLog(`Profile step error: ${error.message}`);
-      Alert.alert('Error', error.message);
+      addLog(`Profile step error: ${(error as Error).message}`);
+      Alert.alert('Error', (error as Error).message);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +112,7 @@ export default function TestOnboardingScreen() {
       addLog(`Found ${interests.length} interests`);
       
       if (interests.length > 0) {
-        const selectedInterests = interests.slice(0, 3).map(i => i.id);
+        const selectedInterests = interests.slice(0, 3).map((i: any) => i.id);
         const result = await onboardingManager.executeStep('interests', {
           interestIds: selectedInterests
         });
