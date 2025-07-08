@@ -144,36 +144,40 @@ class AvatarAccessibilityService {
       this.onAccessibilityChange('screenReader', isEnabled);
     });
 
-    // Listen for high contrast changes (iOS only)
+    // Listen for accessibility changes (using supported events only)
     if (Platform.OS === 'ios' && AccessibilityInfo.addEventListener) {
-      AccessibilityInfo.addEventListener('highContrastChanged', (isEnabled: boolean) => {
-        this.isHighContrastEnabled = isEnabled;
-        this.onAccessibilityChange('highContrast', isEnabled);
-      });
+      // Listen for reduce motion changes (supported event)
+      try {
+        AccessibilityInfo.addEventListener('reduceMotionChanged', (isEnabled: boolean) => {
+          this.isReduceMotionEnabled = isEnabled;
+          this.onAccessibilityChange('reduceMotion', isEnabled);
+        });
+      } catch (error) {
+        logger.warn('reduceMotionChanged event not supported:', error);
+      }
 
-      // Listen for reduce motion changes
-      AccessibilityInfo.addEventListener('reduceMotionChanged', (isEnabled: boolean) => {
-        this.isReduceMotionEnabled = isEnabled;
-        this.onAccessibilityChange('reduceMotion', isEnabled);
-      });
+      // Listen for bold text changes (supported event)
+      try {
+        AccessibilityInfo.addEventListener('boldTextChanged', (isEnabled: boolean) => {
+          this.isBoldTextEnabled = isEnabled;
+          this.onAccessibilityChange('boldText', isEnabled);
+        });
+      } catch (error) {
+        logger.warn('boldTextChanged event not supported:', error);
+      }
 
-      // Listen for large text changes
-      AccessibilityInfo.addEventListener('largeTextChanged', (isEnabled: boolean) => {
-        this.isLargeTextEnabled = isEnabled;
-        this.onAccessibilityChange('largeText', isEnabled);
-      });
+      // Listen for reduce transparency changes (supported event)
+      try {
+        AccessibilityInfo.addEventListener('reduceTransparencyChanged', (isEnabled: boolean) => {
+          this.isReduceTransparencyEnabled = isEnabled;
+          this.onAccessibilityChange('reduceTransparency', isEnabled);
+        });
+      } catch (error) {
+        logger.warn('reduceTransparencyChanged event not supported:', error);
+      }
 
-      // Listen for bold text changes
-      AccessibilityInfo.addEventListener('boldTextChanged', (isEnabled: boolean) => {
-        this.isBoldTextEnabled = isEnabled;
-        this.onAccessibilityChange('boldText', isEnabled);
-      });
-
-      // Listen for reduce transparency changes
-      AccessibilityInfo.addEventListener('reduceTransparencyChanged', (isEnabled: boolean) => {
-        this.isReduceTransparencyEnabled = isEnabled;
-        this.onAccessibilityChange('reduceTransparency', isEnabled);
-      });
+      // Note: highContrastChanged and largeTextChanged events are not available in current RN versions
+      // These states are checked synchronously in initializeAccessibility() method instead
     }
   }
 
