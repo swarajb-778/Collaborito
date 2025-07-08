@@ -695,7 +695,7 @@ export class OnboardingStepManager {
       }
 
       // For mock users, return empty array (no saved interests)
-      if (this.isMockUser()) {
+      if (await this.isMockUser()) {
         logger.info('🔧 Mock user detected, returning empty interests');
         return [];
       }
@@ -726,7 +726,7 @@ export class OnboardingStepManager {
       logger.error('Error loading user interests:', error);
       
       // For mock users, return empty array
-      if (this.isMockUser()) {
+      if (await this.isMockUser()) {
         return [];
       }
       
