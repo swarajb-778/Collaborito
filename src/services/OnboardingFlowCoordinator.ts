@@ -279,7 +279,7 @@ export class OnboardingFlowCoordinator {
   /**
    * Get next step in flow
    */
-  private getNextStep(currentStep: string): string | undefined {
+  getNextStep(currentStep: string): string | undefined {
     const stepIndex = this.flowSteps.indexOf(currentStep);
     if (stepIndex >= 0 && stepIndex < this.flowSteps.length - 1) {
       return this.flowSteps[stepIndex + 1];
@@ -303,6 +303,28 @@ export class OnboardingFlowCoordinator {
    */
   getFlowSteps(): string[] {
     return [...this.flowSteps];
+  }
+
+  /**
+   * Get all flow steps (alias for getFlowSteps)
+   */
+  getSteps(): string[] {
+    return this.getFlowSteps();
+  }
+
+  /**
+   * Get next step route for navigation
+   */
+  getNextStepRoute(currentStep: string): string | null {
+    const routes: { [key: string]: string } = {
+      'profile': '/onboarding/interests',
+      'interests': '/onboarding/goals',
+      'goals': '/onboarding/project-detail',
+      'project_details': '/onboarding/project-skills',
+      'skills': '/(tabs)'
+    };
+
+    return routes[currentStep] || null;
   }
 
   /**
