@@ -38,6 +38,67 @@ export class OnboardingFlowCoordinator {
   }
 
   /**
+   * Initialize the onboarding flow
+   */
+  async initializeFlow(): Promise<{ success: boolean; currentStep?: string; error?: string }> {
+    try {
+      logger.info('Initializing onboarding flow');
+      
+      // Get current user state
+      const currentSession = await this.sessionManager.getSession();
+      if (!currentSession) {
+        return {
+          success: false,
+          error: 'No user session found'
+        };
+      }
+
+      // Get current progress
+      const flowState = await this.getCurrentFlowState();
+      
+      logger.info(`Flow initialized - current step: ${flowState.currentStep}`);
+      return {
+        success: true,
+        currentStep: flowState.currentStep
+      };
+    } catch (error) {
+      logger.error('Failed to initialize flow:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Initialization failed'
+      };
+    }
+  }
+
+  /**
+   * Get current progress information
+   */
+  getProgress(): { currentStep: string; percentageComplete: number; completedSteps: string[] } {
+    try {
+      const onboardingState = this.sessionManager.getOnboardingState();
+      const currentStep = onboardingState?.currentStep || 'profile';
+      const currentIndex = this.flowSteps.indexOf(currentStep);
+      const percentageComplete = currentIndex >= 0 ? Math.round((currentIndex / (this.flowSteps.length - 1)) * 100) : 0;
+      
+      // Get completed steps
+      const completedSteps = this.flowSteps.slice(0, currentIndex);
+      
+      return {
+        currentStep,
+        percentageComplete,
+        completedSteps
+      };
+    } catch (error) {
+      logger.error('Failed to get progress:', error);
+      return {
+        currentStep: 'profile',
+        percentageComplete: 0,
+        completedSteps: []
+      };
+    }
+  }
+
+  /**
    * Get current flow state
    */
   async getCurrentFlowState(): Promise<FlowState> {
@@ -254,6 +315,86 @@ export class OnboardingFlowCoordinator {
     } catch (error) {
       logger.error('Failed to check flow completion:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get current step name
+   */
+  getCurrentStep(): string {
+    const onboardingState = this.sessionManager.getOnboardingState();
+    return onboardingState?.currentStep || 'profile';
+  }
+
+  /**
+   * Get step information
+   */
+  async getStepInfo(stepId: string): Promise<{ name: string; required: boolean; completed: boolean }> {
+    try {
+      const currentStep = this.getCurrentStep();
+      const currentIndex = this.flowSteps.indexOf(currentStep);
+      const stepIndex = this.flowSteps.indexOf(stepId);
+      
+      return {
+        name: stepId,
+        required: stepIndex < this.flowSteps.length - 1, // All steps except 'completed' are required
+        completed: stepIndex < currentIndex
+      };
+    } catch (error) {
+      logger.error('Failed to get step info:', error);
+      return {
+        name: stepId,
+        required: true,
+        completed: false
+      };
+    }
+  }
+
+  /**
+   * Update progress
+   */
+  async updateProgress(): Promise<void> {
+    try {
+      // Trigger progress recalculation by getting current state
+      await this.getCurrentFlowState();
+      logger.debug('Progress updated');
+    } catch (error) {
+      logger.error('Failed to update progress:', error);
+    }
+  }
+
+  /**
+   * Validate step data
+   */
+  validateStepData(stepId: string, data: any): Promise<FlowValidation> {
+    return this.validateStep(stepId);
+  }
+
+  /**
+   * Execute a step with data
+   */
+  async executeStep(stepId: string, data: any): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Validate the step data first
+      const validation = await this.validateStepData(stepId, data);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: `Step validation failed: ${validation.errors.join(', ')}`
+        };
+      }
+
+      // Save the step data through the step manager
+      await this.sessionManager.saveOnboardingStep(stepId, data);
+      
+      logger.info(`Step ${stepId} executed successfully`);
+      return { success: true };
+    } catch (error) {
+      logger.error(`Failed to execute step ${stepId}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Step execution failed'
+      };
     }
   }
 } 
