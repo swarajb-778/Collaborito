@@ -310,14 +310,16 @@ export class OnboardingIntegrationTest {
         
       } catch (error) {
         // Expected for invalid UUIDs - error should be handled gracefully
-        logger.info('Expected error caught for invalid UUIDs:', error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.info('Expected error caught for invalid UUIDs:', errorMessage);
       }
       
       this.addTestResult('error_recovery', true);
       logger.info('✅ Error recovery test passed');
       
     } catch (error) {
-      this.addTestResult('error_recovery', false, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.addTestResult('error_recovery', false, errorMessage);
       logger.error('❌ Error recovery test failed:', error);
     }
   }
