@@ -28,6 +28,7 @@ export interface ProjectDetailsData {
   name: string;
   description: string;
   lookingFor: string[];
+  tags?: string[];
   timeline?: string;
 }
 
