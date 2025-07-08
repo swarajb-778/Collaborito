@@ -28,7 +28,7 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { optimizedOnboardingService } from '../../src/services/index';
 import { createLogger } from '../../src/utils/logger';
 
