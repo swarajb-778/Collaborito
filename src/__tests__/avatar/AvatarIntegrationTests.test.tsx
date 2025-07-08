@@ -10,7 +10,7 @@ import AvatarAccessibilityService from '../../utils/avatarAccessibility';
 import { Avatar } from '../../../components/ui/Avatar';
 import { AvatarManager } from '../../../components/ui/AvatarManager';
 import { AvatarPickerModal } from '../../../components/ui/AvatarPickerModal';
-import { AvatarUploadProgress } from '../../../components/ui/AvatarUploadProgress';
+import { AvatarUploadProgressModal, AvatarUploadProgressProps } from '../../../components/ui/AvatarUploadProgress';
 import { AvatarList } from '../../../components/ui/AvatarList';
 import { createLogger } from '../../utils/logger';
 
@@ -389,9 +389,9 @@ describe('Avatar Integration Tests', () => {
   describe('Avatar List Integration', () => {
     test('renders team avatars with preloading', async () => {
       const teamMembers = [
-        { userId: 'user-1', userName: 'John Doe', avatarUrl: 'https://example.com/1.jpg' },
-        { userId: 'user-2', userName: 'Jane Smith', avatarUrl: 'https://example.com/2.jpg' },
-        { userId: 'user-3', userName: 'Bob Johnson', avatarUrl: 'https://example.com/3.jpg' },
+        { id: 'user-1', name: 'John Doe', avatarUrl: 'https://example.com/1.jpg' },
+        { id: 'user-2', name: 'Jane Smith', avatarUrl: 'https://example.com/2.jpg' },
+        { id: 'user-3', name: 'Bob Johnson', avatarUrl: 'https://example.com/3.jpg' },
       ];
 
       const props = {
@@ -408,7 +408,7 @@ describe('Avatar Integration Tests', () => {
       // Check preloading was triggered
       expect(mockPreloadingService.preloadAvatarList).toHaveBeenCalledWith(
         teamMembers.map(member => ({
-          userId: member.userId,
+          userId: member.id,
           avatarUrl: member.avatarUrl,
         })),
         'medium',
@@ -422,8 +422,8 @@ describe('Avatar Integration Tests', () => {
 
     test('handles overflow with "+N more" indicator', async () => {
       const manyMembers = Array.from({ length: 10 }, (_, i) => ({
-        userId: `user-${i}`,
-        userName: `User ${i}`,
+        id: `user-${i}`,
+        name: `User ${i}`,
         avatarUrl: `https://example.com/${i}.jpg`,
       }));
 
@@ -510,9 +510,8 @@ describe('Avatar Integration Tests', () => {
   describe('Avatar Accessibility Integration', () => {
     test('provides comprehensive accessibility support', async () => {
       const props = {
-        userId: 'accessibility-user',
-        userName: 'Accessible User',
-        avatarUrl: 'https://example.com/accessible.jpg',
+        name: 'Accessible User',
+        uri: 'https://example.com/accessible.jpg',
         size: 'md' as const,
         onPress: jest.fn(),
       };
@@ -604,9 +603,8 @@ describe('Avatar Integration Tests', () => {
       // Step 1: Initial avatar load
       const { rerender } = render(
         <Avatar
-          userId={userId}
-          userName={userName}
-          avatarUrl={null}
+          name={userName}
+          uri={undefined}
           size="lg"
           onPress={jest.fn()}
         />
