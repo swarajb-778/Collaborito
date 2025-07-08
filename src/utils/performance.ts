@@ -113,13 +113,19 @@ class PerformanceMonitor {
    * Get memory usage information
    */
   getMemoryUsage(): { used: number; total: number } | null {
-    if (!this.isEnabled || typeof performance === 'undefined' || !performance.memory) {
+    if (!this.isEnabled || typeof performance === 'undefined') {
+      return null;
+    }
+    
+    // Check if performance.memory is available (browser-specific)
+    const perfWithMemory = performance as any;
+    if (!perfWithMemory.memory) {
       return null;
     }
     
     return {
-      used: Math.round(performance.memory.usedJSHeapSize / 1048576), // MB
-      total: Math.round(performance.memory.totalJSHeapSize / 1048576) // MB
+      used: Math.round(perfWithMemory.memory.usedJSHeapSize / 1048576), // MB
+      total: Math.round(perfWithMemory.memory.totalJSHeapSize / 1048576) // MB
     };
   }
   
