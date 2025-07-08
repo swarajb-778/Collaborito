@@ -256,8 +256,8 @@ export class OnboardingIntegrationTest {
       logger.info('Testing mock user handling...');
       
       // Test mock user detection
-      const isMockUser = this.stepManager.isMockUser();
-      const userId = this.stepManager.getCurrentUserId();
+      const isMockUser = await this.stepManager.isMockUser();
+      const userId = await this.stepManager.getCurrentUserId();
       
       logger.info(`Mock user detected: ${isMockUser}, User ID: ${userId}`);
       
