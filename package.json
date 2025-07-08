@@ -18,7 +18,13 @@
     "fix-packages": "node scripts/diagnose-expo.js --fix",
     "validate-modules": "node scripts/validate-module-resolution.js",
     "fix-modules": "node scripts/fix-module-resolution-complete.js",
-    "health-check": "node scripts/validate-app-health.js"
+    "health-check": "node scripts/validate-app-health.js",
+    "type-check": "npx tsc --noEmit --skipLibCheck",
+    "type-check-strict": "npx tsc --noEmit",
+    "type-watch": "npx tsc --noEmit --watch --skipLibCheck",
+    "integration-test": "node -e \"require('./src/services/test_onboarding_integration.ts').runOnboardingIntegrationTests()\"",
+    "validate-typescript": "npm run type-check && echo '✅ TypeScript validation passed!'",
+    "dev-check": "npm run type-check && npm run health-check && echo '🚀 Development environment validated!'"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
