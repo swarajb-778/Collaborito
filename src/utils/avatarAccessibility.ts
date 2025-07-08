@@ -1,5 +1,7 @@
 import { AccessibilityInfo, Platform, AccessibilityActionInfo } from 'react-native';
-import { logger } from './logger';
+import { createLogger } from './logger';
+
+const logger = createLogger('AvatarAccessibility');
 
 export interface AvatarAccessibilityProps {
   // Basic accessibility props
@@ -98,15 +100,15 @@ class AvatarAccessibilityService {
       
       // Check if high contrast is enabled (iOS only)
       if (Platform.OS === 'ios') {
-        this.isHighContrastEnabled = await AccessibilityInfo.isHighContrastEnabled?.() || false;
+        this.isHighContrastEnabled = await AccessibilityInfo.isHighTextContrastEnabled?.() || false;
       }
 
       // Check if reduce motion is enabled
       this.isReduceMotionEnabled = await AccessibilityInfo.isReduceMotionEnabled?.() || false;
 
-      // Check if large text is enabled (iOS only)
+      // Check if bold text is enabled (iOS only)  
       if (Platform.OS === 'ios') {
-        this.isLargeTextEnabled = await AccessibilityInfo.isLargeTextEnabled?.() || false;
+        this.isLargeTextEnabled = await AccessibilityInfo.isBoldTextEnabled?.() || false;
       }
 
       // Check if bold text is enabled (iOS only)

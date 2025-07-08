@@ -1,7 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'react-native';
-import { logger } from '../utils/logger';
+import { createLogger } from '../utils/logger';
 import { supabase } from './supabase';
+
+const logger = createLogger('AvatarPreloadingService');
 
 export interface PreloadRequest {
   userId: string;
@@ -357,7 +359,7 @@ class AvatarPreloadingService {
         })) || [];
 
       if (userAvatars.length > 0) {
-        await this.preloadAvatarList(userAvatars, 'medium', 'profile');
+        await this.preloadAvatarList(userAvatars, 'medium', 'suggestion');
       }
     } catch (error) {
       logger.error('Error preloading user connections', { userId, error });

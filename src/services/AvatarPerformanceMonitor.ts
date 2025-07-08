@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Dimensions } from 'react-native';
-import { logger } from '../utils/logger';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('AvatarPerformanceMonitor');
 
 export interface PerformanceMetrics {
   componentRenderTime: number;
@@ -105,7 +107,7 @@ class AvatarPerformanceMonitor {
   private readonly RECOMMENDATIONS_KEY = 'avatar_performance_recommendations';
   private readonly MAX_METRICS = 1000;
   private readonly ANALYSIS_INTERVAL = 30000; // 30 seconds
-  private analysisTimer: NodeJS.Timeout | null = null;
+  private analysisTimer: ReturnType<typeof setInterval> | null = null;
 
   private thresholds: PerformanceThresholds = {
     renderTime: {

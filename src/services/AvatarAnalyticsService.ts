@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logger } from '../utils/logger';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('AvatarAnalyticsService');
 
 export interface AvatarAnalyticsEvent {
   event: string;
