@@ -129,8 +129,9 @@ export default function TestOnboardingScreen() {
         Alert.alert('Warning', 'No interests available. Please seed data first.');
       }
     } catch (error) {
-      addLog(`Interests step error: ${error.message}`);
-      Alert.alert('Error', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      addLog(`Interests step error: ${errorMessage}`);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -154,8 +155,9 @@ export default function TestOnboardingScreen() {
         Alert.alert('Error', result.error || 'Goals step failed');
       }
     } catch (error) {
-      addLog(`Goals step error: ${error.message}`);
-      Alert.alert('Error', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      addLog(`Goals step error: ${errorMessage}`);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -177,8 +179,9 @@ export default function TestOnboardingScreen() {
         Alert.alert('Error', 'Data seeding failed');
       }
     } catch (error) {
-      addLog(`Data seeding error: ${error.message}`);
-      Alert.alert('Error', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      addLog(`Data seeding error: ${errorMessage}`);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -201,8 +204,9 @@ export default function TestOnboardingScreen() {
         Alert.alert('Error', 'Onboarding reset failed');
       }
     } catch (error) {
-      addLog(`Reset error: ${error.message}`);
-      Alert.alert('Error', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      addLog(`Reset error: ${errorMessage}`);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
