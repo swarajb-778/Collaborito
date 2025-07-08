@@ -271,7 +271,7 @@ export class OnboardingFlowCoordinator {
   /**
    * Check if can proceed to next step
    */
-  private canProceedToNextStep(currentStep: string): boolean {
+  canProceedToNextStep(currentStep: string): boolean {
     const stepIndex = this.flowSteps.indexOf(currentStep);
     return stepIndex >= 0 && stepIndex < this.flowSteps.length - 1;
   }
