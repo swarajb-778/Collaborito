@@ -2,9 +2,17 @@
  * Logger Utility
  * 
  * A centralized logging utility that provides better debugging capabilities
- * with support for different log levels and environments.
+ * with support for different log levels, environments, and performance tracking.
  */
 import { DEBUG } from '../constants/AppConfig';
+
+interface LogEntry {
+  timestamp: string;
+  namespace: string;
+  level: LogLevel;
+  message: string;
+  args: any[];
+}
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -19,6 +27,8 @@ class Logger {
   private readonly namespace: string;
   private readonly isEnabled: boolean;
   private logLevel: LogLevel;
+  private static logHistory: LogEntry[] = [];
+  private static readonly MAX_HISTORY = 100;
 
   constructor(namespace: string) {
     this.namespace = namespace;
@@ -59,9 +69,30 @@ class Logger {
   }
 
   /**
+   * Add log entry to history for debugging purposes
+   */
+  private addToHistory(level: LogLevel, message: string, args: any[]): void {
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      namespace: this.namespace,
+      level,
+      message,
+      args: args.map(arg => arg instanceof Error ? this.formatError(arg) : arg)
+    };
+
+    Logger.logHistory.push(entry);
+    
+    // Keep only the last MAX_HISTORY entries
+    if (Logger.logHistory.length > Logger.MAX_HISTORY) {
+      Logger.logHistory = Logger.logHistory.slice(-Logger.MAX_HISTORY);
+    }
+  }
+
+  /**
    * Log debug level message
    */
   debug(message: string, ...args: any[]): void {
+    this.addToHistory('debug', message, args);
     if (this.shouldLog('debug')) {
       console.debug(this.formatMessage(message), ...args);
     }
@@ -71,6 +102,7 @@ class Logger {
    * Log info level message
    */
   info(message: string, ...args: any[]): void {
+    this.addToHistory('info', message, args);
     if (this.shouldLog('info')) {
       console.info(this.formatMessage(message), ...args);
     }
@@ -80,6 +112,7 @@ class Logger {
    * Log warning level message
    */
   warn(message: string, ...args: any[]): void {
+    this.addToHistory('warn', message, args);
     if (this.shouldLog('warn')) {
       console.warn(this.formatMessage(message), ...args);
     }
@@ -89,6 +122,7 @@ class Logger {
    * Log error level message
    */
   error(message: string, ...args: any[]): void {
+    this.addToHistory('error', message, args);
     if (this.shouldLog('error')) {
       const formattedArgs = args.map(arg => 
         arg instanceof Error ? this.formatError(arg) : arg
@@ -176,6 +210,48 @@ class Logger {
         if (response) this.debug('Response:', response);
       });
     }
+  }
+
+  /**
+   * Get recent log history (static method)
+   */
+  static getLogHistory(level?: LogLevel): LogEntry[] {
+    if (level) {
+      return Logger.logHistory.filter(entry => entry.level === level);
+    }
+    return [...Logger.logHistory];
+  }
+
+  /**
+   * Clear log history (static method)
+   */
+  static clearHistory(): void {
+    Logger.logHistory = [];
+  }
+
+  /**
+   * Export logs for debugging (static method)
+   */
+  static exportLogs(): string {
+    return JSON.stringify(Logger.logHistory, null, 2);
+  }
+
+  /**
+   * Get log statistics (static method)
+   */
+  static getLogStats(): Record<LogLevel, number> {
+    const stats: Record<LogLevel, number> = {
+      debug: 0,
+      info: 0,
+      warn: 0,
+      error: 0
+    };
+
+    Logger.logHistory.forEach(entry => {
+      stats[entry.level]++;
+    });
+
+    return stats;
   }
 }
 
