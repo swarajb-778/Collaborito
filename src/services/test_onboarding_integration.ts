@@ -275,8 +275,8 @@ export class OnboardingIntegrationTest {
         
         // Test mock goals saving
         const goalData = {
-          goalType: 'find_collaborators' as const,
-          details: { test: true }
+          goals: ['find_collaborators', 'expand_network'],
+          primaryGoal: 'find_collaborators'
         };
         
         await this.stepManager.saveGoalsStep(goalData);
