@@ -12,7 +12,9 @@ import { AvatarManager } from '../../../components/ui/AvatarManager';
 import { AvatarPickerModal } from '../../../components/ui/AvatarPickerModal';
 import { AvatarUploadProgress } from '../../../components/ui/AvatarUploadProgress';
 import { AvatarList } from '../../../components/ui/AvatarList';
-import { logger } from '../../utils/logger';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('AvatarIntegrationTests');
 
 // Mock external dependencies
 jest.mock('../../services/supabase', () => ({

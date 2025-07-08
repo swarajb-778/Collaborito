@@ -84,16 +84,16 @@ export class OnboardingStepManager {
   /**
    * Get current user ID from session or auth context
    */
-  private getCurrentUserId(): string | null {
+  private async getCurrentUserId(): Promise<string | null> {
     try {
-      const session = this.sessionManager.getSession();
+      const session = await this.sessionManager.getSession();
       if (session?.user?.id) {
         return session.user.id;
       }
       
       // Fallback: try to get from flow coordinator's state
       const state = this.sessionManager.getOnboardingState();
-      return state?.userId || null;
+      return state?.user_id || null;
     } catch (error) {
       logger.warn('Could not get current user ID:', error);
       return null;
