@@ -15,6 +15,9 @@ export interface ExtendedUser extends User {
   location?: string;
   jobTitle?: string;
   bio?: string;
+  username?: string;
+  profileImage?: string;
+  oauthProvider?: string;
   onboardingStep?: string;
   onboardingCompleted?: boolean;
   onboardingProgress?: OnboardingProgress;

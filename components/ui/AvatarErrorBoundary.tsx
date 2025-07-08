@@ -1,7 +1,9 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { logger } from '../../src/utils/logger';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('AvatarErrorBoundary');
 
 interface Props {
   children: ReactNode;
