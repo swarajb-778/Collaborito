@@ -20,6 +20,8 @@ interface User {
   location?: string;
   jobTitle?: string;
   bio?: string;
+  username?: string;
+  oauthProvider?: string;
 }
 
 interface AuthContextType {
@@ -178,7 +180,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Initialize profile in database for new users
       try {
-        await profileService.createInitialProfile(userData.id, userData.email, userData.username);
+        await profileService.createInitialProfile(userData.id, userData.email);
         logger.info('Profile initialized for user:', userData.id);
       } catch (profileError) {
         // Profile might already exist, log but don't throw
@@ -437,8 +439,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Create initial profile with basic user data
       const result = await profileService.createInitialProfile(
         user.id, 
-        user.email, 
-        user.username
+        user.email
       );
       
       if (!result.success) {
