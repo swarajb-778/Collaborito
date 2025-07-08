@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/OptimizedAuthContext';
 
 export function useAuthRedirect() {
   const { user, loading } = useAuth();

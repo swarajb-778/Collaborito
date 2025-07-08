@@ -3,7 +3,7 @@ import { AvatarUploadService } from '../services/AvatarUploadService';
 import { ProfileImageService } from '../services/ProfileImageService';
 import { ImagePickerResult } from '../services/ImagePickerService';
 import { createLogger } from '../utils/logger';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/OptimizedAuthContext';
 
 const logger = createLogger('useAvatar');
 

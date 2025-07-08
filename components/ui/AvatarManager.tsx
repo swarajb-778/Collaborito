@@ -8,7 +8,7 @@ import AvatarPickerModal from './AvatarPickerModal';
 import AvatarUploadProgressModal from './AvatarUploadProgress';
 import { ImagePickerResult } from '../../src/services/ImagePickerService';
 import { AvatarUploadService, AvatarUploadProgress } from '../../src/services/AvatarUploadService';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 
 const logger = createLogger('AvatarManager');
 
