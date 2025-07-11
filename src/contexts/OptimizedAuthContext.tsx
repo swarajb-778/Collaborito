@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../services/supabase';
 import { optimizedOnboardingService, ProfileData, OnboardingProgress } from '../services/OptimizedOnboardingService';
 import { securityMonitoringService } from '../services/SecurityMonitoringService';
+import { sessionTimeoutService } from '../services/SessionTimeoutService';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('OptimizedAuthContext');
@@ -54,6 +55,12 @@ interface OptimizedAuthContextType {
   registerTrustedDevice: () => Promise<void>;
   getSecurityMetrics: () => Promise<any>;
   updateSessionActivity: () => Promise<void>;
+  
+  // Session timeout management
+  getSessionInfo: () => { isActive: boolean; timeRemaining: number; lastActivity: Date | null; warningShown: boolean };
+  extendSession: (additionalMinutes?: number) => void;
+  setSessionTimeoutCallback: (callback: () => void) => void;
+  setSessionWarningCallback: (callback: (minutes: number) => void) => void;
 }
 
 const OptimizedAuthContext = createContext<OptimizedAuthContextType | undefined>(undefined);
@@ -146,6 +153,9 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
         
         // Initialize security monitoring
         await securityMonitoringService.initialize();
+        
+        // Initialize session timeout service
+        await sessionTimeoutService.initialize();
         
         // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -300,6 +310,9 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
         // Start secure session monitoring
         await securityMonitoringService.startSecureSession(data.user.id, data.session?.access_token || '');
         
+        // Start session timeout monitoring
+        await sessionTimeoutService.startSession(data.user.id, data.session?.access_token || '');
+        
         return { 
           success: true, 
           user: extendedUser,
@@ -332,6 +345,9 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
       
       // End security session
       await securityMonitoringService.endSession();
+      
+      // End session timeout monitoring
+      await sessionTimeoutService.endSession();
       
       const { error } = await supabase.auth.signOut();
       
@@ -531,9 +547,36 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
   const updateSessionActivity = useCallback(async (): Promise<void> => {
     try {
       await securityMonitoringService.updateSessionActivity();
+      sessionTimeoutService.recordActivity();
     } catch (error) {
       logger.error('❌ Failed to update session activity:', error);
     }
+  }, []);
+
+  // Session timeout management methods
+  const getSessionInfo = useCallback(() => {
+    return sessionTimeoutService.getSessionInfo();
+  }, []);
+
+  const extendSession = useCallback((additionalMinutes?: number) => {
+    sessionTimeoutService.extendSession(additionalMinutes);
+    logger.info('⏰ Session extended by user request');
+  }, []);
+
+  const setSessionTimeoutCallback = useCallback((callback: () => void) => {
+    sessionTimeoutService.setSessionTimeoutCallback(async () => {
+      logger.info('🔒 Session timeout triggered, signing out...');
+      try {
+        await signOut();
+      } catch (error) {
+        logger.error('❌ Error during timeout logout:', error);
+      }
+      callback();
+    });
+  }, [signOut]);
+
+  const setSessionWarningCallback = useCallback((callback: (minutes: number) => void) => {
+    sessionTimeoutService.setSessionWarningCallback(callback);
   }, []);
 
   const value: OptimizedAuthContextType = {
@@ -553,7 +596,11 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
     isDeviceTrusted,
     registerTrustedDevice,
     getSecurityMetrics,
-    updateSessionActivity
+    updateSessionActivity,
+    getSessionInfo,
+    extendSession,
+    setSessionTimeoutCallback,
+    setSessionWarningCallback
   };
 
   return (
