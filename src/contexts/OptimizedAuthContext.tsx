@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../services/supabase';
 import { optimizedOnboardingService, ProfileData, OnboardingProgress } from '../services/OptimizedOnboardingService';
+import { securityMonitoringService } from '../services/SecurityMonitoringService';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('OptimizedAuthContext');
@@ -30,7 +31,7 @@ interface OptimizedAuthContextType {
   
   // Authentication methods
   signUp: (email: string, password: string, userData?: Partial<ExtendedUser>) => Promise<{ success: boolean; error?: string; user?: ExtendedUser }>;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: ExtendedUser }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: ExtendedUser; securityAlerts?: any[] }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   
   // OPTIMIZED: Profile management with database persistence
@@ -47,6 +48,12 @@ interface OptimizedAuthContextType {
   
   // Performance monitoring
   getPerformanceMetrics: () => Promise<any>;
+  
+  // Security monitoring
+  isDeviceTrusted: () => Promise<boolean>;
+  registerTrustedDevice: () => Promise<void>;
+  getSecurityMetrics: () => Promise<any>;
+  updateSessionActivity: () => Promise<void>;
 }
 
 const OptimizedAuthContext = createContext<OptimizedAuthContextType | undefined>(undefined);
@@ -135,7 +142,10 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
 
     const initializeAuth = async () => {
       try {
-        logger.info('🚀 Initializing optimized auth...');
+        logger.info('🚀 Initializing optimized auth with security monitoring...');
+        
+        // Initialize security monitoring
+        await securityMonitoringService.initialize();
         
         // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -238,21 +248,46 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
     }
   }, [loadUserProfile]);
 
-  // OPTIMIZED: Sign in with profile preloading
+  // OPTIMIZED: Sign in with profile preloading and security monitoring
   const signIn = useCallback(async (
     email: string, 
     password: string
-  ): Promise<{ success: boolean; error?: string; user?: ExtendedUser }> => {
+  ): Promise<{ success: boolean; error?: string; user?: ExtendedUser; securityAlerts?: any[] }> => {
     try {
-      logger.info('🔐 Optimized sign in process...');
+      logger.info('🔐 Optimized sign in process with security monitoring...');
+      
+      // Initialize security monitoring first
+      await securityMonitoringService.initialize();
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
+      // Record login attempt for security monitoring
+      const securityResult = await securityMonitoringService.recordLoginAttempt(
+        email,
+        !error && !!data.user,
+        error?.message
+      );
+
+      // Check if login should be blocked due to security concerns
+      if (!securityResult.allowed) {
+        return { 
+          success: false, 
+          error: securityResult.lockoutInfo ? 
+            `Account temporarily locked. Try again in ${securityResult.lockoutInfo.remainingMinutes} minutes.` :
+            'Login blocked due to security concerns.',
+          securityAlerts: securityResult.securityAlerts
+        };
+      }
+
       if (error) {
-        return { success: false, error: error.message };
+        return { 
+          success: false, 
+          error: error.message,
+          securityAlerts: securityResult.securityAlerts
+        };
       }
 
       if (data.user) {
@@ -262,12 +297,27 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
           optimizedOnboardingService.preloadOnboardingData()
         ]);
         
-        return { success: true, user: extendedUser };
+        // Start secure session monitoring
+        await securityMonitoringService.startSecureSession(data.user.id, data.session?.access_token || '');
+        
+        return { 
+          success: true, 
+          user: extendedUser,
+          securityAlerts: securityResult.securityAlerts
+        };
       }
 
-      return { success: true };
+      return { success: true, securityAlerts: securityResult.securityAlerts };
     } catch (error) {
       logger.error('❌ Sign in failed:', error);
+      
+      // Record failed attempt
+      try {
+        await securityMonitoringService.recordLoginAttempt(email, false, 'System error');
+      } catch (secError) {
+        logger.warn('Failed to record security attempt:', secError);
+      }
+      
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Sign in failed' 
@@ -275,10 +325,13 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
     }
   }, [loadUserProfile]);
 
-  // Sign out
+  // Sign out with security cleanup
   const signOut = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      logger.info('👋 Signing out...');
+      logger.info('👋 Signing out with security cleanup...');
+      
+      // End security session
+      await securityMonitoringService.endSession();
       
       const { error } = await supabase.auth.signOut();
       
@@ -445,6 +498,44 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
+  // Security monitoring methods
+  const isDeviceTrusted = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      return await securityMonitoringService.isDeviceTrusted(user.id);
+    } catch (error) {
+      logger.error('❌ Failed to check device trust:', error);
+      return false;
+    }
+  }, [user]);
+
+  const registerTrustedDevice = useCallback(async (): Promise<void> => {
+    if (!user) return;
+    try {
+      await securityMonitoringService.registerTrustedDevice(user.id);
+      logger.info('✅ Device registered as trusted');
+    } catch (error) {
+      logger.error('❌ Failed to register trusted device:', error);
+    }
+  }, [user]);
+
+  const getSecurityMetrics = useCallback(async (): Promise<any> => {
+    try {
+      return await securityMonitoringService.getSecurityMetrics();
+    } catch (error) {
+      logger.error('❌ Failed to get security metrics:', error);
+      return null;
+    }
+  }, []);
+
+  const updateSessionActivity = useCallback(async (): Promise<void> => {
+    try {
+      await securityMonitoringService.updateSessionActivity();
+    } catch (error) {
+      logger.error('❌ Failed to update session activity:', error);
+    }
+  }, []);
+
   const value: OptimizedAuthContextType = {
     user,
     session,
@@ -458,7 +549,11 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
     getOnboardingProgress,
     preloadOnboardingData,
     clearCache,
-    getPerformanceMetrics
+    getPerformanceMetrics,
+    isDeviceTrusted,
+    registerTrustedDevice,
+    getSecurityMetrics,
+    updateSessionActivity
   };
 
   return (
