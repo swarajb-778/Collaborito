@@ -38,3 +38,8 @@ For questions or suggestions regarding this documentation, please contact the pr
 - **Latest Commit**: Added comprehensive documentation updates
 - **Status**: All documentation is current and up-to-date
 - **Last Updated**: December 2024 
+
+## Documentation Maintainers
+
+- Swaraj Bangar (Lead Maintainer)
+- Collaborito Team Contributors 
