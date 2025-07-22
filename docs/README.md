@@ -43,3 +43,7 @@ For questions or suggestions regarding this documentation, please contact the pr
 
 - Swaraj Bangar (Lead Maintainer)
 - Collaborito Team Contributors 
+
+## How to Request Documentation Updates
+
+If you notice outdated or missing information in the documentation, please open an issue or submit a pull request. The maintainers will review and address your request promptly. 
