@@ -51,3 +51,8 @@ If you notice outdated or missing information in the documentation, please open 
 ## License
 
 This project is licensed under the MIT License. See the main repository for details. 
+
+## Changelog
+
+- 2024-12: Added License, Maintainers, and How to Request Updates sections
+- 2024-12: Added Recent Updates section 
