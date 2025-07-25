@@ -56,3 +56,7 @@ This project is licensed under the MIT License. See the main repository for deta
 
 - 2024-12: Added License, Maintainers, and How to Request Updates sections
 - 2024-12: Added Recent Updates section 
+
+## Support
+
+For support or questions, email: support@collaborito.com 
