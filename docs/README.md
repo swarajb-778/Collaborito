@@ -31,7 +31,7 @@ Collaborito follows a modern React Native architecture with:
 
 ## Contact
 
-For questions or suggestions regarding this documentation, please contact the project maintainers.
+For questions or suggestions regarding this documentation, please contact the project maintainers. 
 
 ## Recent Updates
 
@@ -60,3 +60,7 @@ This project is licensed under the MIT License. See the main repository for deta
 ## Support
 
 For support or questions, email: support@collaborito.com 
+
+## Contributing Guidelines
+
+We welcome contributions! Please read our contributing guidelines before submitting pull requests. 
