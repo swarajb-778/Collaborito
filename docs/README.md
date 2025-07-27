@@ -64,3 +64,8 @@ For support or questions, email: support@collaborito.com
 ## Contributing Guidelines
 
 We welcome contributions! Please read our contributing guidelines before submitting pull requests. 
+
+## Version History
+
+- v1.0.0: Initial documentation setup
+- v1.1.0: Added comprehensive sections and guidelines 
