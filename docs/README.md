@@ -69,3 +69,10 @@ We welcome contributions! Please read our contributing guidelines before submitt
 
 - v1.0.0: Initial documentation setup
 - v1.1.0: Added comprehensive sections and guidelines 
+
+## Quick Start
+
+1. Clone the repository
+2. Run `npm install`
+3. Copy `.env.example` to `.env`
+4. Run `npx expo start` 
