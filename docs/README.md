@@ -76,3 +76,10 @@ We welcome contributions! Please read our contributing guidelines before submitt
 2. Run `npm install`
 3. Copy `.env.example` to `.env`
 4. Run `npx expo start` 
+
+## Troubleshooting
+
+Common issues and solutions:
+- If Expo fails to start, try clearing cache with `npx expo start --clear`
+- For dependency issues, delete node_modules and run `npm install` again
+- Check that all environment variables are properly set in `.env` 
