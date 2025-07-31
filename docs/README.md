@@ -83,3 +83,11 @@ Common issues and solutions:
 - If Expo fails to start, try clearing cache with `npx expo start --clear`
 - For dependency issues, delete node_modules and run `npm install` again
 - Check that all environment variables are properly set in `.env` 
+
+## Development Workflow
+
+1. Create a feature branch from main
+2. Make your changes and test thoroughly
+3. Commit with descriptive messages
+4. Push your branch and create a pull request
+5. Wait for review and merge 
