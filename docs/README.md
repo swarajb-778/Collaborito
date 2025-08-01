@@ -98,3 +98,11 @@ Common issues and solutions:
 - Run `npm test` before committing
 - Ensure all tests pass before creating pull requests
 - Follow the existing test patterns in the codebase 
+
+## Code Style
+
+- Follow ESLint configuration
+- Use TypeScript for all new code
+- Follow React Native best practices
+- Use meaningful variable and function names
+- Add comments for complex logic 
