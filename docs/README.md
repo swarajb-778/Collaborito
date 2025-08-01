@@ -91,3 +91,10 @@ Common issues and solutions:
 3. Commit with descriptive messages
 4. Push your branch and create a pull request
 5. Wait for review and merge 
+
+## Testing Guidelines
+
+- Write unit tests for all new features
+- Run `npm test` before committing
+- Ensure all tests pass before creating pull requests
+- Follow the existing test patterns in the codebase 
