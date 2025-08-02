@@ -106,3 +106,11 @@ Common issues and solutions:
 - Follow React Native best practices
 - Use meaningful variable and function names
 - Add comments for complex logic 
+
+## Performance Guidelines
+
+- Optimize images and assets for mobile
+- Use React.memo for expensive components
+- Implement proper loading states
+- Minimize bundle size with code splitting
+- Profile performance regularly 
