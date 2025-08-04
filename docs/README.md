@@ -114,3 +114,11 @@ Common issues and solutions:
 - Implement proper loading states
 - Minimize bundle size with code splitting
 - Profile performance regularly 
+
+## Security Guidelines
+
+- Never commit sensitive data or API keys
+- Use environment variables for secrets
+- Validate all user inputs
+- Implement proper authentication checks
+- Follow OWASP mobile security guidelines 
