@@ -130,3 +130,11 @@ Common issues and solutions:
 - Follow semantic versioning
 - Update changelog with each release
 - Tag releases in git repository 
+
+## API Documentation
+
+- Supabase endpoints for authentication and data
+- RESTful API design principles
+- GraphQL integration for complex queries
+- WebSocket connections for real-time features
+- Rate limiting and error handling 
