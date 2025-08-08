@@ -138,3 +138,11 @@ Common issues and solutions:
 - GraphQL integration for complex queries
 - WebSocket connections for real-time features
 - Rate limiting and error handling 
+
+## Database Schema
+
+- User profiles and authentication tables
+- Project management and collaboration data
+- Real-time messaging and chat storage
+- File uploads and media management
+- Booking and venue reservation system 
