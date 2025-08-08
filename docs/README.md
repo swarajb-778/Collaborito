@@ -145,4 +145,12 @@ Common issues and solutions:
 - Project management and collaboration data
 - Real-time messaging and chat storage
 - File uploads and media management
-- Booking and venue reservation system 
+- Booking and venue reservation system
+
+## Environment Setup
+
+- Copy `.env.example` to `.env`
+- Configure Supabase credentials
+- Set up LinkedIn OAuth keys
+- Add Claude API key for AI features
+- Configure development and production environments 
