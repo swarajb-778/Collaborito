@@ -154,3 +154,10 @@ Common issues and solutions:
 - Set up LinkedIn OAuth keys
 - Add Claude API key for AI features
 - Configure development and production environments 
+
+## Issue Reporting
+
+- Search existing issues before creating a new one
+- Provide clear steps to reproduce and expected vs actual behavior
+- Include screenshots/logs when relevant
+- Label issues appropriately (bug, enhancement, docs) 
