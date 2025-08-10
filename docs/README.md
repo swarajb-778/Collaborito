@@ -161,3 +161,10 @@ Common issues and solutions:
 - Provide clear steps to reproduce and expected vs actual behavior
 - Include screenshots/logs when relevant
 - Label issues appropriately (bug, enhancement, docs) 
+
+## Code Review Process
+
+- All code changes require at least one review
+- Reviewers should check code quality, tests, and documentation
+- Address all feedback before merging
+- Use pull request templates for consistency 
