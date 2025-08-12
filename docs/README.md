@@ -168,3 +168,10 @@ Common issues and solutions:
 - Reviewers should check code quality, tests, and documentation
 - Address all feedback before merging
 - Use pull request templates for consistency 
+
+## Release Notes
+
+- Document all new features and bug fixes
+- Include breaking changes and migration steps
+- Update version numbers and release dates
+- Tag releases in git with descriptive messages 
