@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 import { createLogger } from '../utils/logger';
+import * as Device from 'expo-device';
+import * as Network from 'expo-network';
 
 const logger = createLogger('SecurityMonitoringService');
 
@@ -81,12 +83,48 @@ export class SecurityMonitoringService {
   }
 
   async isDeviceTrusted(_userId: string): Promise<boolean> {
-    // Minimal implementation: assume trusted
-    return true;
+    try {
+      const deviceFingerprint = `${Device.osName || 'os'}-${Device.osVersion || 'ver'}-${Device.modelName || 'model'}`;
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+      if (!userId) return false;
+      const { data, error } = await supabase
+        .from('user_devices')
+        .select('is_trusted')
+        .eq('user_id', userId)
+        .eq('device_fingerprint', deviceFingerprint)
+        .maybeSingle();
+      if (error) return false;
+      return !!data?.is_trusted;
+    } catch {
+      return false;
+    }
   }
 
   async registerTrustedDevice(_userId: string): Promise<void> {
-    return;
+    try {
+      const deviceFingerprint = `${Device.osName || 'os'}-${Device.osVersion || 'ver'}-${Device.modelName || 'model'}`;
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+      if (!userId) return;
+      const ip = (await Network.getIpAddressAsync()) || null;
+      await supabase
+        .from('user_devices')
+        .upsert({
+          user_id: userId,
+          device_fingerprint: deviceFingerprint,
+          device_name: Device.deviceName || 'Unknown Device',
+          os: `${Device.osName} ${Device.osVersion}`,
+          browser: null,
+          ip_address: ip,
+          last_seen: new Date().toISOString(),
+          is_trusted: true,
+        }, {
+          onConflict: 'user_id,device_fingerprint'
+        });
+    } catch (e) {
+      logger.warn('registerTrustedDevice failed:', e);
+    }
   }
 
   async updateSessionActivity(): Promise<void> {
