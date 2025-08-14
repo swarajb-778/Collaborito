@@ -5,6 +5,10 @@ const logger = createLogger('SecurityMonitoringService');
 
 // Minimal, production-safe implementation that matches OptimizedAuthContext usage
 export class SecurityMonitoringService {
+  async initialize(): Promise<void> {
+    return;
+  }
+
   // Record a login attempt using database RPC if available
   async recordLoginAttempt(
     email: string,
