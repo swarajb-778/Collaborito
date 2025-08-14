@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
@@ -9,6 +9,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { Colors } from '../constants/Colors';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import ActionToast from '../components/ui/ActionToast';
+import sessionTimeoutService from '../src/services/SessionTimeoutService';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -67,6 +69,23 @@ function RootLayoutNav() {
     redirectToWelcome();
   }, [router]);
   
+  const [toast, setToast] = useState<{ msg: string; action?: () => void } | null>(null);
+
+  useEffect(() => {
+    // Global warning callback for session timeout
+    sessionTimeoutService.setSessionWarningCallback((m) => {
+      if (m === 5) {
+        setToast({
+          msg: 'Session expiring in 5 minutes',
+          action: () => {
+            sessionTimeoutService.extendSession(120);
+            setToast(null);
+          },
+        });
+      }
+    });
+  }, []);
+
   return (
     <>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -81,6 +100,16 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
       </Stack>
+      {toast && (
+        <ActionToast
+          message={toast.msg}
+          type="warning"
+          actionLabel="Extend"
+          onAction={toast.action}
+          onClose={() => setToast(null)}
+          autoDismissMs={5000}
+        />
+      )}
     </>
   );
 }
