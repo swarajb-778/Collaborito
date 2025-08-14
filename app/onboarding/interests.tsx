@@ -24,6 +24,8 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
+import SkeletonLoader from '../../components/ui/SimpleSkeletonLoader';
+import { AccessibleButton } from '../../components/ui/AccessibleButton';
 
 const logger = createLogger('OnboardingInterests');
 
@@ -78,7 +80,7 @@ export default function OnboardingInterestsScreen() {
   const loadInterests = async () => {
     try {
       logger.info('Loading interests from backend...');
-              const result = await optimizedOnboardingService.getAvailableInterests();
+      const result = await optimizedOnboardingService.getAvailableInterests();
       
       if (result.success && result.data) {
         setAvailableInterests(result.data);
@@ -159,16 +161,13 @@ export default function OnboardingInterestsScreen() {
       
       logger.info('Saving interests to database...', selectedInterests);
       
-      // Save interests using OnboardingService
-              const result = await optimizedOnboardingService.saveInterests(user.id, selectedInterests);
+      const result = await optimizedOnboardingService.saveInterests(user.id, selectedInterests);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save interests');
       }
       
       logger.info('Interests saved successfully, navigating to goals');
-      
-      // Navigate to the goals screen
       router.replace('/onboarding/goals');
       
     } catch (error) {
@@ -185,13 +184,20 @@ export default function OnboardingInterestsScreen() {
     router.replace('/onboarding/goals');
   };
 
-  // Show loading spinner while loading interests
+  // Show skeletons while loading interests
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loadingText}>Loading interests...</Text>
+        <View style={{ width: '90%' }}>
+          <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <SkeletonLoader.Circle size={60} />
+            <SkeletonLoader.Skeleton height={20} width={180} style={{ marginTop: 8 }} />
+          </View>
+          <SkeletonLoader.Card />
+          <View style={{ marginTop: 16 }} />
+          <SkeletonLoader.Card />
+        </View>
       </View>
     );
   }
@@ -281,32 +287,24 @@ export default function OnboardingInterestsScreen() {
               </View>
 
               {/* Continue Button */}
-              <TouchableOpacity 
-                style={[styles.button, styles.primaryButton]}
+              <AccessibleButton 
+                title={isSubmitting ? 'Saving...' : 'Continue'}
                 onPress={handleContinue}
+                variant="primary"
+                size="large"
                 disabled={isSubmitting}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#000000', '#333333']} 
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color="#FFF" size="small" /> 
-                  ) : (
-                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                accessibilityHint="Saves your interests and continues to goals"
+              />
 
               {/* Skip Link */}
-              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
-                <Text style={styles.skipLinkText}>
-                  I'll select my interests later
-                </Text>
-              </TouchableOpacity>
+              <AccessibleButton 
+                title="I'll select my interests later"
+                onPress={handleSkip}
+                variant="text"
+                size="medium"
+                disabled={isSubmitting}
+                accessibilityHint="Skips interests selection and continues to goals"
+              />
             </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -373,7 +371,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'flex-start',  // Changed to flex-start for better scrolling with long list
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 40, 
@@ -381,10 +379,10 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginTop: height * 0.04, 
-    marginBottom: height * 0.02, // Reduced for more content space
+    marginBottom: height * 0.02,
   },
   logo: {
-    width: width * 0.15, // Slightly smaller logo for this screen
+    width: width * 0.15,
     height: width * 0.15, 
     maxWidth: 60, 
     maxHeight: 60,
@@ -465,47 +463,6 @@ const styles = StyleSheet.create({
   },
   interestTextSelected: {
     color: '#FFF',
-  },
-  button: {
-    width: '100%',
-    height: 56, 
-    borderRadius: 10, 
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  primaryButton: {
-    overflow: 'hidden', 
-  },
-  buttonGradient: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Nunito', 
-  },
-  primaryButtonText: {
-    color: '#FFFFFF', 
-  },
-  skipLinkContainer: {
-    marginTop: 20, 
-    alignItems: 'center',
-  },
-  skipLinkText: {
-    fontSize: 15,
-    color: '#575757', 
-    fontFamily: 'Nunito',
-    textDecorationLine: 'underline',
-    fontWeight: '600',
   },
   loadingContainer: {
     justifyContent: 'center',
