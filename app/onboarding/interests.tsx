@@ -24,8 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
-import SkeletonLoader from '../../components/ui/SimpleSkeletonLoader';
-import { AccessibleButton } from '../../components/ui/AccessibleButton';
+ 
 
 const logger = createLogger('OnboardingInterests');
 
@@ -184,20 +183,13 @@ export default function OnboardingInterestsScreen() {
     router.replace('/onboarding/goals');
   };
 
-  // Show skeletons while loading interests
+  // Show loading spinner while loading interests
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <StatusBar style="dark" />
-        <View style={{ width: '90%' }}>
-          <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <SkeletonLoader.Circle size={60} />
-            <SkeletonLoader.Skeleton height={20} width={180} style={{ marginTop: 8 }} />
-          </View>
-          <SkeletonLoader.Card />
-          <View style={{ marginTop: 16 }} />
-          <SkeletonLoader.Card />
-        </View>
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loadingText}>Loading interests...</Text>
       </View>
     );
   }
@@ -287,24 +279,32 @@ export default function OnboardingInterestsScreen() {
               </View>
 
               {/* Continue Button */}
-              <AccessibleButton 
-                title={isSubmitting ? 'Saving...' : 'Continue'}
+              <TouchableOpacity 
+                style={[styles.button, styles.primaryButton]}
                 onPress={handleContinue}
-                variant="primary"
-                size="large"
                 disabled={isSubmitting}
-                accessibilityHint="Saves your interests and continues to goals"
-              />
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']} 
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" size="small" /> 
+                  ) : (
+                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
 
               {/* Skip Link */}
-              <AccessibleButton 
-                title="I'll select my interests later"
-                onPress={handleSkip}
-                variant="text"
-                size="medium"
-                disabled={isSubmitting}
-                accessibilityHint="Skips interests selection and continues to goals"
-              />
+              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={isSubmitting}>
+                <Text style={styles.skipLinkText}>
+                  I'll select my interests later
+                </Text>
+              </TouchableOpacity>
             </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
