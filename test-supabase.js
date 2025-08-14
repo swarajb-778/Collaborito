@@ -1,16 +1,27 @@
 /**
- * Simple Supabase connection test
+ * Simple Supabase connection test (Node runtime)
+ * Uses env vars directly to avoid importing TS modules.
  */
 
-const { supabase } = require('./src/services/supabase');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 async function testSupabaseConnection() {
   console.log('🔍 Testing Supabase connection...');
-  
+
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !anonKey) {
+    console.error('❌ Missing Supabase env configuration');
+    process.exit(1);
+  }
+
+  const supabase = createClient(supabaseUrl, anonKey);
+
   try {
     // Test basic connection
     const { data, error } = await supabase.auth.getSession();
-    
     if (error) {
       console.log('⚠️ Auth error (expected if not logged in):', error.message);
     } else {
@@ -18,8 +29,8 @@ async function testSupabaseConnection() {
       console.log('📊 Session data:', data?.session ? 'User logged in' : 'No active session');
     }
 
-    // Test database connection by checking profiles table
-    const { data: profiles, error: profileError } = await supabase
+    // Test database a11ccess by checking profiles table
+    const { error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .limit(1);
@@ -32,33 +43,28 @@ async function testSupabaseConnection() {
     }
 
     // Test if interests table exists
-    const { data: interests, error: interestError } = await supabase
+    const { error: interestError } = await supabase
       .from('interests')
       .select('id')
       .limit(1);
-
     if (interestError) {
       console.log('⚠️ Interests table not found:', interestError.message);
-      console.log('💡 You may need to run the database migration');
     } else {
       console.log('✅ Interests table exists');
     }
 
     // Test if skills table exists
-    const { data: skills, error: skillError } = await supabase
+    const { error: skillError } = await supabase
       .from('skills')
       .select('id')
       .limit(1);
-
     if (skillError) {
       console.log('⚠️ Skills table not found:', skillError.message);
-      console.log('💡 You may need to run the database migration');
     } else {
       console.log('✅ Skills table exists');
     }
 
     console.log('\n🎯 Test completed!');
-    
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   }
