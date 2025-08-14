@@ -464,6 +464,47 @@ const styles = StyleSheet.create({
   interestTextSelected: {
     color: '#FFF',
   },
+  button: {
+    width: '100%',
+    height: 56,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  primaryButton: {
+    overflow: 'hidden',
+  },
+  buttonGradient: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Nunito',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+  },
+  skipLinkContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  skipLinkText: {
+    fontSize: 15,
+    color: '#575757',
+    fontFamily: 'Nunito',
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
