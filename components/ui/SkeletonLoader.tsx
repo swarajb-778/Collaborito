@@ -445,7 +445,7 @@ export const GridSkeleton: React.FC<GridSkeletonProps> = ({
   theme = 'light',
   style
 }) => {
-  const itemWidth = `${(100 - (columns - 1) * (spacing / 2)) / columns}%`;
+  const itemWidth: DimensionValue = `${(100 - (columns - 1) * (spacing / 2)) / columns}%` as unknown as DimensionValue;
   
   return (
     <View style={[styles.gridSkeleton, style]}>
