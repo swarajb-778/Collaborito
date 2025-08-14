@@ -1,0 +1,300 @@
+## Collaborito: Comprehensive Roadmap, Status, and Future Plan
+
+### Executive summary
+- The app has a production-ready onboarding pipeline with Supabase persistence, modern security foundations (login monitoring, device registration/trust, session timeouts), and a healthy services architecture with clean TypeScript.
+- Immediate focus: finish security RPC deployment, polish session timeout UX, and complete a user-facing device management UI.
+- Growth levers: Profile/Avatar system, LinkedIn OAuth enhancement, Project discovery/feed, Messaging MVP, and (scaffold) Workspace/Event Booking with payments.
+- This document provides the current status, gaps, detailed feature specs, database/API work, testing and rollout plan, risks, KPIs, and a 7–14–30 day execution roadmap.
+
+---
+
+## 1) Current status snapshot
+
+- Core platform
+  - Expo SDK aligned with expected versions; type-check clean; health-check warnings limited to known non-blocking items.
+  - Strong services layer: onboarding, auth/session, device/security, error handling, logging.
+
+- Security features
+  - Login attempt monitoring: Client integration live. RPC not yet deployed remotely; local verification warns but does not block login.
+  - Device registration/trust: Implemented (fingerprint + trust flows), added UI action (“Trust This Device”) and a small list in Profile.
+  - Session timeout: Minimal service and hook live with warning callback; needs UX polish and global integration.
+
+- Onboarding UX
+  - Restored to previous design per your preference (native inputs and gradient buttons); modern accessibility components available but not applied to onboarding.
+
+- Tooling
+  - Verification script `npm run verify-security` validates existence of `login_attempts`/`user_devices`; indicates RPC missing in remote DB.
+  - Node/Expo warnings reduced; Expo deps updated to target SDK compatibility.
+
+---
+
+## 2) Recently delivered
+
+- Security
+  - Client-side login attempt logging with RPC hook.
+  - Device registration + trust check; Profile screen “Trust This Device” and trusted devices list.
+  - Session timeout hook and service (warning + timeout callback; app foreground activity detection).
+
+- Infra/tooling
+  - Expo/Router/Lottie packages aligned (expo 53.0.20, expo-router ~5.1.4, lottie-react-native 7.2.2).
+  - Security verification script and task: `npm run verify-security`.
+
+- Onboarding
+  - Reverted UI to previous style on Profile/Interests onboarding steps.
+
+---
+
+## 3) Open problems and gaps
+
+- Security RPC not deployed (remote Supabase):
+  - `record_login_attempt_and_check_lockout` and related functions exist in repo migrations but aren’t applied to the live project, so lockout remains “soft”.
+- Session timeout UX:
+  - Needs consistent non-blocking warning toast and a “Keep me signed in” control.
+  - Needs app-wide integration (Home/Feed/Messages/Profile).
+- Device management UI:
+  - Need full list, revoke/untrust flows, and a “New device login” alert/notification.
+- Profile/Avatar:
+  - No final upload flow (crop/compress/store), editing UI incomplete.
+- LinkedIn provider:
+  - Provider on, but advanced profile import and optional connection sync not implemented.
+- Discovery/Feed and Messaging:
+  - Not yet implemented; critical to engagement and retention.
+- Booking platform (from requirements):
+  - Requires full schema, payments, maps integration, etc. (major feature set).
+
+---
+
+## 4) Immediate next steps (7–14 days)
+
+- Security hardening (priority)
+  - Deploy RPCs/functions and indexes to Supabase; re-run verification until status is OK (no warnings).
+  - Add lockout feedback UI (countdown timer, “Reset password” shortcut).
+- Session timeout UX
+  - Global non-blocking toast when <5 min remaining; “Extend session” button that records activity.
+  - Add “Remember me” (longer timeout) and per-user configuration.
+- Device management
+  - Profile > Security: full device list, trust/untrust/revoke, metadata (OS, last seen, IP), and new-device notification.
+
+---
+
+## 5) Growth features (near-term, 2–6 weeks)
+
+- Profile & Avatar system (high ROI)
+  - Supabase Storage bucket, policies, upload service (client compression, EXIF strip, resize, retry).
+  - Profile editing: name/headline/location/role/bio; live preview.
+  - Avatar preloading for lists/chat; upload progress, error handling.
+
+- LinkedIn OAuth enhancement
+  - Finalize OAuth callback UX and deep link flow.
+  - Import headline/profile picture; optional connection sync toggle; allow unlink/relink.
+
+- Project discovery & feed
+  - Feed service (interests/skills-based scoring).
+  - Search/filter UI (tags, categories, skills/interests).
+  - Project card skeleton loaders, bookmarking.
+
+- Messaging MVP
+  - Project chat + DMs with Supabase Realtime.
+  - Optimistic sending, retry/resend, typing indicators, read status.
+
+---
+
+## 6) Future scope (medium-term, 1–3 months)
+
+- Workspace/Event Booking
+  - Schema: venues, availability, bookings, reviews, images, payments.
+  - Listing/search with maps and filters; Stripe integration; booking details and history.
+- AI assistance (Claude)
+  - Smart project creation prompts; matching suggestions.
+  - Onboarding assistant (“help me complete profile”); feed personalization.
+
+---
+
+## 7) Detailed feature specifications
+
+### 7.1 Security RPC deployment (DB)
+- Migrations to apply
+  - Ensure security migration that defines `record_login_attempt_and_check_lockout`, `is_account_locked`, `get_account_lockout_info`, and `cleanup_expired_lockouts` is pushed to Supabase.
+  - Verify indexes on `login_attempts`, `user_devices`, and lockout tables.
+- Acceptance criteria
+  - `npm run verify-security` → RPC “OK”, tables accessible, overall OK=3, WARN=0.
+  - Lockouts trigger after configured failures; unlock honors duration.
+
+### 7.2 Session timeout UX
+- Behavior
+  - Warning toast appears 5 minutes before expiration; includes “Extend session”.
+  - Extend resets activity timestamp; respects reduce-motion/accessibility.
+  - “Remember me” extends default session duration (user-configurable).
+- Acceptance criteria
+  - Session expires reliably; sign-out-on-timeout; covered by unit/integration tests.
+  - Warning is non-blocking and not spammy (throttled).
+
+### 7.3 Device management UI
+- Screens
+  - Profile > Security: list all devices, trust/untrust/revoke; show OS, device name, IP, last seen.
+  - “Trust This Device” CTA (with confirmation).
+  - New device login alert (notification and/or toast).
+- Acceptance criteria
+  - Device list and trust status reflect DB state; revoke removes trust.
+  - New device alerts appear on login from unknown device.
+
+### 7.4 Profile & Avatar
+- UI & services
+  - Profile editing: text fields with validations; avatars (upload/crop/resize).
+  - Storage: SUPABASE storage bucket `avatars` with RLS; signed URLs where appropriate.
+  - Preloading: service-backed prefetch for lists and chat.
+- Acceptance criteria
+  - Avatar upload stable on iOS/Android; handles retries/failures.
+  - Image sizes optimized; poor-network UX graceful.
+
+### 7.5 LinkedIn enhancements
+- Data import
+  - Pull headline & profile image; optional “sync” toggle; clear unlink path.
+- Acceptance criteria
+  - OAuth flow end-to-end; privacy & consent messaging clear.
+
+### 7.6 Discovery/feed
+- Algorithm
+  - Score by overlap of interests, skills, recency, tags; add bookmarks/favorites.
+- Acceptance criteria
+  - Feed feels relevant (user testing); filters/search responsive; skeleton loaders during fetch.
+
+### 7.7 Messaging MVP
+- Features
+  - Project channels and DMs; optimistic sending; network-aware retries; typing indicators.
+- Acceptance criteria
+  - Latency acceptable; offline-safe draft handling; basic moderation hooks.
+
+---
+
+## 8) Database and API tasks checklist
+
+- Security
+  - [ ] Push `record_login_attempt_and_check_lockout` RPC and supporting functions.
+  - [ ] Recreate indexes on security tables; verify RLS on `login_attempts` and `user_devices`.
+- Storage
+  - [ ] Ensure `avatars` bucket + RLS policies (upload/view rules).
+- Booking (scaffold)
+  - [ ] Create tables (venues, availability, bookings, payments, reviews) with RLS.
+- Realtime
+  - [ ] Configure channels for messaging; presence/typing indicators.
+
+---
+
+## 9) Performance, resilience, and privacy
+
+- Performance
+  - Image compression/resizing; avatar preloading.
+  - Query optimization and indexes; caching for reference data.
+- Resilience
+  - Unified error boundaries; retry/backoff; offline queues for writes.
+- Privacy/Security
+  - RLS across tables; scoped user access; sanitize inputs; short-lived signed URLs for private assets.
+
+---
+
+## 10) Testing strategy
+
+- Unit tests
+  - Auth/session, security (lockouts), onboarding services, profile/avatar upload, feed scorer.
+- Integration/E2E
+  - New user: signup → onboarding → feed.
+  - Login lockout flow; session warning → extend; device trust/revoke.
+  - Avatar upload under flaky networks.
+- Non-functional
+  - Accessibility checks; performance budget (TTI, animation 60fps); error telemetry.
+
+---
+
+## 11) KPIs and success metrics
+
+- Onboarding
+  - Completion rate > 95%; time-to-complete < 2 minutes.
+- Security
+  - < 0.1% lockout false positives; zero PII leakage.
+- Engagement
+  - DAU/WAU; messages sent per user; projects favorited/created per week.
+- Reliability
+  - Crash-free sessions > 99.5%; p95 screen load < 800ms.
+
+---
+
+## 12) Risks and mitigations
+
+- Supabase function drift
+  - Mitigation: CI-based migration push to staging before production; verification script gate.
+- Push notifications limits (new device)
+  - Mitigation: Start with local toasts/email; add push later with expo-notifications.
+- Messaging scale
+  - Mitigation: Start with small channels; monitor; shard or paginate aggressively.
+
+---
+
+## 13) Commit plan and branching
+
+- Strategy
+  - 1–3 commits per subtask; descriptive conventional commits.
+  - Feature branches per major epic; PR review before merge.
+- Examples
+  - `feat(security): deploy lockout RPC and wire client`
+  - `feat(session): add extend-session toast and warning`
+  - `feat(profile): avatar upload with compression and retries`
+
+---
+
+## 14) Timeline
+
+- Week 1–2 (Immediate)
+  - Deploy RPCs; session warning UX; full device management UI; verification green.
+- Week 3–4
+  - Profile editing + avatar upload; LinkedIn profile import; feed prototype.
+- Week 5–6
+  - Messaging MVP; polish feed; avatar preloading; telemetry and tests.
+- Week 7+
+  - Booking scaffold; maps integration; payments.
+
+---
+
+## 15) Next 7 days execution plan
+
+- Day 1–2
+  - Push security migrations to Supabase; get `verify-security` OK.
+  - Lockout feedback UI with countdown; add “Reset password” shortcut.
+- Day 3–4
+  - Global session warning toast + “Extend session” control; “Remember me.”
+- Day 5–7
+  - Device management: list, trust/untrust/revoke; new-device notification; tests.
+
+---
+
+## 16) Acceptance criteria for this milestone
+
+- Security
+  - Verification script: OK=3, WARN=0, FAIL=0.
+  - Lockouts work end-to-end; device trust flows fully functional.
+- UX
+  - Session warning and extension seen across main screens; tests cover timeout/extend.
+- Quality
+  - Type-check clean; smoke tests pass; no regressions in onboarding/auth.
+
+---
+
+## 17) Dependencies and prerequisites
+
+- Supabase access (CLI auth) to push migrations/functions.
+- Stripe account (for future booking).
+- Claude API key (for AI features).
+- Figma access (for design parity).
+
+---
+
+## 18) Appendix: how to deploy security RPC (operator notes)
+
+- Ensure Supabase CLI is linked:
+  - `supabase link --project-ref <project-ref>`
+- Push migrations:
+  - `supabase db push`
+- Verify:
+  - `npm run verify-security` should show RPC OK and tables accessible.
+
+
