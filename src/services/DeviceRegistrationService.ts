@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from './supabase';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('DeviceRegistrationService');

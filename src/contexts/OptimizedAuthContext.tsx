@@ -3,8 +3,8 @@ import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../services/supabase';
 import { optimizedOnboardingService, ProfileData, OnboardingProgress } from '../services/OptimizedOnboardingService';
-import { securityMonitoringService } from '../services/SecurityMonitoringService';
-import { sessionTimeoutService } from '../services/SessionTimeoutService';
+import securityMonitoringService, { SecurityMonitoringService } from '../services/SecurityMonitoringService';
+import sessionTimeoutService, { SessionTimeoutService } from '../services/SessionTimeoutService';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('OptimizedAuthContext');
