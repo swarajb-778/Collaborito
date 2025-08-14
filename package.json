@@ -24,11 +24,13 @@
     "type-watch": "npx tsc --noEmit --watch --skipLibCheck",
     "integration-test": "node -e \"require('./src/services/test_onboarding_integration.ts').runOnboardingIntegrationTests()\"",
     "validate-typescript": "npm run type-check && echo '✅ TypeScript validation passed!'",
-    "dev-check": "npm run type-check && npm run health-check && echo '🚀 Development environment validated!'"
+    "dev-check": "npm run type-check && npm run health-check && echo '🚀 Development environment validated!'",
+    "verify-security": "node scripts/verify-security-features.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@supabase/supabase-js": "^2.49.4",
@@ -48,6 +50,7 @@
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "~14.1.5",
     "expo-linking": "~7.1.4",
+    "expo-local-authentication": "^16.0.5",
     "expo-location": "^18.1.6",
     "expo-network": "^7.1.5",
     "expo-router": "~5.1.1",
