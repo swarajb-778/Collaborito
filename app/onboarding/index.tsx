@@ -17,7 +17,7 @@ import {
   Animated 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons'; // Keep FontAwesome5, add Ionicons if needed for icons
+// Icons not needed after switching to accessible inputs
 import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'; // Use expo-status-bar
@@ -25,6 +25,8 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Add safe area hook
 import { optimizedOnboardingService } from '../../src/services/OptimizedOnboardingService';
 import { createLogger } from '../../src/utils/logger';
+import { AccessibleTextInput } from '../../components/ui/AccessibleTextInput';
+import { AccessibleButton } from '../../components/ui/AccessibleButton';
 
 const logger = createLogger('OnboardingScreen');
 
@@ -250,107 +252,74 @@ export default function OnboardingScreen() {
 
               {/* Use Input Wrapper style from register.tsx */}
               <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>First Name</Text>
-                 <View style={styles.inputContainer}>
-                   <FontAwesome5 name="user" size={18} color="#8C8C8C" style={styles.inputIcon} />
-                   <RNTextInput
-                     style={styles.input}
+                <AccessibleTextInput
+                  label="First Name"
                   placeholder="Enter your first name"
-                     placeholderTextColor="#B0B0B0"
                   value={firstName}
                   onChangeText={setFirstName}
-                     editable={!savingProfile}
-                     autoCapitalize="words"
-                     returnKeyType="next"
-                   />
-                 </View>
-
-               </View>
+                  required
+                  disabled={savingProfile}
+                  accessibilityHint="Enter your given name"
+                />
+              </View>
 
                <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>Last Name</Text>
-                 <View style={styles.inputContainer}>
-                    <FontAwesome5 name="user" size={18} color="#8C8C8C" style={styles.inputIcon} />
-                   <RNTextInput
-                     style={styles.input}
-                  placeholder="Enter your last name"
-                     placeholderTextColor="#B0B0B0"
-                  value={lastName}
-                  onChangeText={setLastName}
-                     editable={!savingProfile}
-                     autoCapitalize="words"
-                     returnKeyType="next"
-                   />
-                 </View>
-
+                 <AccessibleTextInput
+                   label="Last Name"
+                   placeholder="Enter your last name"
+                   value={lastName}
+                   onChangeText={setLastName}
+                   required
+                   disabled={savingProfile}
+                   accessibilityHint="Enter your family name"
+                 />
                </View>
                 
                <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>Where are you based?</Text>
-                 <View style={styles.inputContainer}>
-                    <FontAwesome5 name="map-marker-alt" size={18} color="#8C8C8C" style={styles.inputIcon} />
-                   <RNTextInput
-                     style={styles.input}
-                  placeholder="City, Country"
-                     placeholderTextColor="#B0B0B0"
-                  value={location}
-                  onChangeText={setLocation}
-                     editable={!savingProfile}
-                     autoCapitalize="words"
-                     returnKeyType="next"
-                   />
-                 </View>
-
+                 <AccessibleTextInput
+                   label="Location"
+                   placeholder="City, Country"
+                   value={location}
+                   onChangeText={setLocation}
+                   required
+                   disabled={savingProfile}
+                   accessibilityHint="Enter your city and country"
+                 />
                </View>
                
                <View style={styles.inputWrapper}>
-                 <Text style={styles.inputLabel}>Job Title</Text>
-                 <View style={styles.inputContainer}>
-                   <FontAwesome5 name="briefcase" size={18} color="#8C8C8C" style={styles.inputIcon} />
-                   <RNTextInput
-                     style={styles.input}
-                  placeholder="What do you do?"
-                     placeholderTextColor="#B0B0B0"
-                  value={jobTitle}
-                  onChangeText={setJobTitle}
-                     editable={!savingProfile}
-                     autoCapitalize="sentences"
-                     returnKeyType="done"
-                   />
-                 </View>
-
+                 <AccessibleTextInput
+                   label="Job Title"
+                   placeholder="What do you do?"
+                   value={jobTitle}
+                   onChangeText={setJobTitle}
+                   required
+                   disabled={savingProfile}
+                   accessibilityHint="Enter your role or title"
+                 />
                </View>
                
               {/* Error Message Area (if needed for general errors) */}
               {/* {error ? <Text style={styles.errorText}>{error}</Text> : null} */}
 
-              {/* Use Primary Button style from register.tsx */}
-              <TouchableOpacity 
-                style={[styles.button, styles.primaryButton]}
-                  onPress={handleComplete}
-                  disabled={savingProfile}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#000000', '#333333']} 
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  {savingProfile ? (
-                    <ActivityIndicator color="#FFF" size="small" /> 
-                  ) : (
-                    <Text style={[styles.buttonText, styles.primaryButtonText]}>Complete Setup</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+              <AccessibleButton
+                title={savingProfile ? 'Saving...' : 'Complete Setup'}
+                onPress={handleComplete}
+                variant="primary"
+                size="large"
+                disabled={savingProfile}
+                accessibilityHint="Saves your profile details and continues to interests"
+              />
 
               {/* Skip Link - Styled like login link in register.tsx */}
-              <TouchableOpacity onPress={handleSkip} style={styles.skipLinkContainer} disabled={savingProfile}>
-                <Text style={styles.skipLinkText}>
-                    I&apos;ll complete this later
-                  </Text>
-                </TouchableOpacity>
+              <AccessibleButton
+                title="I'll complete this later"
+                onPress={handleSkip}
+                variant="text"
+                size="medium"
+                disabled={savingProfile}
+                accessibilityHint="Skips profile details and proceeds to interests"
+              />
 
           </Animated.View>
         </ScrollView>

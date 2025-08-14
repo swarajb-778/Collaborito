@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { OptimizedAuthProvider } from '../src/contexts/OptimizedAuthContext';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { Colors } from '../constants/Colors';
@@ -42,9 +43,11 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-    <OptimizedAuthProvider>
-      <RootLayoutNav />
-    </OptimizedAuthProvider>
+    <ThemeProvider>
+      <OptimizedAuthProvider>
+        <RootLayoutNav />
+      </OptimizedAuthProvider>
+    </ThemeProvider>
     </ErrorBoundary>
   );
 }
@@ -53,51 +56,16 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  // Auth context for routing decisions
-  // Lazy import to avoid SSR issues
-  const { useAuth } = require('../src/contexts/OptimizedAuthContext');
-  const { user, loading, getOnboardingProgress } = useAuth();
   
-  // Effect: Decide initial route based on auth and onboarding state
+  // Effect to redirect from the root to welcome screen
   useEffect(() => {
-    // Wait until auth is resolved
-    if (loading) return;
-
-    const decideRoute = async () => {
-      try {
-        // Not signed in → Welcome
-        if (!user) {
-          if (router.canGoBack() === false) router.replace('/welcome');
-          return;
-        }
-
-        // Signed in → Check onboarding
-        // Prefer user flag, fallback to service lookup
-        const completed = Boolean(user.onboardingCompleted);
-        if (completed) {
-          router.replace('/(tabs)');
-          return;
-        }
-
-        const progress = await getOnboardingProgress?.();
-        const isComplete = Boolean(
-          progress?.isComplete || progress?.completed || progress?.onboarding_completed
-        );
-
-        if (isComplete) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/onboarding');
-        }
-      } catch (err) {
-        // On error, default to tabs for signed-in users to avoid blocking
-        if (user) router.replace('/(tabs)');
-        else router.replace('/welcome');
+    const redirectToWelcome = () => {
+      if (router.canGoBack() === false) {
+        router.replace('/welcome');
       }
     };
-
-    decideRoute();
-  }, [user, loading, router, getOnboardingProgress]);
+    redirectToWelcome();
+  }, [router]);
   
   return (
     <>
