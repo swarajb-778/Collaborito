@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import sessionTimeoutService from '../services/SessionTimeoutService';
 import { AppState } from 'react-native';
+import { useState } from 'react';
 
 export function useSessionTimeout(
   userId: string | undefined,
   onTimeout: () => void,
   onWarning?: (minutesRemaining: number) => void
 ) {
+  const [lastWarning, setLastWarning] = useState<number | null>(null);
   useEffect(() => {
     if (!userId) return;
 
@@ -19,7 +21,13 @@ export function useSessionTimeout(
         if (!isMounted) return;
         onTimeout();
       });
-      if (onWarning) sessionTimeoutService.setSessionWarningCallback(onWarning);
+      if (onWarning) sessionTimeoutService.setSessionWarningCallback((m) => {
+        // prevent spamming warning
+        if (lastWarning !== m) {
+          setLastWarning(m);
+          onWarning(m);
+        }
+      });
       await sessionTimeoutService.startSession(userId, '');
     };
 

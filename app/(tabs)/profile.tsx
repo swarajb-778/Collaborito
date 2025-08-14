@@ -19,6 +19,8 @@ import { Card } from '../../components/ui/Card';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/OptimizedAuthContext';
+import { DeviceRegistrationService } from '../../src/services/DeviceRegistrationService';
+import Toast from '../../components/ui/Toast';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -90,6 +92,8 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState('Bio');
   const insets = useSafeAreaInsets();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showToast, setShowToast] = useState<{ msg: string; type: 'info' | 'warning' | 'error' | 'success' } | null>(null);
+  const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
   
   // Determine theme-based styles
   const theme = colorScheme === 'dark' ? COLORS.dark : COLORS.light;
@@ -249,10 +253,56 @@ export default function ProfileScreen() {
                 <Text style={[styles.authInfoValue, { color: theme.text }]}>{user?.email || USER.email}</Text>
               </View>
               {user?.id && (
-                <View style={styles.authInfoItem}>
-                  <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>User ID:</Text>
-                  <Text style={[styles.authInfoValue, { color: theme.text }]}>{user.id}</Text>
-                </View>
+                <>
+                  <View style={styles.authInfoItem}>
+                    <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>User ID:</Text>
+                    <Text style={[styles.authInfoValue, { color: theme.text }]}>{user.id}</Text>
+                  </View>
+                  <View style={[styles.authInfoItem, { alignItems: 'flex-start' }]}>
+                    <Text style={[styles.authInfoLabel, { color: theme.textMuted }]}>Trusted Devices:</Text>
+                    <View style={{ flex: 1 }}>
+                      {trustedDevices.length === 0 ? (
+                        <Text style={[styles.authInfoValue, { color: theme.textMuted }]}>None</Text>
+                      ) : (
+                        trustedDevices.slice(0, 3).map((d) => (
+                          <Text key={d.id} style={[styles.authInfoValue, { color: theme.text }]}>
+                            {d.device_name || 'Device'} · {d.os || ''}
+                          </Text>
+                        ))
+                      )}
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { borderBottomWidth: 0 }]}
+                    onPress={async () => {
+                      if (!user?.id) return;
+                      try {
+                        await DeviceRegistrationService.registerDevice(
+                          user.id,
+                          `${Platform.OS}-${Platform.Version}`,
+                          'This Device',
+                          Platform.OS,
+                          null,
+                          null,
+                          true
+                        );
+                        setShowToast({ msg: 'Device trusted successfully', type: 'success' });
+                        const list = await DeviceRegistrationService.getTrustedDevices(user.id);
+                        setTrustedDevices(list);
+                      } catch (e) {
+                        setShowToast({ msg: 'Failed to trust device', type: 'error' });
+                      } finally {
+                        setTimeout(() => setShowToast(null), 2000);
+                      }
+                    }}
+                  >
+                    <View style={[styles.actionIconContainer, { backgroundColor: COLORS.success }]}>
+                      <FontAwesome5 name="shield-alt" size={18} color="#FFF" />
+                    </View>
+                    <Text style={[styles.actionText, { color: theme.text }]}>Trust This Device</Text>
+                    <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
+                  </TouchableOpacity>
+                </>
               )}
             </Card>
           </Animated.View>
@@ -423,6 +473,7 @@ export default function ProfileScreen() {
             </RNAnimated.View>
           </ScrollView>
         </KeyboardAvoidingView>
+        {showToast && <Toast message={showToast.msg} type={showToast.type} />}
       </SafeAreaView>
     </View>
   );
