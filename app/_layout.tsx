@@ -53,16 +53,51 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  // Auth context for routing decisions
+  // Lazy import to avoid SSR issues
+  const { useAuth } = require('../src/contexts/OptimizedAuthContext');
+  const { user, loading, getOnboardingProgress } = useAuth();
   
-  // Effect to redirect from the root to welcome screen
+  // Effect: Decide initial route based on auth and onboarding state
   useEffect(() => {
-    const redirectToWelcome = () => {
-      if (router.canGoBack() === false) {
-        router.replace('/welcome');
+    // Wait until auth is resolved
+    if (loading) return;
+
+    const decideRoute = async () => {
+      try {
+        // Not signed in → Welcome
+        if (!user) {
+          if (router.canGoBack() === false) router.replace('/welcome');
+          return;
+        }
+
+        // Signed in → Check onboarding
+        // Prefer user flag, fallback to service lookup
+        const completed = Boolean(user.onboardingCompleted);
+        if (completed) {
+          router.replace('/(tabs)');
+          return;
+        }
+
+        const progress = await getOnboardingProgress?.();
+        const isComplete = Boolean(
+          progress?.isComplete || progress?.completed || progress?.onboarding_completed
+        );
+
+        if (isComplete) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/onboarding');
+        }
+      } catch (err) {
+        // On error, default to tabs for signed-in users to avoid blocking
+        if (user) router.replace('/(tabs)');
+        else router.replace('/welcome');
       }
     };
-    redirectToWelcome();
-  }, [router]);
+
+    decideRoute();
+  }, [user, loading, router, getOnboardingProgress]);
   
   return (
     <>
