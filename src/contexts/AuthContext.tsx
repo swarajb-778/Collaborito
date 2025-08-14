@@ -35,7 +35,7 @@ interface AuthContextType {
   initializeUserProfile: () => Promise<boolean>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper functions for security
 const validateEmail = (email: string): boolean => {

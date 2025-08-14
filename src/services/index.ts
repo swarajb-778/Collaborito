@@ -19,6 +19,7 @@ export { SeedDataService } from './SeedDataService';
 export { SessionManager } from './SessionManager';
 export { DataValidationService } from './DataValidationService';
 export { SupabaseDatabaseService } from './SupabaseDatabaseService';
+export { AvatarPreloadingService } from './AvatarPreloadingService';
 
 // Service Factory Functions - Use direct imports to avoid circular references
 export const getSeedDataService = () => require('./SeedDataService').SeedDataService.getInstance();
