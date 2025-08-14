@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle, DimensionValue } from 'react-native';
+import { View, StyleSheet, ViewStyle, DimensionValue, StyleProp } from 'react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -24,7 +24,7 @@ interface SkeletonLoaderProps {
   width?: DimensionValue;
   height?: DimensionValue;
   borderRadius?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
   animate?: boolean;
   theme?: 'light' | 'dark';
@@ -106,7 +106,7 @@ interface TextSkeletonProps {
   spacing?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const TextSkeleton: React.FC<TextSkeletonProps> = ({
@@ -142,7 +142,7 @@ interface CircleSkeletonProps {
   size?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CircleSkeleton: React.FC<CircleSkeletonProps> = ({
@@ -175,7 +175,7 @@ interface CardSkeletonProps {
   descriptionLines?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CardSkeleton: React.FC<CardSkeletonProps> = ({
@@ -250,11 +250,11 @@ interface ListItemSkeletonProps {
   showAvatar?: boolean;
   avatarSize?: number;
   showAction?: boolean;
-  titleWidth?: string;
-  subtitleWidth?: string;
+  titleWidth?: DimensionValue;
+  subtitleWidth?: DimensionValue;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ListItemSkeleton: React.FC<ListItemSkeletonProps> = ({
@@ -322,7 +322,7 @@ interface ProfileSkeletonProps {
   avatarSize?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ProfileSkeleton: React.FC<ProfileSkeletonProps> = ({
@@ -395,12 +395,12 @@ export const ProfileSkeleton: React.FC<ProfileSkeletonProps> = ({
  * Button Skeleton Component
  */
 interface ButtonSkeletonProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ButtonSkeleton: React.FC<ButtonSkeletonProps> = ({

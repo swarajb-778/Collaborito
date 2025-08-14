@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, DimensionValue, StyleProp } from 'react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -18,10 +18,10 @@ const SHIMMER_COLORS = {
 };
 
 interface SkeletonProps {
-  width?: number | string;
-  height?: number;
+  width?: DimensionValue;
+  height?: DimensionValue;
   borderRadius?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   animate?: boolean;
   theme?: 'light' | 'dark';
 }
@@ -83,7 +83,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       {animate && (
         <Animated.View style={[styles.shimmerContainer, shimmerStyle]}>
           <LinearGradient
-            colors={colors}
+            colors={colors as any}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.shimmer}
@@ -101,10 +101,10 @@ interface TextLinesProps {
   lines?: number;
   lineHeight?: number;
   spacing?: number;
-  lastLineWidth?: string;
+  lastLineWidth?: DimensionValue;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const TextLines: React.FC<TextLinesProps> = ({
@@ -140,7 +140,7 @@ interface CircleProps {
   size?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Circle: React.FC<CircleProps> = ({
@@ -169,7 +169,7 @@ interface CardProps {
   showAvatar?: boolean;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -235,7 +235,7 @@ interface ListItemProps {
   showAction?: boolean;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ListItem: React.FC<ListItemProps> = ({
@@ -293,11 +293,11 @@ export const ListItem: React.FC<ListItemProps> = ({
  * Button Skeleton
  */
 interface ButtonProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -326,7 +326,7 @@ interface FormFieldProps {
   showLabel?: boolean;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -363,7 +363,7 @@ interface ProfileProps {
   showCover?: boolean;
   animate?: boolean;
   theme?: 'light' | 'dark';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Profile: React.FC<ProfileProps> = ({
