@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
@@ -18,8 +18,13 @@ export default function ForgotPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const params = useLocalSearchParams();
   
-  const [email, setEmail] = useState('');
+  // Check if coming from lockout scenario
+  const isFromLockout = params.fromLockout === 'true';
+  const prefilledEmail = params.email as string || '';
+  
+  const [email, setEmail] = useState(prefilledEmail);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -185,9 +190,23 @@ export default function ForgotPasswordScreen() {
                 <FontAwesome5 name="arrow-left" size={20} color={colors.text} />
               </TouchableOpacity>
               
-              <Text style={[styles.title, { color: colors.text }]}>Reset Password</Text>
+              {isFromLockout && (
+                <View style={[styles.lockoutBanner, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive + '30' }]}>
+                  <FontAwesome5 name="lock" size={16} color={colors.destructive} />
+                  <Text style={[styles.lockoutText, { color: colors.destructive }]}>
+                    Account temporarily locked
+                  </Text>
+                </View>
+              )}
+              
+              <Text style={[styles.title, { color: colors.text }]}>
+                {isFromLockout ? 'Unlock Your Account' : 'Reset Password'}
+              </Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Enter your email address and we'll send you a link to reset your password.
+                {isFromLockout 
+                  ? 'Reset your password to immediately unlock your account and regain access.'
+                  : 'Enter your email address and we\'ll send you a link to reset your password.'
+                }
               </Text>
 
               <View style={styles.formContainer}>
@@ -218,7 +237,7 @@ export default function ForgotPasswordScreen() {
                       <Text style={styles.loadingText}>Sending...</Text>
                     </View>
                   ) : (
-                    'Send Reset Link'
+                    isFromLockout ? 'Send Unlock Link' : 'Send Reset Link'
                   )}
                 </Button>
               </View>
@@ -335,5 +354,20 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  lockoutBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 40,
+    marginBottom: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  lockoutText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

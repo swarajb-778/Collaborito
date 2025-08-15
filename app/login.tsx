@@ -289,8 +289,13 @@ export default function LoginScreen() {
   
   const handleResetPassword = () => {
     setIsLocked(false);
-    setMode('reset');
-    setEmail(lockoutEmail);
+    router.push({
+      pathname: '/forgot-password',
+      params: {
+        fromLockout: 'true',
+        email: lockoutEmail
+      }
+    });
   };
   
   const handleLockoutDismiss = () => {
