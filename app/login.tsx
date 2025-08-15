@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { CollaboritoLogo } from '../components/ui/CollaboritoLogo';
 import { SecurityService } from '../src/services/SecurityService';
+import { AccountLockoutDisplay } from '../components/ui/AccountLockoutDisplay';
 
 export default function LoginScreen() {
   console.log('Rendering LoginScreen');
@@ -29,6 +30,11 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  
+  // Lockout state
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockoutDuration, setLockoutDuration] = useState(0);
+  const [lockoutEmail, setLockoutEmail] = useState('');
   
   // Animation values
   const cardScale = useSharedValue(0.95);
@@ -141,14 +147,12 @@ export default function LoginScreen() {
     
     // Check if account is locked before attempting authentication
     if (mode === 'signin') {
-      const isLocked = await securityService.isAccountLocked(email);
-      if (isLocked) {
+      const accountLocked = await securityService.isAccountLocked(email);
+      if (accountLocked) {
         const timeRemaining = await securityService.getAccountLockTimeRemaining(email);
-        Alert.alert(
-          'Account Locked',
-          `Your account is temporarily locked due to multiple failed login attempts. Please try again in ${timeRemaining} minutes.`,
-          [{ text: 'OK' }]
-        );
+        setLockoutEmail(email);
+        setLockoutDuration(timeRemaining);
+        setIsLocked(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         return;
       }
@@ -182,11 +186,9 @@ export default function LoginScreen() {
           const isNowLocked = await securityService.isAccountLocked(email);
           if (isNowLocked) {
             const timeRemaining = await securityService.getAccountLockTimeRemaining(email);
-            Alert.alert(
-              'Account Locked',
-              `Too many failed login attempts. Your account has been temporarily locked for ${timeRemaining} minutes.`,
-              [{ text: 'OK' }]
-            );
+            setLockoutEmail(email);
+            setLockoutDuration(timeRemaining);
+            setIsLocked(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           } else {
             // Show regular sign in failed message
@@ -283,6 +285,24 @@ export default function LoginScreen() {
       cardScale.value = withSpring(1);
     });
     setMode(newMode);
+  };
+  
+  const handleResetPassword = () => {
+    setIsLocked(false);
+    setMode('reset');
+    setEmail(lockoutEmail);
+  };
+  
+  const handleLockoutDismiss = () => {
+    setIsLocked(false);
+    setLockoutEmail('');
+    setLockoutDuration(0);
+  };
+  
+  const handleLockoutComplete = () => {
+    setIsLocked(false);
+    setLockoutEmail('');
+    setLockoutDuration(0);
   };
   
   const renderForm = () => {
@@ -524,14 +544,25 @@ export default function LoginScreen() {
                 {renderFormSubtitle()}
               </Text>
               
-              {renderForm()}
+              {!isLocked && renderForm()}
+              
+              {isLocked && (
+                <AccountLockoutDisplay
+                  email={lockoutEmail}
+                  lockoutDurationMinutes={lockoutDuration}
+                  onResetPassword={handleResetPassword}
+                  onDismiss={handleLockoutDismiss}
+                  onCountdownComplete={handleLockoutComplete}
+                />
+              )}
             </Card>
             
-            <Animated.View
-              style={styles.footer}
-              entering={FadeInUp.delay(500).duration(800)}
-            >
-              {mode === 'signin' && (
+            {!isLocked && (
+              <Animated.View
+                style={styles.footer}
+                entering={FadeInUp.delay(500).duration(800)}
+              >
+                {mode === 'signin' && (
                 <>
                   <TouchableOpacity 
                     onPress={() => {
@@ -581,7 +612,8 @@ export default function LoginScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
-            </Animated.View>
+              </Animated.View>
+            )}
           </Animated.View>
         </ScrollView>
       </LinearGradient>
