@@ -11,6 +11,8 @@ import { Colors } from '../constants/Colors';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import ActionToast from '../components/ui/ActionToast';
 import sessionTimeoutService from '../src/services/SessionTimeoutService';
+import { SessionWarningToast } from '../components/ui/SessionWarningToast';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -44,13 +46,15 @@ export default function RootLayout() {
   }
 
   return (
-    <ErrorBoundary>
-    <ThemeProvider>
-      <OptimizedAuthProvider>
-        <RootLayoutNav />
-      </OptimizedAuthProvider>
-    </ThemeProvider>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <OptimizedAuthProvider>
+            <RootLayoutNav />
+          </OptimizedAuthProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 
@@ -70,21 +74,40 @@ function RootLayoutNav() {
   }, [router]);
   
   const [toast, setToast] = useState<{ msg: string; action?: () => void } | null>(null);
+  const [sessionWarning, setSessionWarning] = useState<{ visible: boolean; minutes: number }>({ 
+    visible: false, 
+    minutes: 0 
+  });
 
   useEffect(() => {
     // Global warning callback for session timeout
     sessionTimeoutService.setSessionWarningCallback((m) => {
       if (m === 5) {
-        setToast({
-          msg: 'Session expiring in 5 minutes',
-          action: () => {
-            sessionTimeoutService.extendSession(120);
-            setToast(null);
-          },
-        });
+        setSessionWarning({ visible: true, minutes: m });
       }
     });
+    
+    // Session timeout callback
+    sessionTimeoutService.setSessionTimeoutCallback(() => {
+      setSessionWarning({ visible: false, minutes: 0 });
+      // Handle session expiration (e.g., redirect to login)
+      // This will be handled by the auth context
+    });
   }, []);
+  
+  const handleExtendSession = () => {
+    sessionTimeoutService.extendSession(120); // Extend by 2 hours
+    setSessionWarning({ visible: false, minutes: 0 });
+  };
+  
+  const handleDismissWarning = () => {
+    setSessionWarning({ visible: false, minutes: 0 });
+  };
+  
+  const handleSessionExpired = () => {
+    setSessionWarning({ visible: false, minutes: 0 });
+    // Additional handling can be added here if needed
+  };
 
   return (
     <>
@@ -110,6 +133,14 @@ function RootLayoutNav() {
           autoDismissMs={5000}
         />
       )}
+      
+      <SessionWarningToast
+        isVisible={sessionWarning.visible}
+        minutesRemaining={sessionWarning.minutes}
+        onExtendSession={handleExtendSession}
+        onDismiss={handleDismissWarning}
+        onSessionExpired={handleSessionExpired}
+      />
     </>
   );
 }
