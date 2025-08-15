@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 import { optimizedOnboardingService, ProfileData, OnboardingProgress } from '../services/OptimizedOnboardingService';
 import securityMonitoringService, { SecurityMonitoringService } from '../services/SecurityMonitoringService';
 import sessionTimeoutService, { SessionTimeoutService } from '../services/SessionTimeoutService';
+import { newDeviceNotificationService } from '../services/NewDeviceNotificationService';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('OptimizedAuthContext');
@@ -314,6 +315,26 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
         // Start session timeout monitoring with custom duration based on rememberMe
         const sessionTimeout = rememberMe ? 7 * 24 * 60 : 120; // 7 days vs 2 hours
         await sessionTimeoutService.startSession(data.user.id, data.session?.access_token || '', sessionTimeout);
+        
+        // Check for new device notification
+        try {
+          const deviceInfo = {
+            device_name: 'User Device', // Could be enhanced with actual device detection
+            os: navigator?.platform || 'Unknown',
+            browser: navigator?.userAgent?.split(' ').pop() || 'Unknown'
+          };
+          
+          await newDeviceNotificationService.checkAndCreateNotification(
+            data.user.id,
+            `device-${Date.now()}`, // Simple fingerprint - could be enhanced
+            deviceInfo,
+            undefined, // IP address would be detected server-side
+            undefined  // Location info would be detected server-side
+          );
+        } catch (error) {
+          logger.warn('Failed to check new device notification:', error);
+          // Non-critical, don't fail the login
+        }
         
         return { 
           success: true, 

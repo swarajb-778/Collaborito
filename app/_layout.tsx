@@ -12,6 +12,8 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import ActionToast from '../components/ui/ActionToast';
 import sessionTimeoutService from '../src/services/SessionTimeoutService';
 import { SessionWarningToast } from '../components/ui/SessionWarningToast';
+import { NewDeviceAlert } from '../components/ui/NewDeviceAlert';
+import { newDeviceNotificationService, NewDeviceNotification } from '../src/services/NewDeviceNotificationService';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export {
@@ -78,6 +80,13 @@ function RootLayoutNav() {
     visible: false, 
     minutes: 0 
   });
+  const [newDeviceAlert, setNewDeviceAlert] = useState<{ 
+    visible: boolean; 
+    notification: NewDeviceNotification | null 
+  }>({ 
+    visible: false, 
+    notification: null 
+  });
 
   useEffect(() => {
     // Global warning callback for session timeout
@@ -93,6 +102,15 @@ function RootLayoutNav() {
       // Handle session expiration (e.g., redirect to login)
       // This will be handled by the auth context
     });
+    
+    // New device notification callback
+    const unsubscribeNewDevice = newDeviceNotificationService.onNewDeviceNotification((notification) => {
+      setNewDeviceAlert({ visible: true, notification });
+    });
+    
+    return () => {
+      unsubscribeNewDevice();
+    };
   }, []);
   
   const handleExtendSession = () => {
@@ -107,6 +125,53 @@ function RootLayoutNav() {
   const handleSessionExpired = () => {
     setSessionWarning({ visible: false, minutes: 0 });
     // Additional handling can be added here if needed
+  };
+  
+  const handleTrustDevice = async () => {
+    if (!newDeviceAlert.notification) return;
+    
+    try {
+      await newDeviceNotificationService.trustDevice(
+        newDeviceAlert.notification.id,
+        newDeviceAlert.notification.user_id,
+        newDeviceAlert.notification.device_fingerprint
+      );
+      setNewDeviceAlert({ visible: false, notification: null });
+    } catch (error) {
+      console.error('Failed to trust device:', error);
+    }
+  };
+  
+  const handleBlockDevice = async () => {
+    if (!newDeviceAlert.notification) return;
+    
+    try {
+      await newDeviceNotificationService.blockDevice(
+        newDeviceAlert.notification.id,
+        newDeviceAlert.notification.user_id,
+        newDeviceAlert.notification.device_fingerprint
+      );
+      setNewDeviceAlert({ visible: false, notification: null });
+    } catch (error) {
+      console.error('Failed to block device:', error);
+    }
+  };
+  
+  const handleViewDeviceDetails = () => {
+    setNewDeviceAlert({ visible: false, notification: null });
+    router.push('/device-management');
+  };
+  
+  const handleDismissDeviceAlert = async () => {
+    if (!newDeviceAlert.notification) return;
+    
+    try {
+      await newDeviceNotificationService.dismissNotification(newDeviceAlert.notification.id);
+      setNewDeviceAlert({ visible: false, notification: null });
+    } catch (error) {
+      console.error('Failed to dismiss device alert:', error);
+      setNewDeviceAlert({ visible: false, notification: null });
+    }
   };
 
   return (
@@ -141,6 +206,25 @@ function RootLayoutNav() {
         onDismiss={handleDismissWarning}
         onSessionExpired={handleSessionExpired}
       />
+      
+      {newDeviceAlert.notification && (
+        <NewDeviceAlert
+          isVisible={newDeviceAlert.visible}
+          deviceInfo={{
+            device_name: newDeviceAlert.notification.device_name,
+            os: newDeviceAlert.notification.device_info?.os || 'Unknown',
+            browser: newDeviceAlert.notification.device_info?.browser,
+            ip_address: newDeviceAlert.notification.ip_address,
+            location: newDeviceAlert.notification.location_info?.city || 
+                     newDeviceAlert.notification.location_info?.region,
+            device_fingerprint: newDeviceAlert.notification.device_fingerprint
+          }}
+          onTrustDevice={handleTrustDevice}
+          onViewDetails={handleViewDeviceDetails}
+          onDismiss={handleDismissDeviceAlert}
+          onDontTrust={handleBlockDevice}
+        />
+      )}
     </>
   );
 }
