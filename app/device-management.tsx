@@ -74,16 +74,21 @@ export default function DeviceManagementScreen() {
     
     try {
       setLoading(true);
-      // For now, we'll use the existing method and enhance it
-      const trustedDevices = await DeviceRegistrationService.getTrustedDevices(user.id);
+      // Use the enhanced service method to get all devices
+      const allDevices = await DeviceRegistrationService.getAllDevices(user.id);
       
-      // TODO: Replace with enhanced service method that gets all devices
-      const allDevices = trustedDevices.map((device: any) => ({
-        ...device,
-        is_current: false // TODO: Detect current device
-      }));
+      // Add current device detection
+      const devicesWithCurrent = await Promise.all(
+        allDevices.map(async (device: any) => {
+          const isCurrent = await DeviceRegistrationService.isCurrentDevice(device.device_fingerprint);
+          return {
+            ...device,
+            is_current: isCurrent
+          };
+        })
+      );
       
-      setDevices(allDevices);
+      setDevices(devicesWithCurrent);
     } catch (error) {
       console.error('Failed to load devices:', error);
       Alert.alert('Error', 'Failed to load device list. Please try again.');
@@ -138,10 +143,9 @@ export default function DeviceManagementScreen() {
               setProcessingDeviceId(device.id);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               
-              // TODO: Add untrustDevice method to service
-              // await DeviceRegistrationService.untrustDevice(user.id, device.device_fingerprint);
+              await DeviceRegistrationService.untrustDevice(user.id, device.device_fingerprint);
               
-              // For now, just update local state
+              // Update local state
               setDevices(devices.map(d => 
                 d.id === device.id ? { ...d, is_trusted: false } : d
               ));
@@ -176,10 +180,9 @@ export default function DeviceManagementScreen() {
               setProcessingDeviceId(device.id);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               
-              // TODO: Add revokeDevice method to service
-              // await DeviceRegistrationService.revokeDevice(user.id, device.device_fingerprint);
+              await DeviceRegistrationService.revokeDevice(user.id, device.device_fingerprint);
               
-              // For now, just remove from local state
+              // Remove from local state
               setDevices(devices.filter(d => d.id !== device.id));
               
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

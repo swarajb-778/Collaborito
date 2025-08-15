@@ -115,4 +115,79 @@ export class DeviceRegistrationService {
       return [];
     }
   }
+
+  static async getAllDevices(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_devices')
+        .select('*')
+        .eq('user_id', userId)
+        .order('last_seen', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      logger.warn('getAllDevices error:', error?.message || error);
+      return [];
+    }
+  }
+
+  static async untrustDevice(userId: string, deviceFingerprint: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_devices')
+        .update({ 
+          is_trusted: false,
+          last_seen: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('device_fingerprint', deviceFingerprint);
+      
+      if (error) throw error;
+      logger.info('Device untrusted successfully');
+    } catch (error: any) {
+      logger.error('untrustDevice error:', error?.message || error);
+      throw error;
+    }
+  }
+
+  static async revokeDevice(userId: string, deviceFingerprint: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_devices')
+        .delete()
+        .eq('user_id', userId)
+        .eq('device_fingerprint', deviceFingerprint);
+      
+      if (error) throw error;
+      logger.info('Device revoked successfully');
+    } catch (error: any) {
+      logger.error('revokeDevice error:', error?.message || error);
+      throw error;
+    }
+  }
+
+  static async getCurrentDeviceFingerprint(): Promise<string> {
+    // Generate a device fingerprint based on available device info
+    try {
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const platform = typeof navigator !== 'undefined' ? navigator.platform : 'Unknown';
+      const timestamp = Date.now().toString();
+      
+      // Simple fingerprint - in production, you'd want something more sophisticated
+      const fingerprint = btoa(`${userAgent}-${platform}-${timestamp}`).slice(0, 32);
+      return fingerprint;
+    } catch (error) {
+      // Fallback fingerprint
+      return `device-${Date.now()}`;
+    }
+  }
+
+  static async isCurrentDevice(deviceFingerprint: string): Promise<boolean> {
+    try {
+      const currentFingerprint = await this.getCurrentDeviceFingerprint();
+      return deviceFingerprint === currentFingerprint;
+    } catch (error) {
+      return false;
+    }
+  }
 } 

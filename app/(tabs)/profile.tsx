@@ -20,6 +20,7 @@ import { useColorScheme } from '../../hooks/useColorScheme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/OptimizedAuthContext';
 import { DeviceRegistrationService } from '../../src/services/DeviceRegistrationService';
+import { useRouter } from 'expo-router';
 import Toast from '../../components/ui/Toast';
 import Animated, { 
   useSharedValue, 
@@ -89,6 +90,7 @@ const USER = {
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('Bio');
   const insets = useSafeAreaInsets();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -274,32 +276,14 @@ export default function ProfileScreen() {
                   </View>
                   <TouchableOpacity
                     style={[styles.actionButton, { borderBottomWidth: 0 }]}
-                    onPress={async () => {
-                      if (!user?.id) return;
-                      try {
-                        await DeviceRegistrationService.registerDevice(
-                          user.id,
-                          `${Platform.OS}-${Platform.Version}`,
-                          'This Device',
-                          Platform.OS,
-                          null,
-                          null,
-                          true
-                        );
-                        setShowToast({ msg: 'Device trusted successfully', type: 'success' });
-                        const list = await DeviceRegistrationService.getTrustedDevices(user.id);
-                        setTrustedDevices(list);
-                      } catch (e) {
-                        setShowToast({ msg: 'Failed to trust device', type: 'error' });
-                      } finally {
-                        setTimeout(() => setShowToast(null), 2000);
-                      }
+                    onPress={() => {
+                      router.push('/device-management');
                     }}
                   >
-                    <View style={[styles.actionIconContainer, { backgroundColor: COLORS.success }]}>
-                      <FontAwesome5 name="shield-alt" size={18} color="#FFF" />
+                    <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primary }]}>
+                      <FontAwesome5 name="cogs" size={18} color="#FFF" />
                     </View>
-                    <Text style={[styles.actionText, { color: theme.text }]}>Trust This Device</Text>
+                    <Text style={[styles.actionText, { color: theme.text }]}>Manage Devices</Text>
                     <FontAwesome5 name="chevron-right" size={16} color={theme.textMuted} style={styles.actionArrow} />
                   </TouchableOpacity>
                 </>
