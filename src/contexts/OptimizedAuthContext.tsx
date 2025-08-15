@@ -32,7 +32,7 @@ interface OptimizedAuthContextType {
   
   // Authentication methods
   signUp: (email: string, password: string, userData?: Partial<ExtendedUser>) => Promise<{ success: boolean; error?: string; user?: ExtendedUser }>;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: ExtendedUser; securityAlerts?: any[] }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string; user?: ExtendedUser; securityAlerts?: any[] }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   
   // OPTIMIZED: Profile management with database persistence
@@ -261,7 +261,8 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
   // OPTIMIZED: Sign in with profile preloading and security monitoring
   const signIn = useCallback(async (
     email: string, 
-    password: string
+    password: string,
+    rememberMe: boolean = false
   ): Promise<{ success: boolean; error?: string; user?: ExtendedUser; securityAlerts?: any[] }> => {
     try {
       logger.info('🔐 Optimized sign in process with security monitoring...');
@@ -310,8 +311,9 @@ export function OptimizedAuthProvider({ children }: { children: React.ReactNode 
         // Start secure session monitoring
         await securityMonitoringService.startSecureSession(data.user.id, data.session?.access_token || '');
         
-        // Start session timeout monitoring
-        await sessionTimeoutService.startSession(data.user.id, data.session?.access_token || '');
+        // Start session timeout monitoring with custom duration based on rememberMe
+        const sessionTimeout = rememberMe ? 7 * 24 * 60 : 120; // 7 days vs 2 hours
+        await sessionTimeoutService.startSession(data.user.id, data.session?.access_token || '', sessionTimeout);
         
         return { 
           success: true, 

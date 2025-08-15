@@ -19,9 +19,9 @@ export class SessionTimeoutService {
     return;
   }
 
-  async startSession(userId: string, _sessionId: string): Promise<void> {
+  async startSession(userId: string, _sessionId: string, customTimeoutMinutes?: number): Promise<void> {
     this.lastActivity = Date.now();
-    this.timeoutMinutes = SessionTimeoutService.DEFAULT_TIMEOUT_MINUTES;
+    this.timeoutMinutes = customTimeoutMinutes || SessionTimeoutService.DEFAULT_TIMEOUT_MINUTES;
     this.scheduleTimers();
   }
 

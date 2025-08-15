@@ -36,6 +36,9 @@ export default function LoginScreen() {
   const [lockoutDuration, setLockoutDuration] = useState(0);
   const [lockoutEmail, setLockoutEmail] = useState('');
   
+  // Remember me state
+  const [rememberMe, setRememberMe] = useState(false);
+  
   // Animation values
   const cardScale = useSharedValue(0.95);
   const opacity = useSharedValue(0);
@@ -164,7 +167,7 @@ export default function LoginScreen() {
       
       if (mode === 'signin') {
         try {
-          await signIn(email, password);
+          await signIn(email, password, rememberMe);
           console.log('Sign in successful, navigating to tabs');
           
           // Record successful login attempt
@@ -333,6 +336,30 @@ export default function LoginScreen() {
               secureTextEntry
               leftIcon={<FontAwesome5 name="lock" size={16} color={colors.muted} style={styles.inputIcon} />}
             />
+            
+            <TouchableOpacity 
+              style={styles.rememberMeContainer}
+              onPress={() => {
+                setRememberMe(!rememberMe);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.checkbox, 
+                { 
+                  backgroundColor: rememberMe ? colors.primary : 'transparent',
+                  borderColor: rememberMe ? colors.primary : colors.muted
+                }
+              ]}>
+                {rememberMe && (
+                  <FontAwesome5 name="check" size={12} color="white" />
+                )}
+              </View>
+              <Text style={[styles.rememberMeText, { color: colors.text }]}>
+                Remember me for 7 days
+              </Text>
+            </TouchableOpacity>
             
             <Button
               style={styles.submitButton}
@@ -761,5 +788,24 @@ const styles = StyleSheet.create({
     width: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rememberMeText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 }); 
