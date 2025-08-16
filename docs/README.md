@@ -183,3 +183,11 @@ Common issues and solutions:
 - Track user engagement analytics
 - Set up alerts for critical issues
 - Use structured logging for debugging 
+
+## Accessibility Guidelines
+
+- Follow WCAG 2.1 AA standards
+- Implement proper screen reader support
+- Use semantic HTML and ARIA labels
+- Ensure sufficient color contrast
+- Test with accessibility tools 
