@@ -297,4 +297,13 @@
 - Verify:
   - `npm run verify-security` should show RPC OK and tables accessible.
 
+---
+
+## 19) Milestone status update (2025-08-18)
+
+- Security RPC deployment: In progress (verification script in place; pushing remote pending)
+- Session timeout UX: In progress (global toast + extend control pending rollout)
+- Device management UI: Planned (trust/untrust/revoke flows and new-device alerts)
+- Documentation: Ongoing updates across security, workflow, and operations
+
 
