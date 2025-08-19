@@ -306,4 +306,12 @@
 - Device management UI: Planned (trust/untrust/revoke flows and new-device alerts)
 - Documentation: Ongoing updates across security, workflow, and operations
 
+---
+
+## 20) Recent adjustments (2025-08-19)
+
+- Prioritized device management UI ahead of LinkedIn enhancements to support security milestone.
+- Added explicit acceptance criteria for session timeout extend control.
+- Scheduled staging push for security RPCs before end of week; production push next week pending verification green.
+
 
