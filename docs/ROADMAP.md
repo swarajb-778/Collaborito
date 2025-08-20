@@ -314,4 +314,9 @@
 - Added explicit acceptance criteria for session timeout extend control.
 - Scheduled staging push for security RPCs before end of week; production push next week pending verification green.
 
+## 21) Risks added/removed (2025-08-19)
+
+- Added: Potential delay in Supabase RPC deployment due to environment access windows.
+- Removed: Expo package mismatch risk (versions aligned and validated in CI).
+
 
