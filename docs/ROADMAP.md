@@ -319,4 +319,10 @@
 - Added: Potential delay in Supabase RPC deployment due to environment access windows.
 - Removed: Expo package mismatch risk (versions aligned and validated in CI).
 
+## 22) Decision log (2025-08-19)
+
+- Prioritized security milestone (RPC deploy + session UX) before feed/messaging.
+- Kept onboarding UI reverted to preferred style; accessibility upgrades deferred post-security.
+- Adopted small, focused commits with immediate pushes to maintain linear history.
+
 
