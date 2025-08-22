@@ -325,4 +325,11 @@
 - Kept onboarding UI reverted to preferred style; accessibility upgrades deferred post-security.
 - Adopted small, focused commits with immediate pushes to maintain linear history.
 
+## 23) Owners and reviewers (2025-08-19)
+
+- Security milestone: Swaraj Bangar (lead), team review required
+- Session timeout UX: Swaraj Bangar (implementation), UX team review
+- Device management: Swaraj Bangar (UI), security team validation
+- Documentation: Swaraj Bangar (maintainer), community contributions welcome
+
 
