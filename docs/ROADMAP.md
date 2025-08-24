@@ -332,4 +332,11 @@
 - Device management: Swaraj Bangar (UI), security team validation
 - Documentation: Swaraj Bangar (maintainer), community contributions welcome
 
+## 24) Next sprint planning (2025-08-19)
+
+- Sprint duration: 2 weeks (Aug 19 - Sep 2)
+- Focus: Security RPC deployment and session timeout UX
+- Deliverables: Working lockout system, global session warnings, device trust flows
+- Success criteria: `npm run verify-security` returns OK=3, WARN=0
+
 
