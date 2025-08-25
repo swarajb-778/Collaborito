@@ -339,4 +339,11 @@
 - Deliverables: Working lockout system, global session warnings, device trust flows
 - Success criteria: `npm run verify-security` returns OK=3, WARN=0
 
+## 25) Technical debt tracking (2025-08-19)
+
+- High priority: Security RPC deployment lag (blocks production security)
+- Medium priority: Session timeout global integration (UX consistency)
+- Low priority: Accessibility upgrades for onboarding (post-security milestone)
+- Monitoring: Package version drift, unused dependencies, test coverage gaps
+
 
