@@ -346,4 +346,12 @@
 - Low priority: Accessibility upgrades for onboarding (post-security milestone)
 - Monitoring: Package version drift, unused dependencies, test coverage gaps
 
+## 26) Communication channels (2025-08-19)
+
+- Project updates: GitHub Issues and Discussions
+- Security concerns: Private security channel (urgent issues)
+- Development coordination: Pull request reviews and comments
+- Documentation feedback: GitHub Issues with 'docs' label
+- Team sync: Weekly status updates in project discussions
+
 
