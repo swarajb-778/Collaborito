@@ -354,4 +354,11 @@
 - Documentation feedback: GitHub Issues with 'docs' label
 - Team sync: Weekly status updates in project discussions
 
+## 27) Dependency update schedule (2025-08-19)
+
+- Weekly: Minor/patch updates checked every Friday
+- Monthly: Expo/React Native ecosystem review and planned upgrades
+- Quarterly: Audit transitive deps, remove unused packages, review polyfills
+- Always: Security patches applied immediately when available
+
 
