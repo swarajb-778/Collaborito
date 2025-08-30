@@ -361,4 +361,12 @@
 - Quarterly: Audit transitive deps, remove unused packages, review polyfills
 - Always: Security patches applied immediately when available
 
+## 28) Quality gates (2025-08-19)
+
+- Code review: All changes require at least one approval
+- Testing: Unit tests must pass, integration tests for critical paths
+- Security: Security verification script must return OK=3, WARN=0
+- Performance: No regression in app startup time or screen load times
+- Documentation: README and API docs updated with new features
+
 
