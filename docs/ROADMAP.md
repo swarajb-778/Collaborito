@@ -369,4 +369,12 @@
 - Performance: No regression in app startup time or screen load times
 - Documentation: README and API docs updated with new features
 
+## 29) Rollback procedures (2025-08-19)
+
+- Database migrations: Use Supabase CLI to revert specific migrations
+- Code deployments: Git revert to previous stable commit
+- Feature flags: Disable problematic features without full rollback
+- Emergency contacts: Immediate escalation to lead developer
+- Rollback criteria: Security issues, critical bugs, performance degradation
+
 
