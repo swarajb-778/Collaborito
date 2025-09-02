@@ -377,4 +377,12 @@
 - Emergency contacts: Immediate escalation to lead developer
 - Rollback criteria: Security issues, critical bugs, performance degradation
 
+## 30) Post-release checklist (2025-08-19)
+
+- Verify error telemetry shows no new spikes
+- Check performance dashboards (startup, p95 load times)
+- Validate critical user flows (login, onboarding, profile update)
+- Review user feedback and open issues
+- Prepare hotfix plan if blockers detected
+
 
