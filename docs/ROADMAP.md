@@ -405,4 +405,12 @@
 
 This roadmap provides a comprehensive guide for Collaborito's development, covering current status, immediate priorities, growth features, and operational procedures. The focus remains on completing the security milestone (RPC deployment, session timeout UX, device management) before moving to engagement features (feed, messaging, booking). Regular updates to this document ensure alignment with project goals and team capabilities.
 
+## 34) Backup strategy (2025-08-19)
+
+- Daily: Automated database backups retained for 14 days
+- Weekly: Full backup snapshot retained for 3 months
+- Encryption: Backups encrypted at rest and in transit
+- Recovery test: Quarterly restore drill to validate procedures
+- Ownership: Lead developer responsible for backup monitoring
+
 
