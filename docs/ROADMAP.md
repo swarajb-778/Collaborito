@@ -421,4 +421,13 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Communication: Status updates every 30 minutes for P1 incidents
 - Post-mortem: Required for P1/P2 incidents within 48 hours
 
+## 36) Glossary
+
+- RPC: Remote Procedure Call used in Supabase to execute server-side logic
+- RLS: Row-Level Security policies controlling data access in Supabase
+- P95: 95th percentile performance metric for latency
+- MVP: Minimum Viable Product
+- CI: Continuous Integration; automated checks on each commit
+- DX: Developer Experience; tooling and ergonomics for contributors
+
 
