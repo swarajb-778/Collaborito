@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - v1.3: Added glossary and documentation maintenance procedures
 - v1.4: Added sprint planning, technical debt tracking, and final summary
 
+## 38) Accessibility audit plan (2025-08-19)
+
+- Tools: iOS VoiceOver, Android TalkBack, Accessibility Inspector
+- Checks: Focus order, labels/traits, contrast, dynamic type, reduce motion
+- Scope: Onboarding, primary tabs, profile, messaging inputs
+- Schedule: Initial pass next sprint; full audit post-security milestone
+- Outcome: Issue list with priorities and remediation owners
+
 
