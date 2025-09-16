@@ -421,20 +421,4 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Communication: Status updates every 30 minutes for P1 incidents
 - Post-mortem: Required for P1/P2 incidents within 48 hours
 
-## 37) Change log (2025-08-19)
-
-- v1.0: Initial comprehensive roadmap with current status and priorities
-- v1.1: Added operational procedures (quality gates, monitoring, rollback)
-- v1.2: Added communication channels, incident response, backup strategy
-- v1.3: Added glossary and documentation maintenance procedures
-- v1.4: Added sprint planning, technical debt tracking, and final summary
-
-## 38) Accessibility audit plan (2025-08-19)
-
-- Tools: iOS VoiceOver, Android TalkBack, Accessibility Inspector
-- Checks: Focus order, labels/traits, contrast, dynamic type, reduce motion
-- Scope: Onboarding, primary tabs, profile, messaging inputs
-- Schedule: Initial pass next sprint; full audit post-security milestone
-- Outcome: Issue list with priorities and remediation owners
-
 
