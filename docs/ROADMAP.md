@@ -421,4 +421,13 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Communication: Status updates every 30 minutes for P1 incidents
 - Post-mortem: Required for P1/P2 incidents within 48 hours
 
+## 36) Glossary (2025-08-19)
+
+- RPC: Remote Procedure Call (Supabase functions)
+- RLS: Row Level Security (database access control)
+- OAuth: Open Authorization (LinkedIn login)
+- MVP: Minimum Viable Product
+- DAU/WAU: Daily/Weekly Active Users
+- TTI: Time to Interactive (performance metric)
+
 
