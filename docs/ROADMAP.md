@@ -413,21 +413,4 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Incident response (2025-08-19)
-
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 36) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
 
