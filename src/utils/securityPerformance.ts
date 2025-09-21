@@ -453,3 +453,4 @@ export function optimizeSecurityComponent<T extends Record<string, any>>(
   
   return optimized;
 }
+

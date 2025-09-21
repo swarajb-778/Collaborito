@@ -317,3 +317,4 @@ export class NewDeviceNotificationService {
 }
 
 export const newDeviceNotificationService = NewDeviceNotificationService.getInstance();
+

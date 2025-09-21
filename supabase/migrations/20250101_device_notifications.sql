@@ -119,3 +119,4 @@ BEGIN
   RETURN cleanup_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

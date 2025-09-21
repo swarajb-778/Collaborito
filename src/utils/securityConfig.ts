@@ -290,3 +290,4 @@ export function formatSecuritySetting(key: keyof SecuritySettings, value: any): 
       return value ? 'Enabled' : 'Disabled';
   }
 }
+

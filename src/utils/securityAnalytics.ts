@@ -496,3 +496,4 @@ export function formatSecurityScore(score: number): {
     };
   }
 }
+
