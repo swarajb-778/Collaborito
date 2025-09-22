@@ -413,4 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 35) Operational metrics (2025-08-19)
+
+- Availability: target 99.5%+ crash-free sessions
+- Performance: p95 screen load < 800ms
+- Errors: < 1% failed requests per day
+- Security: 0 critical unresolved vulnerabilities
+- Engagement: DAU/WAU tracked weekly
+
 
