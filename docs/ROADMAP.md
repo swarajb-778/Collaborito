@@ -421,4 +421,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Security: 0 critical unresolved vulnerabilities
 - Engagement: DAU/WAU tracked weekly
 
+## 36) Release cadences (2025-08-19)
+
+- Patch releases: as-needed for hotfixes
+- Minor releases: bi-weekly feature drops
+- Major releases: quarterly planning and rollout
+- Freeze: 48 hours before major release for stabilization
+
 
