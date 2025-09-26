@@ -413,19 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Operational metrics (2025-08-19)
+## 35) Performance benchmarks (2025-08-19)
 
-- Availability: target 99.5%+ crash-free sessions
-- Performance: p95 screen load < 800ms
-- Errors: < 1% failed requests per day
-- Security: 0 critical unresolved vulnerabilities
-- Engagement: DAU/WAU tracked weekly
-
-## 36) Release cadences (2025-08-19)
-
-- Patch releases: as-needed for hotfixes
-- Minor releases: bi-weekly feature drops
-- Major releases: quarterly planning and rollout
-- Freeze: 48 hours before major release for stabilization
+- App startup: < 3 seconds on mid-range devices
+- Screen transitions: < 300ms for navigation
+- API response: < 500ms for 95th percentile
+- Memory usage: < 150MB peak during normal operation
+- Battery impact: Minimal background processing
 
 
