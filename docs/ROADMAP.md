@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Community forum: User discussions and feature ideas
 - Beta testing: Closed group for early feature feedback
 
+## 37) Feature flags (2025-08-19)
+
+- Gradual rollout: Enable features for percentage of users
+- A/B testing: Compare different implementations
+- Emergency disable: Instantly turn off problematic features
+- Environment control: Different flags for dev/staging/prod
+- User targeting: Enable features for specific user segments
+
 
