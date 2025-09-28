@@ -421,3 +421,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Memory usage: < 150MB peak on iOS/Android
 - Battery impact: < 5% drain per hour of active use
 
+## 36) Security checklist (2025-08-19)
+
+- Authentication: Multi-factor authentication enabled
+- Data encryption: All sensitive data encrypted at rest and in transit
+- Access control: Role-based permissions implemented
+- Audit logging: All security events logged and monitored
+- Vulnerability scanning: Regular security assessments scheduled
+
