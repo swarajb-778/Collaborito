@@ -413,35 +413,14 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
 
-- App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for navigation
-- API response: < 1 second for 95th percentile
-- Memory usage: < 150MB peak on iOS/Android
-- Battery impact: < 5% drain per hour of active use
 
-## 36) Security checklist (2025-08-19)
+## 35) SLA targets (2025-08-19)
 
-- Authentication: Multi-factor authentication enabled
-- Data encryption: All sensitive data encrypted at rest and in transit
-- Access control: Role-based permissions implemented
-- Audit logging: All security events logged and monitored
-- Vulnerability scanning: Regular security assessments scheduled
+- Availability: 99.5
+## 35) SLA targets (2025-08-19)
 
-## 37) User feedback process (2025-08-19)
-
-- Collection: In-app feedback forms and app store reviews
-- Analysis: Weekly review of feedback trends and patterns
-- Response: Acknowledge feedback within 48 hours
-- Implementation: Prioritize high-impact user requests
-- Communication: Update users on feature requests and bug fixes
-
-## 38) Project completion criteria (2025-08-19)
-
-- MVP ready: Core features functional and tested
-- Security milestone: All security features deployed and verified
-- Performance targets: Benchmarks met across all metrics
-- Documentation: Complete user and developer documentation
-- Launch readiness: App store approval and deployment pipeline ready
-
+- Availability: 99.5% monthly target
+- Incident response: P1 within 15 minutes, P2 within 1 hour
+- Recovery time objective (RTO): 2 hours for P1
+- Recovery point objective (RPO): 15 minutes for critical data
