@@ -424,3 +424,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Incident response: P1 within 15 minutes, P2 within 1 hour
 - Recovery time objective (RTO): 2 hours for P1
 - Recovery point objective (RPO): 15 minutes for critical data
+
+## 36) Release cadence (2025-08-19)
+
+- Cadence: Bi-weekly releases (Tuesdays)
+- Freeze: 24-hour code freeze before release
+- Pre-release checks: Tests green, performance budget OK, security verify OK
+- Post-release: Monitor telemetry for 48 hours
