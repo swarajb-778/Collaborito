@@ -431,3 +431,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Freeze: 24-hour code freeze before release
 - Pre-release checks: Tests green, performance budget OK, security verify OK
 - Post-release: Monitor telemetry for 48 hours
+
+## 37) Observability plan (2025-08-19)
+
+- Metrics: App start time, API latency, error rates, login success rate
+- Tracing: Key user flows (login, onboarding, profile update)
+- Logging: Structured logs with correlation IDs
+- Dashboards: Security, performance, reliability
