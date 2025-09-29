@@ -438,3 +438,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Tracing: Key user flows (login, onboarding, profile update)
 - Logging: Structured logs with correlation IDs
 - Dashboards: Security, performance, reliability
+
+## 38) Risk register (2025-08-19)
+
+- Auth provider changes: Monitor LinkedIn API updates
+- Supabase quota limits: Track usage; set alerts
+- Mobile OS updates: Regression testing before major iOS/Android releases
+- Team bandwidth: Prioritize security milestones first
