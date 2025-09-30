@@ -426,3 +426,14 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Deploy migrations to staging and run smoke tests
 - Validate login, onboarding, and device trust flows
 - Confirm no RLS violations in logs
+
+## 39) Production readiness criteria (2025-08-19)
+
+- RLS enforced on all tables; no public data leakage
+- Security RPCs deployed and verified OK
+- Error rate < 1
+## 39) Production readiness criteria (2025-08-19)
+
+- RLS enforced on all tables; no public data leakage
+- Security RPCs deployed and verified OK
+- Error rate < 1% and p95 load < 800ms
