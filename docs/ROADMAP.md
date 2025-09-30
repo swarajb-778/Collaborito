@@ -415,33 +415,8 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 
 
 
-## 35) SLA targets (2025-08-19)
+## 37) Release checklist template (2025-08-19)
 
-- Availability: 99.5
-## 35) SLA targets (2025-08-19)
-
-- Availability: 99.5% monthly target
-- Incident response: P1 within 15 minutes, P2 within 1 hour
-- Recovery time objective (RTO): 2 hours for P1
-- Recovery point objective (RPO): 15 minutes for critical data
-
-## 36) Release cadence (2025-08-19)
-
-- Cadence: Bi-weekly releases (Tuesdays)
-- Freeze: 24-hour code freeze before release
-- Pre-release checks: Tests green, performance budget OK, security verify OK
-- Post-release: Monitor telemetry for 48 hours
-
-## 37) Observability plan (2025-08-19)
-
-- Metrics: App start time, API latency, error rates, login success rate
-- Tracing: Key user flows (login, onboarding, profile update)
-- Logging: Structured logs with correlation IDs
-- Dashboards: Security, performance, reliability
-
-## 38) Risk register (2025-08-19)
-
-- Auth provider changes: Monitor LinkedIn API updates
-- Supabase quota limits: Track usage; set alerts
-- Mobile OS updates: Regression testing before major iOS/Android releases
-- Team bandwidth: Prioritize security milestones first
+- Pre-release: bump version, update changelog, run full test suite
+- Release: tag commit, publish artifacts, verify rollout
+- Post-release: monitor errors, performance, and user feedback
