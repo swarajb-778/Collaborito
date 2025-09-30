@@ -420,3 +420,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Pre-release: bump version, update changelog, run full test suite
 - Release: tag commit, publish artifacts, verify rollout
 - Post-release: monitor errors, performance, and user feedback
+
+## 38) Staging validation steps (2025-08-19)
+
+- Deploy migrations to staging and run smoke tests
+- Validate login, onboarding, and device trust flows
+- Confirm no RLS violations in logs
