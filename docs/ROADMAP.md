@@ -443,3 +443,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Metrics: latency, error rate, session timeouts, device trust actions
 - Logs: structured logs with request IDs and user IDs (where permitted)
 - Traces: instrument onboarding and auth flows
+
+## 41) SLA targets (2025-08-19)
+
+- Availability: 99.5% monthly
+- Login success rate: > 99%
+- Message delivery latency: p95 < 1.5s (post-MVP)
