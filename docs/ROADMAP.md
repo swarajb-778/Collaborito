@@ -437,3 +437,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - RLS enforced on all tables; no public data leakage
 - Security RPCs deployed and verified OK
 - Error rate < 1% and p95 load < 800ms
+
+## 40) Observability plan (2025-08-19)
+
+- Metrics: latency, error rate, session timeouts, device trust actions
+- Logs: structured logs with request IDs and user IDs (where permitted)
+- Traces: instrument onboarding and auth flows
