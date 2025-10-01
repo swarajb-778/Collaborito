@@ -437,5 +437,14 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - User segments: Target specific user groups for testing
 - Monitoring: Track flag usage and performance impact
 
+## 40) Data retention policy (2025-08-19)
+
+- User data: Retained for account lifetime + 30 days
+- Analytics: Aggregated data kept for 2 years
+- Logs: Application logs retained for 90 days
+- Backups: Database backups kept for 3 months
+- Compliance: GDPR/CCPA compliant data handling
+
+
 
 
