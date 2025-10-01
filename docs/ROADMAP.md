@@ -413,39 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 37) Performance benchmarks (2025-08-19)
 
+- App startup: < 3 seconds on average devices
+- Screen transitions: < 500ms for smooth navigation
+- API response: < 200ms for 95th percentile
+- Memory usage: < 150MB peak during normal operation
+- Battery impact: Minimal background processing
 
-## 37) Release checklist template (2025-08-19)
-
-- Pre-release: bump version, update changelog, run full test suite
-- Release: tag commit, publish artifacts, verify rollout
-- Post-release: monitor errors, performance, and user feedback
-
-## 38) Staging validation steps (2025-08-19)
-
-- Deploy migrations to staging and run smoke tests
-- Validate login, onboarding, and device trust flows
-- Confirm no RLS violations in logs
-
-## 39) Production readiness criteria (2025-08-19)
-
-- RLS enforced on all tables; no public data leakage
-- Security RPCs deployed and verified OK
-- Error rate < 1
-## 39) Production readiness criteria (2025-08-19)
-
-- RLS enforced on all tables; no public data leakage
-- Security RPCs deployed and verified OK
-- Error rate < 1% and p95 load < 800ms
-
-## 40) Observability plan (2025-08-19)
-
-- Metrics: latency, error rate, session timeouts, device trust actions
-- Logs: structured logs with request IDs and user IDs (where permitted)
-- Traces: instrument onboarding and auth flows
-
-## 41) SLA targets (2025-08-19)
-
-- Availability: 99.5% monthly
-- Login success rate: > 99%
-- Message delivery latency: p95 < 1.5s (post-MVP)
