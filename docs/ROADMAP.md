@@ -445,6 +445,15 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Backups: Database backups kept for 3 months
 - Compliance: GDPR/CCPA compliant data handling
 
+## 41) Development environment setup (2025-08-19)
+
+- Local development: Docker containers for consistent environments
+- Database: Local Supabase instance for development
+- Testing: Separate test database and environment
+- CI/CD: Automated testing and deployment pipelines
+- Documentation: Developer onboarding guide and setup scripts
+
+
 
 
 
