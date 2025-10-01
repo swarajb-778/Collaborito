@@ -429,4 +429,13 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Feature requests: GitHub Issues for user suggestions
 - Analytics: Track user behavior and pain points
 
+## 39) Feature flag strategy (2025-08-19)
+
+- New features: Deploy behind feature flags for gradual rollout
+- A/B testing: Use flags for controlled experiments
+- Emergency disable: Quick toggle for problematic features
+- User segments: Target specific user groups for testing
+- Monitoring: Track flag usage and performance impact
+
+
 
