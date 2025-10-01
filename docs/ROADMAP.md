@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Support tickets: Categorize and prioritize user issues
 - Beta testing: Early access program for new features
 
+## 39) Feature flags (2025-08-19)
+
+- Implementation: Use environment variables for feature toggles
+- Rollout strategy: Gradual percentage-based rollouts
+- Monitoring: Track feature adoption and error rates
+- Rollback: Quick disable capability for problematic features
+- Documentation: Maintain feature flag registry and status
+
 
