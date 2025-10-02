@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - User interviews: Monthly sessions with active users
 - Analytics: Track user behavior and pain points
 
+## 37) Code review checklist (2025-08-19)
+
+- Functionality: Does the code work as intended?
+- Security: No sensitive data exposure or vulnerabilities
+- Performance: No significant performance regressions
+- Testing: Adequate test coverage for new code
+- Documentation: Code is well-commented and documented
+
 
