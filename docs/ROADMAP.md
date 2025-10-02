@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Testing: Adequate test coverage for new code
 - Documentation: Code is well-commented and documented
 
+## 38) Feature flag strategy (2025-08-19)
+
+- New features: Deploy behind feature flags for gradual rollout
+- A/B testing: Use flags to test different implementations
+- Emergency disable: Quick way to disable problematic features
+- User segments: Target specific user groups for testing
+- Monitoring: Track feature adoption and performance metrics
+
 
