@@ -424,3 +424,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Zero PII exposure incidents
 - p95 login time < 800ms
 - MFA adoption rate > 60% (post-launch)
+
+## 38) Release cadence (2025-08-19)
+
+- Patch: As needed for bug fixes (hotfix within 24–48 hours)
+- Minor: Every 2–4 weeks with feature bundles
+- Major: Quarterly planned upgrades with migration notes
+- Freeze: 48 hours before major releases for stabilization
