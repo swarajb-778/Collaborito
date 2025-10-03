@@ -445,3 +445,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Updated: Session timeout UX scope clarified (reduced)
 - Removed: Expo package mismatch risk (resolved)
 - Next review: Weekly during sprint planning
+
+## 41) Architecture decision records (ADR) (2025-08-19)
+
+- ADR-001: Choose Supabase for backend (auth, DB, storage)
+- ADR-002: Use Expo Router for app navigation
+- ADR-003: Adopt TypeScript across codebase
+- ADR-004: Implement service-layer architecture for modularity
