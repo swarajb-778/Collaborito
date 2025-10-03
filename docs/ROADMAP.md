@@ -413,44 +413,14 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
-
-- App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for smooth navigation
-- API response times: < 200ms for 95th percentile
-- Memory usage: < 150MB peak during normal operation
-- Battery impact: Minimal background processing
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app feedback: Quick rating system for features
-- Bug reporting: Integrated crash reporting with user context
-- Feature requests: GitHub Issues with 'enhancement' label
-- User interviews: Monthly sessions with active users
-- Analytics: Track user behavior and pain points
-
-## 37) Code review checklist (2025-08-19)
-
-- Functionality: Does the code work as intended?
-- Security: No sensitive data exposure or vulnerabilities
-- Performance: No significant performance regressions
-- Testing: Adequate test coverage for new code
-- Documentation: Code is well-commented and documented
-
-## 38) Feature flag strategy (2025-08-19)
-
-- New features: Deploy behind feature flags for gradual rollout
-- A/B testing: Use flags to test different implementations
-- Emergency disable: Quick way to disable problematic features
-- User segments: Target specific user groups for testing
-- Monitoring: Track feature adoption and performance metrics
-
-## 39) Continuous improvement (2025-08-19)
-
-- Weekly retrospectives: Review what went well and what didn't
-- Process optimization: Identify bottlenecks and inefficiencies
-- Tool evaluation: Regularly assess development tools and workflows
-- Skill development: Encourage team learning and growth
-- Innovation time: Dedicated time for exploring new technologies
 
 
+## 37) Security KPIs (2025-08-19)
+
+- Lockout false positives < 0.1
+## 37) Security KPIs (2025-08-19)
+
+- Lockout false positives < 0.1%
+- Zero PII exposure incidents
+- p95 login time < 800ms
+- MFA adoption rate > 60% (post-launch)
