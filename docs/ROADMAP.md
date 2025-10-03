@@ -431,3 +431,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Minor: Every 2–4 weeks with feature bundles
 - Major: Quarterly planned upgrades with migration notes
 - Freeze: 48 hours before major releases for stabilization
+
+## 39) Support policy (2025-08-19)
+
+- Channels: GitHub issues for bugs, Discussions for Q&A
+- SLA targets: First response within 24 hours on business days
+- Versions: Support latest minor and one previous minor
+- Deprecation: 30-day notice before removing deprecated features
