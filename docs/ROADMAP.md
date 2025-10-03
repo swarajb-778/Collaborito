@@ -438,3 +438,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - SLA targets: First response within 24 hours on business days
 - Versions: Support latest minor and one previous minor
 - Deprecation: 30-day notice before removing deprecated features
+
+## 40) Risk register updates (2025-08-19)
+
+- Added: RPC deployment access timing risk (medium)
+- Updated: Session timeout UX scope clarified (reduced)
+- Removed: Expo package mismatch risk (resolved)
+- Next review: Weekly during sprint planning
