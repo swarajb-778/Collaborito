@@ -413,42 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 37) Performance benchmarks (2025-08-19)
+
+- App startup: < 3 seconds on mid-range devices
+- Screen transitions: < 200ms for smooth navigation
+- API response: < 500ms for 95th percentile
+- Memory usage: < 150MB peak during normal operation
+- Battery impact: Minimal drain during background operation
 
 
-## 37) Security KPIs (2025-08-19)
-
-- Lockout false positives < 0.1
-## 37) Security KPIs (2025-08-19)
-
-- Lockout false positives < 0.1%
-- Zero PII exposure incidents
-- p95 login time < 800ms
-- MFA adoption rate > 60% (post-launch)
-
-## 38) Release cadence (2025-08-19)
-
-- Patch: As needed for bug fixes (hotfix within 24–48 hours)
-- Minor: Every 2–4 weeks with feature bundles
-- Major: Quarterly planned upgrades with migration notes
-- Freeze: 48 hours before major releases for stabilization
-
-## 39) Support policy (2025-08-19)
-
-- Channels: GitHub issues for bugs, Discussions for Q&A
-- SLA targets: First response within 24 hours on business days
-- Versions: Support latest minor and one previous minor
-- Deprecation: 30-day notice before removing deprecated features
-
-## 40) Risk register updates (2025-08-19)
-
-- Added: RPC deployment access timing risk (medium)
-- Updated: Session timeout UX scope clarified (reduced)
-- Removed: Expo package mismatch risk (resolved)
-- Next review: Weekly during sprint planning
-
-## 41) Architecture decision records (ADR) (2025-08-19)
-
-- ADR-001: Choose Supabase for backend (auth, DB, storage)
-- ADR-002: Use Expo Router for app navigation
-- ADR-003: Adopt TypeScript across codebase
-- ADR-004: Implement service-layer architecture for modularity
