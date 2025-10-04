@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - User segments: Targeted feature access based on user groups
 - Monitoring: Track feature adoption and performance metrics
 
+## 40) Data privacy compliance (2025-08-19)
+
+- GDPR compliance: User data export and deletion capabilities
+- Data retention: Clear policies for user data lifecycle
+- Consent management: Granular privacy controls for users
+- Audit logging: Track data access and modifications
+- Privacy by design: Built-in privacy protections from development start
+
 
