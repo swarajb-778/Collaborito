@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Surveys: Quarterly user satisfaction surveys
 - Support tickets: Categorize and prioritize user issues
 
+## 40) Feature flag management (2025-08-19)
+
+- New features: Deploy behind feature flags for gradual rollout
+- A/B testing: Use flags for controlled experiments
+- Emergency disable: Quick toggle for problematic features
+- User segments: Target specific user groups for testing
+- Monitoring: Track flag usage and performance impact
+
 
