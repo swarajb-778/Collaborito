@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Remote configuration: Update feature flags without app updates
 - Analytics: Track feature adoption and performance metrics
 
+## 38) Data privacy compliance (2025-08-19)
+
+- GDPR compliance: User data rights and consent management
+- Data retention: Automatic deletion of old user data
+- Privacy policy: Clear and up-to-date privacy documentation
+- Data encryption: End-to-end encryption for sensitive data
+- Audit logs: Track all data access and modifications
+
 
