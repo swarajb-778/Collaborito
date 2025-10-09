@@ -416,41 +416,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 ## 35) Performance benchmarks (2025-08-19)
 
 - App startup: < 3 seconds on average devices
-- Screen transitions: < 200ms for smooth navigation
-- API response: < 500ms for 95th percentile
+- Screen transitions: < 500ms for smooth navigation
+- API response: < 200ms for 95th percentile
 - Memory usage: < 150MB peak during normal operation
 - Battery impact: Minimal drain during background operation
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app feedback: Star rating and comment system
-- App store reviews: Monitor and respond to user reviews
-- Beta testing: Regular feedback from beta users
-- Analytics: Track user behavior and pain points
-- Support tickets: Categorize and prioritize user issues
-
-## 37) Feature flag management (2025-08-19)
-
-- A/B testing: Gradual rollout of new features
-- Kill switches: Instant disable for problematic features
-- User segmentation: Different features for different user groups
-- Remote configuration: Update feature flags without app updates
-- Analytics: Track feature adoption and performance metrics
-
-## 38) Data privacy compliance (2025-08-19)
-
-- GDPR compliance: User data rights and consent management
-- Data retention: Automatic deletion of old user data
-- Privacy policy: Clear and up-to-date privacy documentation
-- Data encryption: End-to-end encryption for sensitive data
-- Audit logs: Track all data access and modifications
-
-## 39) Continuous improvement (2025-08-19)
-
-- Retrospectives: Weekly team retrospectives to identify improvements
-- Metrics review: Monthly analysis of KPIs and performance data
-- Process optimization: Quarterly review of development processes
-- Technology updates: Regular evaluation of new tools and frameworks
-- Learning budget: Allocated time for team skill development
 
 
