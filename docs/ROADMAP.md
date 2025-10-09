@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Analytics: Track user behavior and pain points
 - Support tickets: Categorize and prioritize user issues
 
+## 37) Feature flag management (2025-08-19)
+
+- A/B testing: Gradual rollout of new features
+- Kill switches: Ability to disable features instantly
+- User segmentation: Different features for different user groups
+- Analytics: Track feature adoption and performance
+- Rollback: Quick disable for problematic features
+
 
