@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Analytics: Track feature adoption and performance
 - Rollback: Quick disable for problematic features
 
+## 38) Compliance and privacy (2025-08-19)
+
+- GDPR: User data export and deletion capabilities
+- CCPA: California privacy rights compliance
+- Data retention: Clear policies for user data storage
+- Consent management: Granular privacy controls
+- Audit trail: Log all data access and modifications
+
 
