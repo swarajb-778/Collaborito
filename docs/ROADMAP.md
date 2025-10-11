@@ -415,38 +415,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 
 ## 35) Performance benchmarks (2025-08-19)
 
-- App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for smooth navigation
-- API response: < 200ms for 95th percentile
-- Memory usage: < 150MB peak during normal operation
-- Battery impact: Minimal drain during background operation
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app feedback: Quick rating system for features
-- App store reviews: Monitor and respond to user reviews
-- Beta testing: Regular feedback from beta users
-- Analytics: Track user behavior and pain points
-- Support tickets: Categorize and prioritize user issues
-
-## 37) Feature flag management (2025-08-19)
-
-- A/B testing: Gradual rollout of new features
-- Kill switches: Ability to disable features instantly
-- User segmentation: Different features for different user groups
-- Analytics: Track feature adoption and performance
-- Rollback: Quick disable for problematic features
-
-## 38) Compliance and privacy (2025-08-19)
-
-- GDPR: User data export and deletion capabilities
-- CCPA: California privacy rights compliance
-- Data retention: Clear policies for user data storage
-- Consent management: Granular privacy controls
-- Audit trail: Log all data access and modifications
-
-## 39) Final roadmap summary (2025-08-19)
-
-This comprehensive roadmap now contains 39 sections covering all aspects of Collaborito's development lifecycle. From current status and immediate priorities to operational procedures, compliance, and user experience. The document serves as a living guide that should be updated regularly to reflect project progress and changing requirements. Focus remains on security milestone completion before advancing to engagement features.
+- App startup: < 3 seconds on mid-range devices
+- Screen transitions: < 300ms for navigation
+- API response: < 500ms for 95th percentile
+- Memory usage: < 150MB peak usage
+- Battery impact: < 5% drain per hour of active use
 
 
