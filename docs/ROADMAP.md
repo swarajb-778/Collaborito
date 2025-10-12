@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Battery impact: Minimize background processing
 - Network efficiency: Optimize API calls and caching
 
+## 37) User feedback collection (2025-08-19)
+
+- In-app surveys: Post-onboarding and after key feature usage
+- App store reviews: Monitor and respond to user feedback
+- Support tickets: Track common issues and pain points
+- Analytics: Monitor user behavior and feature adoption
+- Beta testing: Regular user testing sessions for new features
+
 
