@@ -413,44 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
+## 35) Code review checklist (2025-08-19)
 
-- App startup: < 3 seconds on mid-range devices
-- Screen transitions: < 300ms for navigation
-- API response: < 500ms for 95th percentile
-- Memory usage: < 150MB peak usage
-- Battery impact: < 5% drain per hour of active use
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app feedback: Rating prompts after key actions
-- Surveys: Monthly user satisfaction surveys
-- Analytics: Track feature usage and drop-off points
-- Support tickets: Categorize and analyze common issues
-- Beta testing: Recruit power users for early feature feedback
-
-## 37) Feature flag management (2025-08-19)
-
-- Toggle system: Implement feature flags for gradual rollouts
-- A/B testing: Test new features with subset of users
-- Emergency disable: Quick kill switch for problematic features
-- User targeting: Enable features for specific user segments
-- Analytics: Track feature adoption and performance metrics
-
-## 38) Scalability planning (2025-08-19)
-
-- User growth: Design for 10x current user base
-- Database scaling: Read replicas and connection pooling
-- CDN integration: Static asset delivery optimization
-- Caching strategy: Redis for session and frequently accessed data
-- Load balancing: Horizontal scaling for API endpoints
-
-## 39) Success metrics dashboard (2025-08-19)
-
-- Real-time metrics: DAU, session duration, feature adoption
-- Business KPIs: User retention, conversion rates, revenue metrics
-- Technical health: Error rates, performance, uptime monitoring
-- User satisfaction: NPS scores, support ticket trends
-- Goal tracking: Progress toward quarterly objectives
+- Security: Check for sensitive data exposure, validate inputs
+- Performance: Review for memory leaks, unnecessary re-renders
+- Testing: Ensure adequate test coverage for new features
+- Documentation: Update relevant docs and add code comments
+- Style: Follow project coding standards and conventions
 
 
