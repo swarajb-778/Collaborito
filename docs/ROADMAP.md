@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Documentation: Update relevant docs and add code comments
 - Style: Follow project coding standards and conventions
 
+## 36) Performance benchmarks (2025-08-19)
+
+- App startup: Target < 2 seconds on mid-range devices
+- Screen transitions: Target < 300ms for navigation
+- Memory usage: Keep under 150MB for typical usage
+- Battery impact: Minimize background processing
+- Network efficiency: Optimize API calls and caching
+
 
