@@ -204,3 +204,9 @@ Common issues and solutions:
 - Monday to Friday: 9:00 AM – 6:00 PM IST
 - Weekend: Critical incidents only (P1/P2) via on-call
 - Response target: <24h for docs issues, per SLA for incidents
+
+## Release cadence
+
+- Minor/patch releases: weekly (Fridays)
+- Feature releases: bi-weekly aligned with sprint end
+- Hotfixes: as needed for P1/P2 issues
