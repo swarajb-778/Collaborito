@@ -427,3 +427,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Documentation updates: Maintainers
 - Infra/Migrations: Supabase operator
 - Mobile CI issues: Build pipeline owner
+
+## Security SLA (2025-08-19)
+
+- P1: 15min acknowledge / 4h resolution target
+- P2: 1h acknowledge / 24h resolution target
+- P3: 4h acknowledge / 3d resolution target
+- P4: 24h acknowledge / next release
