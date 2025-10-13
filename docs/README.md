@@ -199,3 +199,8 @@ Common issues and solutions:
 - Keep sections organized and logical
 - Update documentation with code changes
 - Follow consistent formatting guidelines 
+## Support hours
+
+- Monday to Friday: 9:00 AM – 6:00 PM IST
+- Weekend: Critical incidents only (P1/P2) via on-call
+- Response target: <24h for docs issues, per SLA for incidents
