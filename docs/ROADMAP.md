@@ -420,3 +420,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Added sections: Communication channels, Quality gates, Rollback procedures
 - Updated: Next sprint planning and Milestone status
 - Archived: None
+
+## Contact matrix (2025-08-19)
+
+- Security incidents: Lead developer (primary), security team (secondary)
+- Documentation updates: Maintainers
+- Infra/Migrations: Supabase operator
+- Mobile CI issues: Build pipeline owner
