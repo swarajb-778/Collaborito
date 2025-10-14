@@ -413,24 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 37) Code review checklist (2025-08-19)
+
+- Security: No hardcoded secrets, proper input validation
+- Performance: No unnecessary re-renders, optimized queries
+- Accessibility: Screen reader support, keyboard navigation
+- Testing: Unit tests for new features, integration tests updated
+- Documentation: README updated, inline comments added
 
 
-## Index update (2025-08-19)
-
-- Added sections: Communication channels, Quality gates, Rollback procedures
-- Updated: Next sprint planning and Milestone status
-- Archived: None
-
-## Contact matrix (2025-08-19)
-
-- Security incidents: Lead developer (primary), security team (secondary)
-- Documentation updates: Maintainers
-- Infra/Migrations: Supabase operator
-- Mobile CI issues: Build pipeline owner
-
-## Security SLA (2025-08-19)
-
-- P1: 15min acknowledge / 4h resolution target
-- P2: 1h acknowledge / 24h resolution target
-- P3: 4h acknowledge / 3d resolution target
-- P4: 24h acknowledge / next release
