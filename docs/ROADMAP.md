@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Testing: Unit tests for new features, integration tests updated
 - Documentation: README updated, inline comments added
 
+## 38) Performance benchmarks (2025-08-19)
+
+- App startup: < 3 seconds on average devices
+- Screen transitions: < 300ms for navigation
+- API response time: < 500ms for 95th percentile
+- Memory usage: < 100MB peak during normal operation
+- Battery impact: Minimal background processing
+
 
