@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Migration guides: Provide clear upgrade paths for API consumers
 - Version headers: Include version in all API requests and responses
 
+## 38) Feature flag management (2025-08-19)
+
+- Implementation: Use environment variables and remote config
+- Rollout strategy: Gradual rollout (10%, 50%, 100%) with monitoring
+- Kill switch: Instant disable capability for critical features
+- A/B testing: Support for feature variants and user segmentation
+- Documentation: Maintain feature flag registry and usage guidelines
+
 
