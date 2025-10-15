@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Reporting: Automated coverage reports in CI/CD pipeline
 - Quality gates: Block merges if coverage falls below thresholds
 
+## 40) User feedback collection (2025-08-19)
+
+- In-app feedback: Non-intrusive feedback widget on all screens
+- User interviews: Monthly sessions with active users
+- Analytics: Track feature usage and user behavior patterns
+- Support tickets: Categorize and prioritize user-reported issues
+- Feature requests: Public roadmap with voting system for user priorities
+
 
