@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - A/B testing: Support for feature variants and user segmentation
 - Documentation: Maintain feature flag registry and usage guidelines
 
+## 39) Code coverage requirements (2025-08-19)
+
+- Minimum threshold: 80% overall code coverage
+- Critical paths: 95% coverage for authentication and security modules
+- New code: 100% coverage requirement for all new features
+- Reporting: Automated coverage reports in CI/CD pipeline
+- Quality gates: Block merges if coverage falls below thresholds
+
 
