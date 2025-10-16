@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Memory usage: < 150MB peak during normal operation
 - Battery impact: Minimal drain during background operation
 
+## 36) Incident response (2025-08-19)
+
+- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
+- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
+- Escalation: Immediate notification to lead developer for P1/P2
+- Communication: Status updates every 30 minutes for P1 incidents
+- Post-mortem: Required for P1/P2 incidents within 48 hours
+
 
