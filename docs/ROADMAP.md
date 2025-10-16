@@ -413,44 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 37) API versioning (2025-08-19)
+## 35) Performance benchmarks (2025-08-19)
 
-- Version strategy: Semantic versioning (v1.0.0, v1.1.0, v2.0.0)
-- Backward compatibility: Maintain for at least 2 major versions
-- Deprecation notice: 90-day advance warning for breaking changes
-- Migration guides: Provide clear upgrade paths for API consumers
-- Version headers: Include version in all API requests and responses
-
-## 38) Feature flag management (2025-08-19)
-
-- Implementation: Use environment variables and remote config
-- Rollout strategy: Gradual rollout (10%, 50%, 100%) with monitoring
-- Kill switch: Instant disable capability for critical features
-- A/B testing: Support for feature variants and user segmentation
-- Documentation: Maintain feature flag registry and usage guidelines
-
-## 39) Code coverage requirements (2025-08-19)
-
-- Minimum threshold: 80% overall code coverage
-- Critical paths: 95% coverage for authentication and security modules
-- New code: 100% coverage requirement for all new features
-- Reporting: Automated coverage reports in CI/CD pipeline
-- Quality gates: Block merges if coverage falls below thresholds
-
-## 40) User feedback collection (2025-08-19)
-
-- In-app feedback: Non-intrusive feedback widget on all screens
-- User interviews: Monthly sessions with active users
-- Analytics: Track feature usage and user behavior patterns
-- Support tickets: Categorize and prioritize user-reported issues
-- Feature requests: Public roadmap with voting system for user priorities
-
-## 41) Performance benchmarking (2025-08-19)
-
-- Baseline metrics: App startup time, screen load times, memory usage
-- Performance budgets: Maximum acceptable thresholds for key metrics
-- Automated testing: Performance regression tests in CI/CD pipeline
-- Monitoring: Real-time performance dashboards and alerting
-- Optimization: Quarterly performance review and optimization sprints
+- App startup: < 3 seconds on average devices
+- Screen transitions: < 500ms for smooth navigation
+- API response: < 200ms for 95th percentile
+- Memory usage: < 150MB peak during normal operation
+- Battery impact: Minimal drain during background operation
 
 
