@@ -438,4 +438,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - DAU/WAU: Daily/Weekly Active Users
 - TTI: Time to Interactive (performance metric)
 
+## 38) User feedback collection (2025-08-19)
+
+- In-app feedback: Star rating and comment system
+- App store reviews: Monitor and respond to user reviews
+- User interviews: Monthly sessions with active users
+- Analytics: Track user behavior and pain points
+- Feature requests: GitHub Issues for community suggestions
+
 
