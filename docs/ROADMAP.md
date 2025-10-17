@@ -421,3 +421,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Minor: bi-weekly feature drops
 - Major: quarterly, after stability window
 - Freeze: 48 hours pre-major release for final verification
+
+## 38) Localization plan (2025-08-19)
+
+- Phase 1: English baseline, extract strings
+- Phase 2: Hindi localization, community review
+- Phase 3: Regional languages based on demand
+- Tooling: i18n framework with fallback strings
