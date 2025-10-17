@@ -428,3 +428,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Phase 2: Hindi localization, community review
 - Phase 3: Regional languages based on demand
 - Tooling: i18n framework with fallback strings
+
+## 39) Error taxonomy (2025-08-19)
+
+- P0: Security/Privacy breaches, data loss
+- P1: App launch failures, login blocked
+- P2: Feature regressions with workarounds
+- P3: Minor UI/UX issues
+- Handling: Telemetry tag per category for dashboards
