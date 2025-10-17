@@ -436,3 +436,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - P2: Feature regressions with workarounds
 - P3: Minor UI/UX issues
 - Handling: Telemetry tag per category for dashboards
+
+## 40) Data retention policy (2025-08-19)
+
+- Authentication logs: 90 days
+- Messaging data: 180 days (MVP), export available
+- Analytics: Aggregated, anonymized after 30 days
+- Right to be forgotten: User-initiated deletion flow
