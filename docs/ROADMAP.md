@@ -443,3 +443,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Messaging data: 180 days (MVP), export available
 - Analytics: Aggregated, anonymized after 30 days
 - Right to be forgotten: User-initiated deletion flow
+
+## 41) Security training (2025-08-19)
+
+- Onboarding: Basics of RLS, secrets handling
+- Quarterly: Refresher on OWASP mobile threats
+- Incident drills: Simulated P1 response once per quarter
+- Resources: Internal wiki + curated external courses
