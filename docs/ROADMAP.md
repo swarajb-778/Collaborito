@@ -413,45 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
-
-- App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for smooth navigation
-- API response: < 200ms for 95th percentile
-- Memory usage: < 150MB peak during normal operation
-- Battery impact: Minimal drain during background operation
-
-## 36) Incident response (2025-08-19)
-
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 37) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
-## 38) User feedback collection (2025-08-19)
-
-- In-app feedback: Star rating and comment system
-- App store reviews: Monitor and respond to user reviews
-- User interviews: Monthly sessions with active users
-- Analytics: Track user behavior and pain points
-- Feature requests: GitHub Issues for community suggestions
-
-## 39) Maintenance schedule (2025-08-19)
-
-- Daily: Monitor error logs and performance metrics
-- Weekly: Review security alerts and dependency updates
-- Monthly: Database optimization and cleanup
-- Quarterly: Full security audit and penetration testing
-- Annually: Architecture review and technology stack evaluation
 
 
+## 37) Release cadence (2025-08-19)
+
+- Patch: as needed for hotfixes
+- Minor: bi-weekly feature drops
+- Major: quarterly, after stability window
+- Freeze: 48 hours pre-major release for final verification
