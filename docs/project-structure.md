@@ -50,4 +50,11 @@ This document outlines the improved project structure for better organization an
 - **Enhanced Documentation**: Added comprehensive documentation structure
 - **Service Layer**: Implemented organized service architecture
 - **Type Safety**: Improved TypeScript integration throughout
-- **Performance**: Optimized file organization for better build times 
+- **Performance**: Optimized file organization for better build times
+
+## Troubleshooting
+
+- Build issues: Clear cache with `npm run clean` and reinstall dependencies
+- Type errors: Run `npx tsc --noEmit` to check TypeScript compilation
+- Expo issues: Use `npx expo start --clear` to clear Expo cache
+- Database issues: Check Supabase connection and RLS policies 
