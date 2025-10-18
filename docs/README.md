@@ -198,15 +198,10 @@ Common issues and solutions:
 - Include code examples where relevant
 - Keep sections organized and logical
 - Update documentation with code changes
-- Follow consistent formatting guidelines 
-## Support hours
+- Follow consistent formatting guidelines
 
-- Monday to Friday: 9:00 AM – 6:00 PM IST
-- Weekend: Critical incidents only (P1/P2) via on-call
-- Response target: <24h for docs issues, per SLA for incidents
+## Version History
 
-## Release cadence
-
-- Minor/patch releases: weekly (Fridays)
-- Feature releases: bi-weekly aligned with sprint end
-- Hotfixes: as needed for P1/P2 issues
+- v1.0.0: Initial documentation setup
+- v1.1.0: Added comprehensive sections and guidelines
+- v1.2.0: Enhanced with security and performance guidelines 
