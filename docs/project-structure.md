@@ -57,4 +57,11 @@ This document outlines the improved project structure for better organization an
 - Build issues: Clear cache with `npm run clean` and reinstall dependencies
 - Type errors: Run `npx tsc --noEmit` to check TypeScript compilation
 - Expo issues: Use `npx expo start --clear` to clear Expo cache
-- Database issues: Check Supabase connection and RLS policies 
+- Database issues: Check Supabase connection and RLS policies
+
+## Team Contacts
+
+- Lead Developer: Swaraj Bangar (swarajbangar@collaborito.com)
+- Security Team: security@collaborito.com
+- Documentation: docs@collaborito.com
+- General Support: support@collaborito.com 
