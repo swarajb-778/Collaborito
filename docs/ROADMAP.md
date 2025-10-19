@@ -438,4 +438,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - DAU/WAU: Daily/Weekly Active Users
 - TTI: Time to Interactive (performance metric)
 
+## 38) Code review checklist (2025-08-19)
+
+- Security: No hardcoded secrets, proper input validation
+- Performance: No memory leaks, efficient algorithms
+- Testing: Unit tests cover new functionality
+- Documentation: README updated, code comments clear
+- Style: Follows project conventions, ESLint passes
+
 
