@@ -413,11 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 37) Changelog (2025-08-19)
+## 35) Performance benchmarks (2025-08-19)
 
-- Added comprehensive documentation sections (README, project-structure, ROADMAP)
-- Implemented security guidelines and monitoring procedures
-- Established quality gates and rollback procedures
-- Created incident response and backup strategies
+- App startup: < 3 seconds on average devices
+- Screen transitions: < 500ms for smooth navigation
+- API response: < 200ms for critical endpoints
+- Memory usage: < 150MB baseline, < 200MB peak
+- Battery impact: Minimal background processing
 
 
