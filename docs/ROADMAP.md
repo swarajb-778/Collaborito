@@ -416,42 +416,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 ## 35) Performance benchmarks (2025-08-19)
 
 - App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for smooth navigation
-- API response: < 200ms for critical endpoints
-- Memory usage: < 150MB baseline, < 200MB peak
+- Screen transitions: < 300ms for smooth navigation
+- API response: < 500ms for 95th percentile
+- Memory usage: < 150MB peak during normal operation
 - Battery impact: Minimal background processing
-
-## 36) Incident response (2025-08-19)
-
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 37) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
-## 38) Code review checklist (2025-08-19)
-
-- Security: No hardcoded secrets, proper input validation
-- Performance: No memory leaks, efficient algorithms
-- Testing: Unit tests cover new functionality
-- Documentation: README updated, code comments clear
-- Style: Follows project conventions, ESLint passes
-
-## 39) Project completion criteria (2025-08-19)
-
-- Security milestone: All RPCs deployed, verification script passes
-- Session timeout: Global UX implemented and tested
-- Device management: Full CRUD operations working
-- Documentation: All sections updated and reviewed
-- Testing: Critical paths covered with automated tests
 
 
