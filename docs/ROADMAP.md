@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Memory usage: < 150MB peak during normal operation
 - Battery impact: Minimal background processing
 
+## 37) User feedback collection (2025-08-19)
+
+- In-app surveys: Post-onboarding and feature usage
+- App store reviews: Monitor and respond to feedback
+- Support tickets: Categorize and track resolution times
+- Analytics: Track user behavior and pain points
+- Beta testing: Regular user testing sessions
+
 
