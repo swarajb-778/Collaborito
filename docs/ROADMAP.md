@@ -446,4 +446,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Documentation: Code comments and README updates
 - Style: Follows project coding standards
 
+## 39) Deployment checklist (2025-08-19)
+
+- Pre-deployment: All tests pass, security verification OK
+- Database: Migrations applied successfully
+- Environment: Variables configured correctly
+- Monitoring: Alerts configured and tested
+- Rollback: Plan ready in case of issues
+
 
