@@ -413,45 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
+## 35) Continuous integration (2025-08-19)
 
-- App startup: < 3 seconds on average devices
-- Screen transitions: < 500ms for smooth navigation
-- API response: < 200ms for 95th percentile
-- Memory usage: < 150MB peak during normal operation
-- Battery impact: Minimal background processing
-
-## 36) Incident response (2025-08-19)
-
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 37) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
-## 38) Code review checklist (2025-08-19)
-
-- Security: No hardcoded secrets, proper input validation
-- Performance: No memory leaks, efficient algorithms
-- Testing: Unit tests cover new functionality
-- Documentation: Code comments and README updates
-- Style: Follows project coding standards
-
-## 39) Deployment checklist (2025-08-19)
-
-- Pre-deployment: All tests pass, security verification OK
-- Database: Migrations applied successfully
-- Environment: Variables configured correctly
-- Monitoring: Alerts configured and tested
-- Rollback: Plan ready in case of issues
+- Automated tests: Run on every push to main and feature branches
+- Build verification: Ensure app builds successfully for iOS and Android
+- Linting: TypeScript and ESLint checks must pass
+- Type checking: No TypeScript errors allowed
+- Deployment gates: Only green builds can be deployed to production
 
 
