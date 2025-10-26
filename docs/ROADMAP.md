@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - A/B testing: Support split user testing for feature validation
 - Monitoring: Track metrics for flagged features separately
 
+## 37) Code reviews (2025-08-19)
+
+- Standard: All PRs require at least one approval before merging
+- Review criteria: Code quality, tests, documentation, security implications
+- Feedback: Constructive comments focused on improvement
+- Response time: Initial review within 24 hours during workdays
+- Merge restrictions: No force push to main, require passing CI checks
+
 
