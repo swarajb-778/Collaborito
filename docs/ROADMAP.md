@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Type checking: No TypeScript errors allowed
 - Deployment gates: Only green builds can be deployed to production
 
+## 36) Feature flags (2025-08-19)
+
+- Tool: Implement feature flag service for gradual rollouts
+- New features: Initially disabled, enable for internal testing first
+- Rollback: Instant disable of problematic features without deployment
+- A/B testing: Support split user testing for feature validation
+- Monitoring: Track metrics for flagged features separately
+
 
