@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Response time: Initial review within 24 hours during workdays
 - Merge restrictions: No force push to main, require passing CI checks
 
+## 38) Performance optimization (2025-08-19)
+
+- Image optimization: Compress and resize images before upload
+- Bundle size: Monitor and minimize JavaScript bundle size
+- Lazy loading: Load components and data only when needed
+- Caching: Implement smart caching strategies for API calls
+- Profiling: Regular performance audits and bottleneck identification
+
 
