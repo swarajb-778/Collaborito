@@ -413,44 +413,21 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Continuous integration (2025-08-19)
+## 35) Incident response (2025-08-19)
 
-- Automated tests: Run on every push to main and feature branches
-- Build verification: Ensure app builds successfully for iOS and Android
-- Linting: TypeScript and ESLint checks must pass
-- Type checking: No TypeScript errors allowed
-- Deployment gates: Only green builds can be deployed to production
+- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
+- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
+- Escalation: Immediate notification to lead developer for P1/P2
+- Communication: Status updates every 30 minutes for P1 incidents
+- Post-mortem: Required for P1/P2 incidents within 48 hours
 
-## 36) Feature flags (2025-08-19)
+## 36) Glossary (2025-08-19)
 
-- Tool: Implement feature flag service for gradual rollouts
-- New features: Initially disabled, enable for internal testing first
-- Rollback: Instant disable of problematic features without deployment
-- A/B testing: Support split user testing for feature validation
-- Monitoring: Track metrics for flagged features separately
-
-## 37) Code reviews (2025-08-19)
-
-- Standard: All PRs require at least one approval before merging
-- Review criteria: Code quality, tests, documentation, security implications
-- Feedback: Constructive comments focused on improvement
-- Response time: Initial review within 24 hours during workdays
-- Merge restrictions: No force push to main, require passing CI checks
-
-## 38) Performance optimization (2025-08-19)
-
-- Image optimization: Compress and resize images before upload
-- Bundle size: Monitor and minimize JavaScript bundle size
-- Lazy loading: Load components and data only when needed
-- Caching: Implement smart caching strategies for API calls
-- Profiling: Regular performance audits and bottleneck identification
-
-## 39) User feedback loop (2025-08-19)
-
-- Collection: In-app feedback forms, app store reviews, support channels
-- Analysis: Categorize feedback by feature, priority, and user segment
-- Response: Acknowledge all feedback within 48 hours
-- Implementation: Address high-priority feedback in next sprint
-- Communication: Regular updates to users on feature requests status
+- RPC: Remote Procedure Call (Supabase functions)
+- RLS: Row Level Security (database access control)
+- OAuth: Open Authorization (LinkedIn login)
+- MVP: Minimum Viable Product
+- DAU/WAU: Daily/Weekly Active Users
+- TTI: Time to Interactive (performance metric)
 
 
