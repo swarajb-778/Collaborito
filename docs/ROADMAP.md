@@ -430,4 +430,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - DAU/WAU: Daily/Weekly Active Users
 - TTI: Time to Interactive (performance metric)
 
+## 37) Testing strategy updates (2025-08-19)
+
+- E2E coverage: Critical user flows automated
+- Security testing: Regular penetration testing and vulnerability scans
+- Performance testing: Load testing before major releases
+- Regression testing: Automated suite run before each deployment
+- Mobile testing: iOS and Android device farm testing
+
 
