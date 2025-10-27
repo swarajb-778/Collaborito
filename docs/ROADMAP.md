@@ -438,4 +438,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Regression testing: Automated suite run before each deployment
 - Mobile testing: iOS and Android device farm testing
 
+## 38) Performance benchmarks (2025-08-19)
+
+- App startup: Target < 3 seconds cold start
+- Screen load: Target p95 < 800ms
+- API response: Target p95 < 200ms
+- Image loading: Lazy load with skeleton states
+- Bundle size: Monitor and optimize to reduce initial download
+
 
