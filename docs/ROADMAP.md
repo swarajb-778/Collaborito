@@ -446,4 +446,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Bundle size: Monitor and keep bundle under 2MB uncompressed
 - Profiling: Run performance audits before each release
 
+## 39) Security audit checklist (2025-08-19)
+
+- Authentication: Verify secure token storage and rotation
+- Authorization: Check RLS policies enforce user access correctly
+- Input validation: All user inputs sanitized and validated
+- Secrets management: No hardcoded API keys or credentials
+- Dependencies: Regular security scans for known vulnerabilities
+
 
