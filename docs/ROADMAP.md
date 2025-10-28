@@ -430,36 +430,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - DAU/WAU: Daily/Weekly Active Users
 - TTI: Time to Interactive (performance metric)
 
-## 37) Testing strategy updates (2025-08-19)
+## 37) Code review standards (2025-08-19)
 
-- E2E coverage: Critical user flows automated
-- Security testing: Regular penetration testing and vulnerability scans
-- Performance testing: Load testing before major releases
-- Regression testing: Automated suite run before each deployment
-- Mobile testing: iOS and Android device farm testing
-
-## 38) Performance benchmarks (2025-08-19)
-
-- App startup: Target < 3 seconds cold start
-- Screen load: Target p95 < 800ms
-- API response: Target p95 < 200ms
-- Image loading: Lazy load with skeleton states
-- Bundle size: Monitor and optimize to reduce initial download
-
-## 39) Security enhancements (2025-08-19)
-
-- 2FA: Implement two-factor authentication for enhanced security
-- Rate limiting: API rate limiting to prevent abuse
-- Session management: Secure session tokens with refresh rotation
-- Data encryption: End-to-end encryption for sensitive communications
-- Audit logging: Comprehensive audit trail for security events
-
-## 40) Future considerations (2025-08-19)
-
-- Scalability: Plan for horizontal scaling as user base grows
-- Internationalization: Multi-language support for global expansion
-- Offline mode: Core features available without internet connection
-- AI integration: Expand Claude AI features for enhanced productivity
-- Analytics: Advanced user behavior analytics and insights
+- Focus areas: Security, performance, accessibility, test coverage
+- Minimum requirements: At least one approval, passing CI checks
+- Review time: Target 24-hour response for open PRs
+- Documentation: Code comments for complex logic required
+- Breaking changes: Must include migration guide and rollback plan
 
 
