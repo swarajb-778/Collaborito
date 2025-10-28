@@ -454,4 +454,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Secrets management: No hardcoded API keys or credentials
 - Dependencies: Regular security scans for known vulnerabilities
 
+## 40) Testing coverage requirements (2025-08-19)
+
+- Unit tests: Minimum 70% code coverage
+- Integration tests: All critical user flows covered
+- E2E tests: Payment, booking, and messaging workflows
+- Regression tests: Run on every pull request
+- Test maintenance: Update tests with feature changes
+
 
