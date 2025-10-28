@@ -438,4 +438,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Documentation: Code comments for complex logic required
 - Breaking changes: Must include migration guide and rollback plan
 
+## 38) Performance optimization checklist (2025-08-19)
+
+- Image optimization: Compress all images, use WebP format where possible
+- Code splitting: Implement lazy loading for non-critical components
+- Caching strategy: Use appropriate cache headers and local storage
+- Bundle size: Monitor and keep bundle under 2MB uncompressed
+- Profiling: Run performance audits before each release
+
 
