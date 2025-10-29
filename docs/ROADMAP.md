@@ -435,3 +435,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - EAS build: green for iOS/Android
 - Migrations: applied in staging, verified
 - Release notes: updated
+
+## 38) Metrics to watch (2025-08-19)
+
+- Activation: onboarding completion rate
+- Engagement: DAU/WAU, messages/user
+- Reliability: crash-free sessions, p95 load times
+- Security: lockout false-positive rate, RPC error rate
