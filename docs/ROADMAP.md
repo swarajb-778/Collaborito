@@ -413,61 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Incident response (2025-08-19)
-
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 36) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
-## 37) Code review standards (2025-08-19)
-
-- Focus areas: Security, performance, accessibility, test coverage
-- Minimum requirements: At least one approval, passing CI checks
-- Review time: Target 24-hour response for open PRs
-- Documentation: Code comments for complex logic required
-- Breaking changes: Must include migration guide and rollback plan
-
-## 38) Performance optimization checklist (2025-08-19)
-
-- Image optimization: Compress all images, use WebP format where possible
-- Code splitting: Implement lazy loading for non-critical components
-- Caching strategy: Use appropriate cache headers and local storage
-- Bundle size: Monitor and keep bundle under 2MB uncompressed
-- Profiling: Run performance audits before each release
-
-## 39) Security audit checklist (2025-08-19)
-
-- Authentication: Verify secure token storage and rotation
-- Authorization: Check RLS policies enforce user access correctly
-- Input validation: All user inputs sanitized and validated
-- Secrets management: No hardcoded API keys or credentials
-- Dependencies: Regular security scans for known vulnerabilities
-
-## 40) Testing coverage requirements (2025-08-19)
-
-- Unit tests: Minimum 70% code coverage
-- Integration tests: All critical user flows covered
-- E2E tests: Payment, booking, and messaging workflows
-- Regression tests: Run on every pull request
-- Test maintenance: Update tests with feature changes
-
-## 41) Continuous improvement (2025-08-19)
-
-- Retrospectives: Monthly team retrospective meetings
-- Feedback loops: User feedback collection and analysis
-- Metrics review: Weekly review of KPIs and success metrics
-- Learning opportunities: Technology updates and best practices research
-- Innovation: Allocate 20% time for experimental features
 
 
+## 35) Release calendar (2025-08-19)
+
+- Code freeze: Two days before release
+- Release day: Tuesdays 10:00 UTC
+- Hotfix window: 48 hours post-release
+- Staging cut: Friday EOD prior to release week
