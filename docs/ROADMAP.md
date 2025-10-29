@@ -427,3 +427,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Added: OAuth provider rate limit variance
 - Mitigated: Expo package mismatch via lockfile refresh
 - Watching: Supabase function cold starts in staging
+
+## 37) CI/CD checklist (2025-08-19)
+
+- Lint & Typecheck: pass
+- Unit tests: pass
+- EAS build: green for iOS/Android
+- Migrations: applied in staging, verified
+- Release notes: updated
