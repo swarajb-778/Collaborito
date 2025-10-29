@@ -442,3 +442,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Engagement: DAU/WAU, messages/user
 - Reliability: crash-free sessions, p95 load times
 - Security: lockout false-positive rate, RPC error rate
+
+## 39) Support SLAs (2025-08-19)
+
+- P1: 15 min response, 4h resolution target
+- P2: 1h response, 24h resolution target
+- P3: 8h response, next sprint
+- P4: Best effort, backlog triage
