@@ -421,3 +421,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Release day: Tuesdays 10:00 UTC
 - Hotfix window: 48 hours post-release
 - Staging cut: Friday EOD prior to release week
+
+## 36) Risk register updates (2025-08-19)
+
+- Added: OAuth provider rate limit variance
+- Mitigated: Expo package mismatch via lockfile refresh
+- Watching: Supabase function cold starts in staging
