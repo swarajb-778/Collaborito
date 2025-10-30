@@ -413,39 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-
-
 ## 35) Release calendar (2025-08-19)
 
-- Code freeze: Two days before release
-- Release day: Tuesdays 10:00 UTC
-- Hotfix window: 48 hours post-release
-- Staging cut: Friday EOD prior to release week
+- Cadence: Bi-weekly releases on Tuesdays
+- Freeze: Code freeze starts Friday EOD pre-release week
+- Staging: Deploy to staging Monday, run smoke and regression tests
+- Production: Tuesday morning rollout with monitoring window
+- Hotfix: Allowed outside cadence for P1/P2 issues
 
-## 36) Risk register updates (2025-08-19)
 
-- Added: OAuth provider rate limit variance
-- Mitigated: Expo package mismatch via lockfile refresh
-- Watching: Supabase function cold starts in staging
-
-## 37) CI/CD checklist (2025-08-19)
-
-- Lint & Typecheck: pass
-- Unit tests: pass
-- EAS build: green for iOS/Android
-- Migrations: applied in staging, verified
-- Release notes: updated
-
-## 38) Metrics to watch (2025-08-19)
-
-- Activation: onboarding completion rate
-- Engagement: DAU/WAU, messages/user
-- Reliability: crash-free sessions, p95 load times
-- Security: lockout false-positive rate, RPC error rate
-
-## 39) Support SLAs (2025-08-19)
-
-- P1: 15 min response, 4h resolution target
-- P2: 1h response, 24h resolution target
-- P3: 8h response, next sprint
-- P4: Best effort, backlog triage
