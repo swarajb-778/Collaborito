@@ -421,4 +421,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Production: Tuesday morning rollout with monitoring window
 - Hotfix: Allowed outside cadence for P1/P2 issues
 
+## 36) Risk matrix (2025-08-19)
+
+- Likelihood x Impact scoring: Low (1) to High (3)
+- High risks: Security RPC delays (3x3), data migration errors (2x3)
+- Medium risks: Session UX regressions (2x2), LinkedIn OAuth edge cases (2x2)
+- Mitigations: Staging verification, feature flags, rollback procedures
+
 
