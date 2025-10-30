@@ -435,4 +435,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Error budget: < 0.5% monthly
 - Alert response time: < 15 minutes for P1
 
+## 38) On-call schedule (2025-08-19)
+
+- Primary: Week rotation, handoff Monday 09:00 local time
+- Secondary: Backup engineer for escalation
+- Coverage: 24/7 for P1 incidents; business hours for others
+- Handover: Update on-call notes and known issues
+
 
