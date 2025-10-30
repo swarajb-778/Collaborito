@@ -442,4 +442,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Coverage: 24/7 for P1 incidents; business hours for others
 - Handover: Update on-call notes and known issues
 
+## 39) SLA targets (2025-08-19)
+
+- Availability: 99.9% monthly uptime
+- Incident response: P1 acknowledged within 15 minutes
+- Data recovery: RPO 24 hours, RTO 4 hours
+- Support: Business-hours response within 1 business day
+
 
