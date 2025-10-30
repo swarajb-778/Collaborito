@@ -428,4 +428,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Medium risks: Session UX regressions (2x2), LinkedIn OAuth edge cases (2x2)
 - Mitigations: Staging verification, feature flags, rollback procedures
 
+## 37) Observability KPIs (2025-08-19)
+
+- Crash-free sessions > 99.5%
+- p95 screen load < 800ms (home/feed/messaging)
+- Error budget: < 0.5% monthly
+- Alert response time: < 15 minutes for P1
+
 
