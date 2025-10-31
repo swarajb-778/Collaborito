@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Audit logs: All security events logged and retained for 90 days
 - Compliance: GDPR-ready data handling procedures
 
+## 37) Feature flags (2025-08-19)
+
+- Implementation: Use environment variables and config flags
+- Rollout strategy: Gradual rollout (10% -> 50% -> 100%)
+- Rollback capability: Instant disable without code deployment
+- Testing: Feature flags tested in staging before production
+- Monitoring: Track feature adoption and performance metrics
+
 
