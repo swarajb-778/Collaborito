@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Image loading: < 1 second (optimized assets)
 - Database query: < 100ms (indexed queries)
 
+## 36) Security compliance (2025-08-19)
+
+- Data encryption: AES-256 at rest, TLS 1.3 in transit
+- Authentication: Multi-factor authentication support
+- Access control: Role-based access control (RBAC)
+- Audit logs: All security events logged and retained for 90 days
+- Compliance: GDPR-ready data handling procedures
+
 
