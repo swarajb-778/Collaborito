@@ -421,3 +421,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Release window: Tue/Thu 10:00–12:00 UTC
 - Stakeholders: Notify product and support before rollout
 - Rollback readiness: Verify rollback steps documented and tested
+
+## 38) Security audit checklist (2025-08-19)
+
+- RLS policies validated on all tables
+- Secrets rotation schedule reviewed
+- Dependency vulnerability scan clean
+- Supabase function permissions least-privileged
