@@ -413,40 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Release calendar (2025-08-19)
-
-- Cadence: Bi-weekly releases on Tuesdays
-- Freeze: Code freeze starts Friday EOD pre-release week
-- Staging: Deploy to staging Monday, run smoke and regression tests
-- Production: Tuesday morning rollout with monitoring window
-- Hotfix: Allowed outside cadence for P1/P2 issues
-
-## 36) Risk matrix (2025-08-19)
-
-- Likelihood x Impact scoring: Low (1) to High (3)
-- High risks: Security RPC delays (3x3), data migration errors (2x3)
-- Medium risks: Session UX regressions (2x2), LinkedIn OAuth edge cases (2x2)
-- Mitigations: Staging verification, feature flags, rollback procedures
-
-## 37) Observability KPIs (2025-08-19)
-
-- Crash-free sessions > 99.5%
-- p95 screen load < 800ms (home/feed/messaging)
-- Error budget: < 0.5% monthly
-- Alert response time: < 15 minutes for P1
-
-## 38) On-call schedule (2025-08-19)
-
-- Primary: Week rotation, handoff Monday 09:00 local time
-- Secondary: Backup engineer for escalation
-- Coverage: 24/7 for P1 incidents; business hours for others
-- Handover: Update on-call notes and known issues
-
-## 39) SLA targets (2025-08-19)
-
-- Availability: 99.9% monthly uptime
-- Incident response: P1 acknowledged within 15 minutes
-- Data recovery: RPO 24 hours, RTO 4 hours
-- Support: Business-hours response within 1 business day
 
 
+## 37) Release coordination (2025-08-19)
+
+- Code freeze: 24 hours before release
+- Release window: Tue/Thu 10:00–12:00 UTC
+- Stakeholders: Notify product and support before rollout
+- Rollback readiness: Verify rollback steps documented and tested
