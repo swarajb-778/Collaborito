@@ -434,3 +434,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Phase 1: Extract strings to i18n framework
 - Phase 2: English + Hindi coverage for onboarding
 - Phase 3: Community translations via PRs
+
+## 40) Analytics KPIs cadence (2025-08-19)
+
+- Weekly: DAU/WAU, retention, messages/user
+- Bi-weekly: Onboarding completion, time-to-complete
+- Monthly: Feature adoption and churn review
