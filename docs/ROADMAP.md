@@ -413,37 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 35) Performance benchmarks (2025-08-19)
+
+- App startup time: < 3 seconds (cold start)
+- Screen navigation: < 500ms (instant feedback)
+- API response time: < 200ms (p95)
+- Image loading: < 1 second (optimized assets)
+- Database query: < 100ms (indexed queries)
 
 
-## 37) Release coordination (2025-08-19)
-
-- Code freeze: 24 hours before release
-- Release window: Tue/Thu 10:00–12:00 UTC
-- Stakeholders: Notify product and support before rollout
-- Rollback readiness: Verify rollback steps documented and tested
-
-## 38) Security audit checklist (2025-08-19)
-
-- RLS policies validated on all tables
-- Secrets rotation schedule reviewed
-- Dependency vulnerability scan clean
-- Supabase function permissions least-privileged
-
-## 39) Localization plan (2025-08-19)
-
-- Phase 1: Extract strings to i18n framework
-- Phase 2: English + Hindi coverage for onboarding
-- Phase 3: Community translations via PRs
-
-## 40) Analytics KPIs cadence (2025-08-19)
-
-- Weekly: DAU/WAU, retention, messages/user
-- Bi-weekly: Onboarding completion, time-to-complete
-- Monthly: Feature adoption and churn review
-
-## 41) Decommission plan (2025-08-19)
-
-- Criteria: Feature replaced or obsolete
-- Steps: Deprecate, migrate data, remove code paths
-- Validation: No active traffic for 30 days
-- Cleanup: Remove storage artifacts and secrets
