@@ -440,3 +440,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Weekly: DAU/WAU, retention, messages/user
 - Bi-weekly: Onboarding completion, time-to-complete
 - Monthly: Feature adoption and churn review
+
+## 41) Decommission plan (2025-08-19)
+
+- Criteria: Feature replaced or obsolete
+- Steps: Deprecate, migrate data, remove code paths
+- Validation: No active traffic for 30 days
+- Cleanup: Remove storage artifacts and secrets
