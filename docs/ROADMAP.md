@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Testing: Feature flags tested in staging before production
 - Monitoring: Track feature adoption and performance metrics
 
+## 38) User feedback collection (2025-08-19)
+
+- In-app surveys: Periodic prompts for user experience feedback
+- Support tickets: Track common issues and feature requests
+- Analytics: Monitor user behavior and drop-off points
+- Beta testing: Engage power users for early feature feedback
+- Review monitoring: Track app store reviews for insights
+
 
