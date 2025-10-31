@@ -428,3 +428,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Secrets rotation schedule reviewed
 - Dependency vulnerability scan clean
 - Supabase function permissions least-privileged
+
+## 39) Localization plan (2025-08-19)
+
+- Phase 1: Extract strings to i18n framework
+- Phase 2: English + Hindi coverage for onboarding
+- Phase 3: Community translations via PRs
