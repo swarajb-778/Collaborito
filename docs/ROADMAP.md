@@ -445,4 +445,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Beta testing: Engage power users for early feature feedback
 - Review monitoring: Track app store reviews for insights
 
+## 39) Scaling strategy (2025-08-19)
+
+- Horizontal scaling: Supabase auto-scales database and storage
+- Caching: Implement Redis for frequently accessed data
+- CDN: Use CloudFront for static assets and images
+- Load balancing: Supabase handles load distribution
+- Database optimization: Index tuning and query optimization as needed
+
 
