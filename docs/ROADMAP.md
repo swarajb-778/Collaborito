@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - App store reviews: Monitor and respond to user reviews
 - Beta testing: Early access program for feature testing
 
+## 37) Feature flags strategy (2025-08-19)
+
+- New features: Always launched behind feature flags
+- Gradual rollout: 10% → 50% → 100% over 1 week
+- Emergency toggle: Ability to disable features instantly
+- A/B testing: Use flags for experimentation and comparison
+- Cleanup: Remove flags 2 weeks after 100% rollout
+
 
