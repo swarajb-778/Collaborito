@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Bundle size: Main bundle < 5MB, total assets < 15MB
 - Frame rate: Maintain 60fps during animations and scrolling
 
+## 36) User feedback collection (2025-08-19)
+
+- In-app feedback: Quick rating prompts after key actions
+- Surveys: Quarterly user satisfaction surveys
+- Support tickets: Categorize and analyze common issues
+- App store reviews: Monitor and respond to user reviews
+- Beta testing: Early access program for feature testing
+
 
