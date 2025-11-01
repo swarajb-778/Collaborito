@@ -445,4 +445,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - E2E tests: Smoke tests for core features on each platform
 - Performance tests: Automated performance regression detection
 
+## 39) API versioning (2025-08-19)
+
+- Versioning: Use semantic versioning (v1.0.0, v1.1.0, v2.0.0)
+- Breaking changes: Require major version bump
+- Deprecation: 6-month notice before removing deprecated endpoints
+- Documentation: Maintain changelog for each API version
+- Client support: Support last 2 major versions simultaneously
+
 
