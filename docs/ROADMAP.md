@@ -415,42 +415,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 
 ## 35) Performance benchmarks (2025-08-19)
 
-- App startup time: < 3 seconds (cold start)
-- Screen navigation: < 500ms (instant feedback)
-- API response time: < 200ms (p95)
-- Image loading: < 1 second (optimized assets)
-- Database query: < 100ms (indexed queries)
-
-## 36) Security compliance (2025-08-19)
-
-- Data encryption: AES-256 at rest, TLS 1.3 in transit
-- Authentication: Multi-factor authentication support
-- Access control: Role-based access control (RBAC)
-- Audit logs: All security events logged and retained for 90 days
-- Compliance: GDPR-ready data handling procedures
-
-## 37) Feature flags (2025-08-19)
-
-- Implementation: Use environment variables and config flags
-- Rollout strategy: Gradual rollout (10% -> 50% -> 100%)
-- Rollback capability: Instant disable without code deployment
-- Testing: Feature flags tested in staging before production
-- Monitoring: Track feature adoption and performance metrics
-
-## 38) User feedback collection (2025-08-19)
-
-- In-app surveys: Periodic prompts for user experience feedback
-- Support tickets: Track common issues and feature requests
-- Analytics: Monitor user behavior and drop-off points
-- Beta testing: Engage power users for early feature feedback
-- Review monitoring: Track app store reviews for insights
-
-## 39) Scaling strategy (2025-08-19)
-
-- Horizontal scaling: Supabase auto-scales database and storage
-- Caching: Implement Redis for frequently accessed data
-- CDN: Use CloudFront for static assets and images
-- Load balancing: Supabase handles load distribution
-- Database optimization: Index tuning and query optimization as needed
+- App startup: Target < 2 seconds on mid-range devices
+- Screen load: p95 < 800ms for all screens
+- API response: p95 < 500ms for all endpoints
+- Bundle size: Main bundle < 5MB, total assets < 15MB
+- Frame rate: Maintain 60fps during animations and scrolling
 
 
