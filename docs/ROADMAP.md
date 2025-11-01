@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - A/B testing: Use flags for experimentation and comparison
 - Cleanup: Remove flags 2 weeks after 100% rollout
 
+## 38) Testing automation (2025-08-19)
+
+- CI/CD: Run all tests on every pull request
+- Unit tests: Minimum 70% code coverage required
+- Integration tests: Cover critical user flows
+- E2E tests: Smoke tests for core features on each platform
+- Performance tests: Automated performance regression detection
+
 
