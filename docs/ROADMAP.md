@@ -427,4 +427,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Phase 3: Crowdsourced translations and review workflow
 - Tooling: i18n extraction script, untranslated key warnings in CI
 
+## 39) Device support policy (2025-08-19)
+
+- iOS: Latest + previous 2 major versions
+- Android: API level 26+ (Oreo) and above
+- Minimum RAM: 2GB recommended
+- Testing matrix: Top 5 devices by usage share updated quarterly
+
 
