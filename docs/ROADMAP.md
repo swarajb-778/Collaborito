@@ -420,4 +420,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Major: Quarterly breaking changes with migration guide
 - Freeze: 24h code freeze before planned releases
 
+## 38) Localization plan (2025-08-19)
+
+- Phase 1: Externalize strings, English baseline
+- Phase 2: Add language packs (en, es), RTL readiness check
+- Phase 3: Crowdsourced translations and review workflow
+- Tooling: i18n extraction script, untranslated key warnings in CI
+
 
