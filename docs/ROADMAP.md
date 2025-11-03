@@ -413,44 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
+## 37) Release cadence (2025-08-19)
 
-- App startup: Target < 2 seconds on mid-range devices
-- Screen load: p95 < 800ms for all screens
-- API response: p95 < 500ms for all endpoints
-- Bundle size: Main bundle < 5MB, total assets < 15MB
-- Frame rate: Maintain 60fps during animations and scrolling
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app feedback: Quick rating prompts after key actions
-- Surveys: Quarterly user satisfaction surveys
-- Support tickets: Categorize and analyze common issues
-- App store reviews: Monitor and respond to user reviews
-- Beta testing: Early access program for feature testing
-
-## 37) Feature flags strategy (2025-08-19)
-
-- New features: Always launched behind feature flags
-- Gradual rollout: 10% → 50% → 100% over 1 week
-- Emergency toggle: Ability to disable features instantly
-- A/B testing: Use flags for experimentation and comparison
-- Cleanup: Remove flags 2 weeks after 100% rollout
-
-## 38) Testing automation (2025-08-19)
-
-- CI/CD: Run all tests on every pull request
-- Unit tests: Minimum 70% code coverage required
-- Integration tests: Cover critical user flows
-- E2E tests: Smoke tests for core features on each platform
-- Performance tests: Automated performance regression detection
-
-## 39) API versioning (2025-08-19)
-
-- Versioning: Use semantic versioning (v1.0.0, v1.1.0, v2.0.0)
-- Breaking changes: Require major version bump
-- Deprecation: 6-month notice before removing deprecated endpoints
-- Documentation: Maintain changelog for each API version
-- Client support: Support last 2 major versions simultaneously
+- Patch: As needed for hotfixes (same day)
+- Minor: Bi-weekly feature releases
+- Major: Quarterly breaking changes with migration guide
+- Freeze: 24h code freeze before planned releases
 
 
