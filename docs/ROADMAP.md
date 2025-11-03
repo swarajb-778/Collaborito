@@ -434,4 +434,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Minimum RAM: 2GB recommended
 - Testing matrix: Top 5 devices by usage share updated quarterly
 
+## 40) Analytics KPIs tracking (2025-08-19)
+
+- Engagement: DAU/WAU ratio, messages per user, sessions per user
+- Retention: D1/D7/D30 retention
+- Conversion: Signup → onboarding completion rate
+- Performance: p95 screen load, crash-free sessions
+- Reporting: Weekly dashboard snapshot archived in docs
+
 
