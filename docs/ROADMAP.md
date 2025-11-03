@@ -442,4 +442,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Performance: p95 screen load, crash-free sessions
 - Reporting: Weekly dashboard snapshot archived in docs
 
+## 41) CI checks overview (2025-08-19)
+
+- Lint & Typecheck: ESLint and tsc must pass
+- Tests: Unit tests required, integration tests on main
+- Build: Expo build dry-run to detect config issues
+- Security: Dependency audit, secrets scan
+- Gates: All checks required before merge to main
+
 
