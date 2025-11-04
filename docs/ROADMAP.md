@@ -430,3 +430,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Budget: 0.5% monthly downtime allowance
 - Policy: Freeze feature releases if budget exceeded
 - Remediation: Focus on reliability work until budget recovers
+
+## 39) Release cadence (2025-08-19)
+
+- Patch: As needed for hotfixes
+- Minor: Bi-weekly feature releases
+- Major: Quarterly platform updates
+- Freeze: 48-hour code freeze before minor/major releases
