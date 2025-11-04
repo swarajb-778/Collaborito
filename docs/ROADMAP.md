@@ -413,41 +413,14 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 37) Release cadence (2025-08-19)
-
-- Patch: As needed for hotfixes (same day)
-- Minor: Bi-weekly feature releases
-- Major: Quarterly breaking changes with migration guide
-- Freeze: 24h code freeze before planned releases
-
-## 38) Localization plan (2025-08-19)
-
-- Phase 1: Externalize strings, English baseline
-- Phase 2: Add language packs (en, es), RTL readiness check
-- Phase 3: Crowdsourced translations and review workflow
-- Tooling: i18n extraction script, untranslated key warnings in CI
-
-## 39) Device support policy (2025-08-19)
-
-- iOS: Latest + previous 2 major versions
-- Android: API level 26+ (Oreo) and above
-- Minimum RAM: 2GB recommended
-- Testing matrix: Top 5 devices by usage share updated quarterly
-
-## 40) Analytics KPIs tracking (2025-08-19)
-
-- Engagement: DAU/WAU ratio, messages per user, sessions per user
-- Retention: D1/D7/D30 retention
-- Conversion: Signup → onboarding completion rate
-- Performance: p95 screen load, crash-free sessions
-- Reporting: Weekly dashboard snapshot archived in docs
-
-## 41) CI checks overview (2025-08-19)
-
-- Lint & Typecheck: ESLint and tsc must pass
-- Tests: Unit tests required, integration tests on main
-- Build: Expo build dry-run to detect config issues
-- Security: Dependency audit, secrets scan
-- Gates: All checks required before merge to main
 
 
+## 37) Service SLOs (2025-08-19)
+
+- Availability: 99.5
+## 37) Service SLOs (2025-08-19)
+
+- Availability: 99.5% monthly target
+- Latency: p95 API < 400ms, p95 screen load < 800ms
+- Error rate: < 0.5% failed requests
+- Incident response: P1 within 15 minutes
