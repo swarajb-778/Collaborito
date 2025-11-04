@@ -444,3 +444,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Android: API 28+ supported
 - Testing: Smoke tests on low-end and mid-range devices
 - Accessibility: VoiceOver/TalkBack checks on primary flows
+
+## 41) Observability roadmap (2025-08-19)
+
+- Metrics: App start, API latency, error rates, lockout events
+- Logs: Structured logs for auth, onboarding, and payments
+- Tracing: Add spans for onboarding and auth flows
+- Dashboards: Security, performance, and engagement panels
