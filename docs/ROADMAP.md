@@ -437,3 +437,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Minor: Bi-weekly feature releases
 - Major: Quarterly platform updates
 - Freeze: 48-hour code freeze before minor/major releases
+
+## 40) Mobile device support (2025-08-19)
+
+- iOS: 14+ supported, 13 best-effort
+- Android: API 28+ supported
+- Testing: Smoke tests on low-end and mid-range devices
+- Accessibility: VoiceOver/TalkBack checks on primary flows
