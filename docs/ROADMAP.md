@@ -424,3 +424,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Latency: p95 API < 400ms, p95 screen load < 800ms
 - Error rate: < 0.5% failed requests
 - Incident response: P1 within 15 minutes
+
+## 38) Error budgets (2025-08-19)
+
+- Budget: 0.5% monthly downtime allowance
+- Policy: Freeze feature releases if budget exceeded
+- Remediation: Focus on reliability work until budget recovers
