@@ -421,3 +421,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Minor: Every 2–3 weeks with features and improvements
 - Major: As required for breaking changes or platform upgrades
 - Tagging: Semantic versioning with release notes
+
+## 38) Maintenance contacts (2025-08-19)
+
+- Primary: Swaraj Bangar (Lead Developer)
+- Secondary: Security team on-call
+- Escalation: Project owner if P1 persists > 1 hour
+- Contact: security@collaborito.com
