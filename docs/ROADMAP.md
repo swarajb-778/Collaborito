@@ -415,39 +415,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 
 
 
-## 37) Service SLOs (2025-08-19)
-
-- Availability: 99.5
-## 37) Service SLOs (2025-08-19)
-
-- Availability: 99.5% monthly target
-- Latency: p95 API < 400ms, p95 screen load < 800ms
-- Error rate: < 0.5% failed requests
-- Incident response: P1 within 15 minutes
-
-## 38) Error budgets (2025-08-19)
-
-- Budget: 0.5% monthly downtime allowance
-- Policy: Freeze feature releases if budget exceeded
-- Remediation: Focus on reliability work until budget recovers
-
-## 39) Release cadence (2025-08-19)
+## 37) Release cadence (2025-08-19)
 
 - Patch: As needed for hotfixes
-- Minor: Bi-weekly feature releases
-- Major: Quarterly platform updates
-- Freeze: 48-hour code freeze before minor/major releases
-
-## 40) Mobile device support (2025-08-19)
-
-- iOS: 14+ supported, 13 best-effort
-- Android: API 28+ supported
-- Testing: Smoke tests on low-end and mid-range devices
-- Accessibility: VoiceOver/TalkBack checks on primary flows
-
-## 41) Observability roadmap (2025-08-19)
-
-- Metrics: App start, API latency, error rates, lockout events
-- Logs: Structured logs for auth, onboarding, and payments
-- Tracing: Add spans for onboarding and auth flows
-- Dashboards: Security, performance, and engagement panels
+- Minor: Every 2–3 weeks with features and improvements
+- Major: As required for breaking changes or platform upgrades
+- Tagging: Semantic versioning with release notes
