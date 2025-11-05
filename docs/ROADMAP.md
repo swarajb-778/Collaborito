@@ -442,3 +442,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Gradual rollout: internal → beta → 10% → 100%
 - Kill switch: immediate disable for regressions
 - Cleanup: remove stale flags within one release
+
+## 41) Migration checklist (2025-08-19)
+
+- Backup DB and verify restore point
+- Apply migrations to staging; run smoke tests
+- Push to production during window; monitor telemetry
+- Rollback plan ready (scripts + steps)
