@@ -435,3 +435,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Error budget: 0.5% downtime per month
 - Response: P1 in 15 minutes, P2 in 1 hour
 - Resolution: P1 within 4 hours where feasible
+
+## 40) Feature flag policy (2025-08-19)
+
+- Default off for risky features
+- Gradual rollout: internal → beta → 10% → 100%
+- Kill switch: immediate disable for regressions
+- Cleanup: remove stale flags within one release
