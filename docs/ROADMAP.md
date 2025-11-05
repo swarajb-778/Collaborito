@@ -428,3 +428,10 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Secondary: Security team on-call
 - Escalation: Project owner if P1 persists > 1 hour
 - Contact: security@collaborito.com
+
+## 39) SLA targets (2025-08-19)
+
+- Availability: 99.5% monthly
+- Error budget: 0.5% downtime per month
+- Response: P1 in 15 minutes, P2 in 1 hour
+- Resolution: P1 within 4 hours where feasible
