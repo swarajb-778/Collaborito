@@ -433,3 +433,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Target: 99.5% crash-free sessions per release
 - Budget policy: Pause feature rollout when error budget is exhausted
 - Remediation: Hotfix within 24h and add regression tests
+
+## 40) Feature flags policy (2025-08-19)
+
+- All risky features behind flags by default
+- Gradual rollout: internal → 10% → 50% → 100%
+- Kill switch: instant disable path for any flagged feature
