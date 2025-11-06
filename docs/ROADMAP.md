@@ -417,35 +417,7 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 
 ## 37) Release cadence (2025-08-19)
 
-- Patch: As needed for hotfixes
-- Minor: Every 2–3 weeks with features and improvements
-- Major: As required for breaking changes or platform upgrades
-- Tagging: Semantic versioning with release notes
-
-## 38) Maintenance contacts (2025-08-19)
-
-- Primary: Swaraj Bangar (Lead Developer)
-- Secondary: Security team on-call
-- Escalation: Project owner if P1 persists > 1 hour
-- Contact: security@collaborito.com
-
-## 39) SLA targets (2025-08-19)
-
-- Availability: 99.5% monthly
-- Error budget: 0.5% downtime per month
-- Response: P1 in 15 minutes, P2 in 1 hour
-- Resolution: P1 within 4 hours where feasible
-
-## 40) Feature flag policy (2025-08-19)
-
-- Default off for risky features
-- Gradual rollout: internal → beta → 10% → 100%
-- Kill switch: immediate disable for regressions
-- Cleanup: remove stale flags within one release
-
-## 41) Migration checklist (2025-08-19)
-
-- Backup DB and verify restore point
-- Apply migrations to staging; run smoke tests
-- Push to production during window; monitor telemetry
-- Rollback plan ready (scripts + steps)
+- Cadence: Bi-weekly releases with mid-sprint hotfix window
+- Freeze: 24h pre-release freeze for final verification
+- Tags: Semantic versioning vX.Y.Z, annotate with highlights
+- Rollout: Staged rollout with monitoring gates
