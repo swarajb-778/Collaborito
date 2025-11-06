@@ -427,3 +427,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Quarterly security refresher for contributors
 - Topics: secrets handling, RLS best practices, OAuth flows
 - Checklist: pre-merge security verification and dependency audit
+
+## 39) Error budgets (2025-08-19)
+
+- Target: 99.5% crash-free sessions per release
+- Budget policy: Pause feature rollout when error budget is exhausted
+- Remediation: Hotfix within 24h and add regression tests
