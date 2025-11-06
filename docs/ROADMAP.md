@@ -421,3 +421,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Freeze: 24h pre-release freeze for final verification
 - Tags: Semantic versioning vX.Y.Z, annotate with highlights
 - Rollout: Staged rollout with monitoring gates
+
+## 38) Security training (2025-08-19)
+
+- Quarterly security refresher for contributors
+- Topics: secrets handling, RLS best practices, OAuth flows
+- Checklist: pre-merge security verification and dependency audit
