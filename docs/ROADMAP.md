@@ -439,3 +439,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - All risky features behind flags by default
 - Gradual rollout: internal → 10% → 50% → 100%
 - Kill switch: instant disable path for any flagged feature
+
+## 41) Support matrix (2025-08-19)
+
+- Platforms: iOS 15+, Android 9+
+- Devices: Recent flagship and one budget class device per platform
+- RN/Expo: Track latest stable - 1 as minimum supported
