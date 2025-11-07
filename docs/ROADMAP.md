@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Bundle size: Target < 5MB initial download
 - Memory usage: Target < 150MB average during normal operation
 
+## 36) User feedback integration (2025-08-19)
+
+- Collection: In-app feedback forms, App Store reviews, GitHub issues
+- Analysis: Weekly review of feedback trends and common themes
+- Prioritization: Feature requests ranked by user impact and effort
+- Communication: Public roadmap updates for high-demand features
+- Implementation: User feedback directly influences sprint planning
+
 
