@@ -441,4 +441,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Retention: 7/30-day retention rates
 - Performance: p95 screen load < 800ms
 
+## 41) CI/CD pipeline overview (2025-08-19)
+
+- CI: Lint, type-check, unit tests on PRs
+- Build: Expo EAS build triggered on main merges
+- Deploy: Staging on main; production on tagged releases
+- Gates: Security script check, test pass required
+
 
