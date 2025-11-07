@@ -413,44 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
+## 37) Release calendar (2025-08-19)
 
-- App startup: Target < 2 seconds on mid-range devices
-- Screen load: Target < 800ms p95 for all screens
-- API response: Target < 200ms p95 for critical endpoints
-- Bundle size: Target < 5MB initial download
-- Memory usage: Target < 150MB average during normal operation
-
-## 36) User feedback integration (2025-08-19)
-
-- Collection: In-app feedback forms, App Store reviews, GitHub issues
-- Analysis: Weekly review of feedback trends and common themes
-- Prioritization: Feature requests ranked by user impact and effort
-- Communication: Public roadmap updates for high-demand features
-- Implementation: User feedback directly influences sprint planning
-
-## 37) Security audit schedule (2025-08-19)
-
-- Monthly: Review authentication and authorization flows
-- Quarterly: Full security audit including dependency scanning
-- Annually: Third-party penetration testing
-- Continuous: Automated security scanning in CI/CD pipeline
-- Incident-based: Immediate audit after any security incident
-
-## 38) Feature flag strategy (2025-08-19)
-
-- New features: Deploy behind feature flags for gradual rollout
-- A/B testing: Use flags for controlled experiments
-- Rollback: Instant disable without code deployment
-- User segments: Target specific user groups for early access
-- Monitoring: Track feature adoption and performance metrics
-
-## 39) Continuous improvement process (2025-08-19)
-
-- Retrospectives: Weekly team retrospectives to identify improvements
-- Metrics review: Monthly analysis of KPIs and performance data
-- Process optimization: Quarterly review of development workflows
-- Tool evaluation: Annual assessment of development tools and services
-- Learning culture: Encourage experimentation and knowledge sharing
+- Bi-weekly releases on Tuesdays
+- Code freeze 24 hours prior to release
+- Hotfix window open for 72 hours post-release
+- Tag format: v<MAJOR>.<MINOR>.<PATCH>
 
 
