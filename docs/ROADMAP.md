@@ -434,4 +434,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Phase 3: Expand to 2 additional languages based on demand
 - Use translation keys, avoid hardcoded strings
 
+## 40) Analytics KPIs (2025-08-19)
+
+- Activation: Onboarding completion rate (>95%)
+- Engagement: DAU/WAU, messages sent per user
+- Retention: 7/30-day retention rates
+- Performance: p95 screen load < 800ms
+
 
