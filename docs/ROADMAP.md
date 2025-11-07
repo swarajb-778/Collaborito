@@ -420,4 +420,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Hotfix window open for 72 hours post-release
 - Tag format: v<MAJOR>.<MINOR>.<PATCH>
 
+## 38) Security audit plan (2025-08-19)
+
+- Quarterly internal review of RLS and RPCs
+- Annual external penetration test
+- Monthly dependency vulnerability audit (npm audit, GitHub alerts)
+- Track findings and remediation in Issues (label: security)
+
 
