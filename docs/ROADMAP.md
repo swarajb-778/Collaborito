@@ -427,4 +427,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Monthly dependency vulnerability audit (npm audit, GitHub alerts)
 - Track findings and remediation in Issues (label: security)
 
+## 39) Localization plan (2025-08-19)
+
+- Phase 1: i18n scaffolding and English baseline
+- Phase 2: Add Hindi localization for top screens
+- Phase 3: Expand to 2 additional languages based on demand
+- Use translation keys, avoid hardcoded strings
+
 
