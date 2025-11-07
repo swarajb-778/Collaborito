@@ -413,35 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 35) Performance benchmarks (2025-08-19)
+
+- App startup: Target < 2 seconds on mid-range devices
+- Screen load: Target < 800ms p95 for all screens
+- API response: Target < 200ms p95 for critical endpoints
+- Bundle size: Target < 5MB initial download
+- Memory usage: Target < 150MB average during normal operation
 
 
-## 37) Release cadence (2025-08-19)
-
-- Cadence: Bi-weekly releases with mid-sprint hotfix window
-- Freeze: 24h pre-release freeze for final verification
-- Tags: Semantic versioning vX.Y.Z, annotate with highlights
-- Rollout: Staged rollout with monitoring gates
-
-## 38) Security training (2025-08-19)
-
-- Quarterly security refresher for contributors
-- Topics: secrets handling, RLS best practices, OAuth flows
-- Checklist: pre-merge security verification and dependency audit
-
-## 39) Error budgets (2025-08-19)
-
-- Target: 99.5% crash-free sessions per release
-- Budget policy: Pause feature rollout when error budget is exhausted
-- Remediation: Hotfix within 24h and add regression tests
-
-## 40) Feature flags policy (2025-08-19)
-
-- All risky features behind flags by default
-- Gradual rollout: internal → 10% → 50% → 100%
-- Kill switch: instant disable path for any flagged feature
-
-## 41) Support matrix (2025-08-19)
-
-- Platforms: iOS 15+, Android 9+
-- Devices: Recent flagship and one budget class device per platform
-- RN/Expo: Track latest stable - 1 as minimum supported
