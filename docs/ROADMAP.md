@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Continuous: Automated security scanning in CI/CD pipeline
 - Incident-based: Immediate audit after any security incident
 
+## 38) Feature flag strategy (2025-08-19)
+
+- New features: Deploy behind feature flags for gradual rollout
+- A/B testing: Use flags for controlled experiments
+- Rollback: Instant disable without code deployment
+- User segments: Target specific user groups for early access
+- Monitoring: Track feature adoption and performance metrics
+
 
