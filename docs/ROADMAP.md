@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Communication: Public roadmap updates for high-demand features
 - Implementation: User feedback directly influences sprint planning
 
+## 37) Security audit schedule (2025-08-19)
+
+- Monthly: Review authentication and authorization flows
+- Quarterly: Full security audit including dependency scanning
+- Annually: Third-party penetration testing
+- Continuous: Automated security scanning in CI/CD pipeline
+- Incident-based: Immediate audit after any security incident
+
 
