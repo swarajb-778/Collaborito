@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Beta testing: Regular feedback from beta users before releases
 - Analytics: Track feature usage and user behavior patterns
 
+## 37) Compliance and privacy (2025-08-19)
+
+- GDPR: User data export and deletion capabilities
+- Privacy policy: Regular updates and user notifications
+- Data retention: Clear policies for user data storage duration
+- Consent management: Granular permissions for data usage
+- Audit logs: Track all access to sensitive user data
+
 
