@@ -413,39 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 37) Release calendar (2025-08-19)
+## 35) Performance benchmarks (2025-08-19)
 
-- Bi-weekly releases on Tuesdays
-- Code freeze 24 hours prior to release
-- Hotfix window open for 72 hours post-release
-- Tag format: v<MAJOR>.<MINOR>.<PATCH>
-
-## 38) Security audit plan (2025-08-19)
-
-- Quarterly internal review of RLS and RPCs
-- Annual external penetration test
-- Monthly dependency vulnerability audit (npm audit, GitHub alerts)
-- Track findings and remediation in Issues (label: security)
-
-## 39) Localization plan (2025-08-19)
-
-- Phase 1: i18n scaffolding and English baseline
-- Phase 2: Add Hindi localization for top screens
-- Phase 3: Expand to 2 additional languages based on demand
-- Use translation keys, avoid hardcoded strings
-
-## 40) Analytics KPIs (2025-08-19)
-
-- Activation: Onboarding completion rate (>95%)
-- Engagement: DAU/WAU, messages sent per user
-- Retention: 7/30-day retention rates
-- Performance: p95 screen load < 800ms
-
-## 41) CI/CD pipeline overview (2025-08-19)
-
-- CI: Lint, type-check, unit tests on PRs
-- Build: Expo EAS build triggered on main merges
-- Deploy: Staging on main; production on tagged releases
-- Gates: Security script check, test pass required
+- App startup: Target < 3 seconds on average devices
+- Screen load: Target < 800ms p95 for all screens
+- API response: Target < 500ms p95 for all endpoints
+- Memory usage: Target < 150MB peak memory consumption
+- Battery impact: Minimize background processing and optimize animations
 
 
