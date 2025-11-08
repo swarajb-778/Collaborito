@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Consent management: Granular permissions for data usage
 - Audit logs: Track all access to sensitive user data
 
+## 38) Scaling strategy (2025-08-19)
+
+- Database: Horizontal scaling with read replicas for high traffic
+- Caching: Redis for frequently accessed data and session management
+- CDN: Static assets and images served via CDN
+- Load balancing: Multiple app instances behind load balancer
+- Monitoring: Auto-scaling based on CPU, memory, and request metrics
+
 
