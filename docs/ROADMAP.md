@@ -421,3 +421,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Execute `npm run verify-security` and confirm OK=3, WARN=0
 - Capture deployment notes in change log
 
+## 36) Device management QA checklist (2025-08-19)
+
+- Verify device list displays OS, last seen, and trust status
+- Test trust/untrust flows across iOS, Android, and web
+- Simulate new device login and confirm alert delivery
+- Ensure revoke removes device from Supabase and local cache
+- Validate accessibility labels for device entries and actions
+
