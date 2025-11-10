@@ -437,3 +437,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Test "Remember me" configuration for extended sessions
 - Ensure analytics capture warning and timeout events
 
+## 38) Messaging MVP prerequisites (2025-08-19)
+
+- Finalize Supabase Realtime channel naming conventions
+- Implement optimistic send utilities with retry queue
+- Define message moderation guidelines and escalation flow
+- Prepare UI skeletons for project channels and DMs
+- Ensure push notification strategy aligned with messaging launch
+
