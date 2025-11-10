@@ -413,44 +413,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Performance benchmarks (2025-08-19)
+## 35) Security RPC deployment checklist (2025-08-19)
 
-- App startup: Target < 3 seconds on average devices
-- Screen load: Target < 800ms p95 for all screens
-- API response: Target < 500ms p95 for all endpoints
-- Memory usage: Target < 150MB peak memory consumption
-- Battery impact: Minimize background processing and optimize animations
-
-## 36) User feedback collection (2025-08-19)
-
-- In-app surveys: Post-onboarding and after key features
-- App store reviews: Monitor and respond to all reviews
-- Support tickets: Categorize and track common issues
-- Beta testing: Regular feedback from beta users before releases
-- Analytics: Track feature usage and user behavior patterns
-
-## 37) Compliance and privacy (2025-08-19)
-
-- GDPR: User data export and deletion capabilities
-- Privacy policy: Regular updates and user notifications
-- Data retention: Clear policies for user data storage duration
-- Consent management: Granular permissions for data usage
-- Audit logs: Track all access to sensitive user data
-
-## 38) Scaling strategy (2025-08-19)
-
-- Database: Horizontal scaling with read replicas for high traffic
-- Caching: Redis for frequently accessed data and session management
-- CDN: Static assets and images served via CDN
-- Load balancing: Multiple app instances behind load balancer
-- Monitoring: Auto-scaling based on CPU, memory, and request metrics
-
-## 39) Team collaboration (2025-08-19)
-
-- Code ownership: Clear ownership for each module and feature
-- Pair programming: Encouraged for complex features and security work
-- Knowledge sharing: Weekly tech talks and documentation sessions
-- Cross-training: Team members learn multiple areas of the codebase
-- Onboarding: New team members assigned a mentor for first 30 days
-
+- Confirm Supabase project ref configured locally
+- Ensure migrations include all security functions and policies
+- Run `supabase db push` against staging and verify success
+- Execute `npm run verify-security` and confirm OK=3, WARN=0
+- Capture deployment notes in change log
 
