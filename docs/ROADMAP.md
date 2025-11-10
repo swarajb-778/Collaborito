@@ -445,3 +445,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Prepare UI skeletons for project channels and DMs
 - Ensure push notification strategy aligned with messaging launch
 
+## 39) Operational resources (2025-08-19)
+
+- Architecture diagram: `/docs/architecture/` (update quarterly)
+- Security runbook: `/docs/SECURITY_IMPLEMENTATION_SUMMARY.md`
+- Monitoring dashboards: Supabase metrics + Expo EAS analytics
+- Support handbook: `/docs/support-playbook.md` (draft)
+- Contact matrix: maintained in company directory
+
