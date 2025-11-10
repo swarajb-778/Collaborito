@@ -429,3 +429,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Ensure revoke removes device from Supabase and local cache
 - Validate accessibility labels for device entries and actions
 
+## 37) Session timeout test plan (2025-08-19)
+
+- Simulate inactivity to trigger warning toast and confirm extend option
+- Validate session extend updates server timestamp without errors
+- Confirm timeout signs user out and clears sensitive data
+- Test "Remember me" configuration for extended sessions
+- Ensure analytics capture warning and timeout events
+
