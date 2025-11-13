@@ -438,3 +438,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Regression suite: Execute before every release candidate
 - Code ownership: Feature owners responsible for updating tests
 - Tooling: Coverage reports generated via CI and linked in PRs
+
+## 38) Tooling inventory (2025-08-19)
+
+- Development: Expo, TypeScript, ESLint, Prettier
+- Backend: Supabase (auth, database, storage, functions)
+- Monitoring: Sentry (errors), custom performance dashboards
+- Collaboration: GitHub Issues, Discussions, Pull Requests
+- Automation: GitHub Actions CI/CD, security verification scripts
