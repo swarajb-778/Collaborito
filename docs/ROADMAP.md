@@ -422,3 +422,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Audience segmentation: Existing users, waitlist, internal stakeholders
 - Content checklist: Summary of changes, security highlights, known issues, next steps
 - Feedback loop: Collect questions in a dedicated discussion thread for triage
+
+## 36) Security audit calendar (2025-08-19)
+
+- Monthly: Run Supabase security verification and dependency audit
+- Quarterly: External penetration test or bug bounty review
+- Bi-annually: Review RLS policies and access logs for anomalies
+- Annually: Update incident response playbooks and disaster recovery drills
+- Ownership: Security lead and lead developer jointly accountable
