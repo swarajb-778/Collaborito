@@ -413,43 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Security RPC deployment checklist (2025-08-19)
 
-- Confirm Supabase project ref configured locally
-- Ensure migrations include all security functions and policies
-- Run `supabase db push` against staging and verify success
-- Execute `npm run verify-security` and confirm OK=3, WARN=0
-- Capture deployment notes in change log
 
-## 36) Device management QA checklist (2025-08-19)
+## 35) Release communication plan (2025-08-19)
 
-- Verify device list displays OS, last seen, and trust status
-- Test trust/untrust flows across iOS, Android, and web
-- Simulate new device login and confirm alert delivery
-- Ensure revoke removes device from Supabase and local cache
-- Validate accessibility labels for device entries and actions
-
-## 37) Session timeout test plan (2025-08-19)
-
-- Simulate inactivity to trigger warning toast and confirm extend option
-- Validate session extend updates server timestamp without errors
-- Confirm timeout signs user out and clears sensitive data
-- Test "Remember me" configuration for extended sessions
-- Ensure analytics capture warning and timeout events
-
-## 38) Messaging MVP prerequisites (2025-08-19)
-
-- Finalize Supabase Realtime channel naming conventions
-- Implement optimistic send utilities with retry queue
-- Define message moderation guidelines and escalation flow
-- Prepare UI skeletons for project channels and DMs
-- Ensure push notification strategy aligned with messaging launch
-
-## 39) Operational resources (2025-08-19)
-
-- Architecture diagram: `/docs/architecture/` (update quarterly)
-- Security runbook: `/docs/SECURITY_IMPLEMENTATION_SUMMARY.md`
-- Monitoring dashboards: Supabase metrics + Expo EAS analytics
-- Support handbook: `/docs/support-playbook.md` (draft)
-- Contact matrix: maintained in company directory
-
+- Announcement channels: GitHub Discussions, email newsletter, LinkedIn update
+- Timing: Publish communication within 30 minutes of release completion
+- Audience segmentation: Existing users, waitlist, internal stakeholders
+- Content checklist: Summary of changes, security highlights, known issues, next steps
+- Feedback loop: Collect questions in a dedicated discussion thread for triage
