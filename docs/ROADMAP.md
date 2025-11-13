@@ -446,3 +446,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Monitoring: Sentry (errors), custom performance dashboards
 - Collaboration: GitHub Issues, Discussions, Pull Requests
 - Automation: GitHub Actions CI/CD, security verification scripts
+
+## 39) Roadmap review cadence (2025-08-19)
+
+- Weekly: Quick stand-up review of milestone progress
+- Bi-weekly: Deeper sprint review and backlog reprioritization
+- Monthly: Stakeholder sync with metrics, risks, and decisions
+- Quarterly: Strategic planning session to adjust long-term goals
+- Documentation: Publish meeting notes and action items in docs/ROADMAP.md history
