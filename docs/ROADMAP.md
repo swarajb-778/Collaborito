@@ -430,3 +430,11 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Bi-annually: Review RLS policies and access logs for anomalies
 - Annually: Update incident response playbooks and disaster recovery drills
 - Ownership: Security lead and lead developer jointly accountable
+
+## 37) Test coverage targets (2025-08-19)
+
+- Unit tests: Maintain >80overage on core services and utilities
+- Integration tests: End-to-end onboarding, login, and device trust flows
+- Regression suite: Execute before every release candidate
+- Code ownership: Feature owners responsible for updating tests
+- Tooling: Coverage reports generated via CI and linked in PRs
