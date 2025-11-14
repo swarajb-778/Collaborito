@@ -430,4 +430,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - DAU/WAU: Daily/Weekly Active Users
 - TTI: Time to Interactive (performance metric)
 
+## 37) Stakeholder communication (2025-08-19)
+
+- Weekly digest: Shared with stakeholders every Friday
+- Milestone briefings: Before/after major releases
+- Escalation channel: Dedicated email + chat for urgent items
+- Decision log: Summaries posted to project documentation
+- Feedback loop: Structured survey each sprint
+
 
