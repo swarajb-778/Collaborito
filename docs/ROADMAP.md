@@ -446,4 +446,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Telemetry: Flag usage tracked in analytics dashboards
 - Ownership: Feature owner monitors metrics during rollout
 
+## 39) Analytics instrumentation (2025-08-19)
+
+- Event taxonomy: Shared schema for onboarding, security, collaboration flows
+- Required events: Login success/failure, device trust actions, session warnings
+- Tooling: Supabase analytics + optional Segment export
+- Validation: QA checklist ensures events fire before release
+- Privacy: PII stripped before logging; adhere to RLS policies
+
 
