@@ -438,4 +438,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Decision log: Summaries posted to project documentation
 - Feedback loop: Structured survey each sprint
 
+## 38) Feature flag strategy (2025-08-19)
+
+- Default off: New features ship behind flags until validated
+- Gradual rollout: Enable for 10% → 50% → 100% of users
+- Kill switch: Instant disable path via remote config
+- Telemetry: Flag usage tracked in analytics dashboards
+- Ownership: Feature owner monitors metrics during rollout
+
 
