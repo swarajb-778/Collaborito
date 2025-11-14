@@ -413,44 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
+## 35) Incident response (2025-08-19)
+
+- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
+- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
+- Escalation: Immediate notification to lead developer for P1/P2
+- Communication: Status updates every 30 minutes for P1 incidents
+- Post-mortem: Required for P1/P2 incidents within 48 hours
 
 
-## 35) Release communication plan (2025-08-19)
-
-- Announcement channels: GitHub Discussions, email newsletter, LinkedIn update
-- Timing: Publish communication within 30 minutes of release completion
-- Audience segmentation: Existing users, waitlist, internal stakeholders
-- Content checklist: Summary of changes, security highlights, known issues, next steps
-- Feedback loop: Collect questions in a dedicated discussion thread for triage
-
-## 36) Security audit calendar (2025-08-19)
-
-- Monthly: Run Supabase security verification and dependency audit
-- Quarterly: External penetration test or bug bounty review
-- Bi-annually: Review RLS policies and access logs for anomalies
-- Annually: Update incident response playbooks and disaster recovery drills
-- Ownership: Security lead and lead developer jointly accountable
-
-## 37) Test coverage targets (2025-08-19)
-
-- Unit tests: Maintain >80overage on core services and utilities
-- Integration tests: End-to-end onboarding, login, and device trust flows
-- Regression suite: Execute before every release candidate
-- Code ownership: Feature owners responsible for updating tests
-- Tooling: Coverage reports generated via CI and linked in PRs
-
-## 38) Tooling inventory (2025-08-19)
-
-- Development: Expo, TypeScript, ESLint, Prettier
-- Backend: Supabase (auth, database, storage, functions)
-- Monitoring: Sentry (errors), custom performance dashboards
-- Collaboration: GitHub Issues, Discussions, Pull Requests
-- Automation: GitHub Actions CI/CD, security verification scripts
-
-## 39) Roadmap review cadence (2025-08-19)
-
-- Weekly: Quick stand-up review of milestone progress
-- Bi-weekly: Deeper sprint review and backlog reprioritization
-- Monthly: Stakeholder sync with metrics, risks, and decisions
-- Quarterly: Strategic planning session to adjust long-term goals
-- Documentation: Publish meeting notes and action items in docs/ROADMAP.md history
