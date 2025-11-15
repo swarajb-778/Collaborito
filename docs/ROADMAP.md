@@ -416,41 +416,9 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 ## 35) Performance benchmarks (2025-08-19)
 
 - App startup: Target < 2 seconds on mid-range devices
-- Screen load: Target < 800ms p95 for all screens
-- API response: Target < 200ms p95 for database queries
-- Image loading: Target < 1 second for avatar/profile images
-- Memory usage: Target < 150MB for typical app session
-
-## 36) Code review checklist (2025-08-19)
-
-- Security: No sensitive data exposed, proper input validation
-- Performance: No unnecessary re-renders, efficient queries
-- Testing: Unit tests added/updated for new features
-- Documentation: Code comments and README updated
-- Accessibility: Screen reader support, proper ARIA labels
-
-## 37) Feature flags (2025-08-19)
-
-- Purpose: Enable gradual rollouts and A/B testing
-- Implementation: Environment-based flags for feature toggles
-- Rollout strategy: 10% → 50% → 100% over 1 week
-- Monitoring: Track feature adoption and error rates
-- Rollback: Instant disable without code deployment
-
-## 38) User feedback collection (2025-08-19)
-
-- In-app surveys: Post-onboarding and after key actions
-- App store reviews: Monitor and respond to user feedback
-- Support tickets: Track common issues and pain points
-- Analytics: User behavior patterns and drop-off points
-- Action items: Monthly review and prioritization of feedback
-
-## 39) Continuous improvement (2025-08-19)
-
-- Weekly retrospectives: What went well, what to improve
-- Monthly metrics review: KPIs, user growth, engagement trends
-- Quarterly planning: Adjust roadmap based on learnings
-- Annual review: Major strategy assessment and pivot decisions
-- Culture: Foster experimentation and learning from failures
+- Screen navigation: Target < 300ms between screens
+- API response: Target p95 < 500ms for standard queries
+- Image loading: Target < 1 second for avatar images
+- Bundle size: Target < 5MB initial download
 
 
