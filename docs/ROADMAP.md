@@ -413,45 +413,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Recovery test: Quarterly restore drill to validate procedures
 - Ownership: Lead developer responsible for backup monitoring
 
-## 35) Incident response (2025-08-19)
+## 35) Performance benchmarks (2025-08-19)
 
-- Severity levels: P1 (critical), P2 (high), P3 (medium), P4 (low)
-- Response times: P1 (15 min), P2 (1 hour), P3 (4 hours), P4 (24 hours)
-- Escalation: Immediate notification to lead developer for P1/P2
-- Communication: Status updates every 30 minutes for P1 incidents
-- Post-mortem: Required for P1/P2 incidents within 48 hours
-
-## 36) Glossary (2025-08-19)
-
-- RPC: Remote Procedure Call (Supabase functions)
-- RLS: Row Level Security (database access control)
-- OAuth: Open Authorization (LinkedIn login)
-- MVP: Minimum Viable Product
-- DAU/WAU: Daily/Weekly Active Users
-- TTI: Time to Interactive (performance metric)
-
-## 37) Stakeholder communication (2025-08-19)
-
-- Weekly digest: Shared with stakeholders every Friday
-- Milestone briefings: Before/after major releases
-- Escalation channel: Dedicated email + chat for urgent items
-- Decision log: Summaries posted to project documentation
-- Feedback loop: Structured survey each sprint
-
-## 38) Feature flag strategy (2025-08-19)
-
-- Default off: New features ship behind flags until validated
-- Gradual rollout: Enable for 10% → 50% → 100% of users
-- Kill switch: Instant disable path via remote config
-- Telemetry: Flag usage tracked in analytics dashboards
-- Ownership: Feature owner monitors metrics during rollout
-
-## 39) Analytics instrumentation (2025-08-19)
-
-- Event taxonomy: Shared schema for onboarding, security, collaboration flows
-- Required events: Login success/failure, device trust actions, session warnings
-- Tooling: Supabase analytics + optional Segment export
-- Validation: QA checklist ensures events fire before release
-- Privacy: PII stripped before logging; adhere to RLS policies
+- App startup: Target < 2 seconds on mid-range devices
+- Screen load: Target < 800ms p95 for all screens
+- API response: Target < 200ms p95 for database queries
+- Image loading: Target < 1 second for avatar/profile images
+- Memory usage: Target < 150MB for typical app session
 
 
