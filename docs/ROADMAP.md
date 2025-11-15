@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Image loading: Target < 1 second for avatar/profile images
 - Memory usage: Target < 150MB for typical app session
 
+## 36) Code review checklist (2025-08-19)
+
+- Security: No sensitive data exposed, proper input validation
+- Performance: No unnecessary re-renders, efficient queries
+- Testing: Unit tests added/updated for new features
+- Documentation: Code comments and README updated
+- Accessibility: Screen reader support, proper ARIA labels
+
 
