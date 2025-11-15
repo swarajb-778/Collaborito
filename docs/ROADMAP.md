@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Ad-hoc: Immediate review after any security incident
 - Compliance: GDPR, CCPA, and data protection regulations
 
+## 38) Feature flag strategy (2025-08-19)
+
+- New features: Deploy behind feature flags for gradual rollout
+- A/B testing: Use flags for experimentation and user segmentation
+- Rollback: Instant disable without code deployment
+- Monitoring: Track feature adoption and performance metrics
+- Cleanup: Remove flags after feature stabilization (within 2 sprints)
+
 
