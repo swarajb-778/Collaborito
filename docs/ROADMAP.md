@@ -437,4 +437,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Monitoring: Track feature adoption and error rates
 - Rollback: Instant disable without code deployment
 
+## 38) User feedback collection (2025-08-19)
+
+- In-app surveys: Post-onboarding and after key actions
+- App store reviews: Monitor and respond to user feedback
+- Support tickets: Track common issues and pain points
+- Analytics: User behavior patterns and drop-off points
+- Action items: Monthly review and prioritization of feedback
+
 
