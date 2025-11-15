@@ -429,4 +429,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Documentation: Code comments and README updated
 - Accessibility: Screen reader support, proper ARIA labels
 
+## 37) Feature flags (2025-08-19)
+
+- Purpose: Enable gradual rollouts and A/B testing
+- Implementation: Environment-based flags for feature toggles
+- Rollout strategy: 10% → 50% → 100% over 1 week
+- Monitoring: Track feature adoption and error rates
+- Rollback: Instant disable without code deployment
+
 
