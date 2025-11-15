@@ -421,4 +421,12 @@ This roadmap provides a comprehensive guide for Collaborito's development, cover
 - Image loading: Target < 1 second for avatar images
 - Bundle size: Target < 5MB initial download
 
+## 36) User feedback integration (2025-08-19)
+
+- Collection: In-app feedback forms, app store reviews, support tickets
+- Analysis: Weekly review of feedback themes and patterns
+- Prioritization: User impact vs implementation effort matrix
+- Communication: Public roadmap updates based on user requests
+- Follow-up: Acknowledge feedback and update users on progress
+
 
